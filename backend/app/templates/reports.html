@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Relatórios{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('reports') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Relatórios & Exportações</div>
+      <div class="topbar-actions">
+        <span class="text-muted text-sm">Gere e exporte dados do sistema</span>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Summary Stats -->
+      <div class="stats-grid" id="rep-stats">
+        <div class="stat-card cyan">
+          <div class="stat-label">Total Produtos</div>
+          <div class="stat-value cyan" id="rp-products">—</div>
+          <i class="fas fa-boxes stat-icon"></i>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Valor em Estoque</div>
+          <div class="stat-value green" id="rp-value" style="font-size:18px">—</div>
+          <i class="fas fa-dollar-sign stat-icon"></i>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Críticos</div>
+          <div class="stat-value amber" id="rp-critical">—</div>
+          <i class="fas fa-exclamation-triangle stat-icon"></i>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Fornecedores</div>
+          <div class="stat-value purple" id="rp-suppliers">—</div>
+          <i class="fas fa-truck stat-icon"></i>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Relatório de Estoque -->
+        <div class="card">
+          <div class="card-title">Posição de Estoque</div>
+          <p class="text-muted text-sm mb-4">Lista completa de produtos com quantidades, valores e status de estoque.</p>
+          <div class="form-group">
+            <label class="form-label">Filtrar por Status</label>
+            <select id="rep-stock-filter" class="form-control">
+              <option value="all">Todos os produtos</option>
+              <option value="low">Estoque crítico / zerado</option>
+              <option value="ok">Estoque OK</option>
+            </select>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-primary" onclick="exportStockCSV(this)">
+              <i class="fas fa-download"></i> Exportar CSV
+            </button>
+            <button class="btn btn-secondary" onclick="previewStock(this)">
+              <i class="fas fa-eye"></i> Visualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Relatório de Movimentações -->
+        <div class="card">
+          <div class="card-title">Movimentações por Período</div>
+          <p class="text-muted text-sm mb-4">Histórico de entradas, saídas e ajustes de estoque.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Data Inicial</label>
+              <input type="date" id="rep-mov-from" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Data Final</label>
+              <input type="date" id="rep-mov-to" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select id="rep-mov-type" class="form-control">
+              <option value="">Todos</option>
+              <option value="entry">Entradas</option>
+              <option value="exit">Saídas</option>
+              <option value="adjustment">Ajustes</option>
+            </select>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-primary" onclick="exportMovementsCSV(this)">
+              <i class="fas fa-download"></i> Exportar CSV
+            </button>
+            <button class="btn btn-secondary" onclick="previewMovements(this)">
+              <i class="fas fa-eye"></i> Visualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Relatório de Projetos -->
+        <div class="card">
+          <div class="card-title">Necessidades de Projetos</div>
+          <p class="text-muted text-sm mb-4">Status de suprimentos para todos os projetos ativos.</p>
+          <div class="form-group">
+            <label class="form-label">Status do Projeto</label>
+            <select id="rep-proj-status" class="form-control">
+              <option value="active">Projetos Ativos</option>
+              <option value="">Todos os Projetos</option>
+              <option value="completed">Concluídos</option>
+            </select>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-primary" onclick="exportProjectsCSV(this)">
+              <i class="fas fa-download"></i> Exportar CSV
+            </button>
+            <button class="btn btn-secondary" onclick="previewProjects(this)">
+              <i class="fas fa-eye"></i> Visualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Relatório de Cotações -->
+        <div class="card">
+          <div class="card-title">Análise de Cotações</div>
+          <p class="text-muted text-sm mb-4">Comparativo de preços e status das cotações com fornecedores.</p>
+          <div class="form-group">
+            <label class="form-label">Status da Cotação</label>
+            <select id="rep-quot-status" class="form-control">
+              <option value="">Todas</option>
+              <option value="open">Abertas</option>
+              <option value="received">Recebidas</option>
+              <option value="approved">Aprovadas</option>
+            </select>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button class="btn btn-primary" onclick="exportQuotationsCSV(this)">
+              <i class="fas fa-download"></i> Exportar CSV
+            </button>
+            <button class="btn btn-secondary" onclick="previewQuotations(this)">
+              <i class="fas fa-eye"></i> Visualizar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Area -->
+      <div class="card mt-4" id="preview-panel" style="display:none">
+        <div class="flex items-center justify-between mb-4">
+          <div class="card-title" id="preview-title" style="margin-bottom:0">Visualização</div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary btn-sm" id="preview-export-btn">
+              <i class="fas fa-download"></i> Exportar este relatório
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="closePreview()">
+              <i class="fas fa-times"></i> Fechar
+            </button>
+          </div>
+        </div>
+        <div class="text-muted text-sm mb-3" id="preview-count"></div>
+        <div class="table-wrapper" id="preview-table-wrapper">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let previewExportFn = null;
+
+// ===== Load Summary =====
+async function loadSummary() {
+  try {
+    const summary = await api.get('/dashboard/summary');
+    document.getElementById('rp-products').textContent = summary.total_products;
+    document.getElementById('rp-value').textContent = fmtCurrency(summary.total_stock_value);
+    document.getElementById('rp-critical').textContent = summary.low_stock_count;
+  } catch(e) {}
+  try {
+    const suppliers = await api.get('/suppliers/');
+    document.getElementById('rp-suppliers').textContent = suppliers.length;
+  } catch(e) {}
+}
+
+// ===== Set default dates =====
+function setDefaultDates() {
+  var today = new Date();
+  var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('rep-mov-to').value = today.toISOString().substring(0,10);
+  document.getElementById('rep-mov-from').value = firstDay.toISOString().substring(0,10);
+}
+
+function closePreview() {
+  document.getElementById('preview-panel').style.display = 'none';
+}
+
+function showPreview(title, html, count, exportFn) {
+  document.getElementById('preview-title').textContent = title;
+  document.getElementById('preview-count').textContent = count + ' registros encontrados';
+  document.getElementById('preview-table-wrapper').innerHTML = html;
+  previewExportFn = exportFn;
+  document.getElementById('preview-export-btn').onclick = exportFn;
+  document.getElementById('preview-panel').style.display = '';
+  document.getElementById('preview-panel').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ===== ESTOQUE =====
+async function getStockData() {
+  var filter = document.getElementById('rep-stock-filter').value;
+  var products = await api.get('/products/');
+  if (filter === 'low') products = products.filter(function(p) { return p.stock <= p.min_stock; });
+  else if (filter === 'ok') products = products.filter(function(p) { return p.stock > p.min_stock; });
+  return products;
+}
+
+async function withBtnLoading(btn, fn) {
+  btn.classList.add('loading');
+  try { await fn(); } catch(e) { showToast(e.message, 'error'); } finally { btn.classList.remove('loading'); }
+}
+
+async function exportStockCSV(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var products = await getStockData();
+    if (btn) btn.classList.remove('loading');
+    if (!products.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
+    var headers = ['Nome','SKU','Categoria','Estoque','Reservado','Disponível','Mínimo','Status','Custo Unit.','Valor Total','Unidade'];
+    var rows = products.map(function(p) {
+      var available = p.stock - (p.reserved_stock || 0);
+      var status = p.stock <= 0 ? 'Zerado' : p.is_low_stock ? 'Crítico' : 'OK';
+      return [
+        '"' + p.name + '"',
+        '"' + (p.sku || '') + '"',
+        '"' + (p.category_name || p.category && p.category.name || '') + '"',
+        p.stock,
+        p.reserved_stock || 0,
+        available,
+        p.min_stock,
+        status,
+        p.cost_price || 0,
+        (p.stock * (p.cost_price || 0)).toFixed(2),
+        '"' + (p.unit || 'un') + '"',
+      ].join(',');
+    });
+    downloadCSV([headers.join(',')].concat(rows).join('\n'), 'estoque_' + dateStr() + '.csv');
+    showToast('CSV de estoque exportado!');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function previewStock(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var products = await getStockData();
+    if (btn) btn.classList.remove('loading');
+    if (!products.length) { showToast('Nenhum produto encontrado', 'warning'); return; }
+    var html = '<table><thead><tr>' +
+      '<th>Nome</th><th>SKU</th><th>Estoque</th><th>Reservado</th><th>Disponível</th>' +
+      '<th>Mínimo</th><th>Custo Unit.</th><th>Valor Total</th><th>Status</th>' +
+      '</tr></thead><tbody>' +
+      products.map(function(p) {
+        var avail = p.stock - (p.reserved_stock || 0);
+        var status = p.stock <= 0 ? '<span class="badge badge-danger">Zerado</span>'
+          : p.is_low_stock ? '<span class="badge badge-warning">Crítico</span>'
+          : '<span class="badge badge-success">OK</span>';
+        return '<tr>' +
+          '<td><strong>' + p.name + '</strong></td>' +
+          '<td class="text-mono text-sm">' + (p.sku || '—') + '</td>' +
+          '<td class="text-mono">' + p.stock + '</td>' +
+          '<td class="text-muted">' + (p.reserved_stock || 0) + '</td>' +
+          '<td class="text-mono">' + avail + '</td>' +
+          '<td class="text-muted">' + p.min_stock + '</td>' +
+          '<td class="text-mono">' + fmtCurrency(p.cost_price) + '</td>' +
+          '<td class="text-mono">' + fmtCurrency(p.stock * p.cost_price) + '</td>' +
+          '<td>' + status + '</td>' +
+          '</tr>';
+      }).join('') + '</tbody></table>';
+    showPreview('Posição de Estoque', html, products.length, exportStockCSV);
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+// ===== MOVIMENTAÇÕES =====
+async function getMovementsData() {
+  var type = document.getElementById('rep-mov-type').value;
+  var dateFrom = document.getElementById('rep-mov-from').value;
+  var dateTo = document.getElementById('rep-mov-to').value;
+  var url = '/movements/?limit=2000';
+  if (type) url += '&type=' + type;
+  var movs = await api.get(url);
+  if (dateFrom) movs = movs.filter(function(m) { return m.created_at && m.created_at.substring(0,10) >= dateFrom; });
+  if (dateTo) movs = movs.filter(function(m) { return m.created_at && m.created_at.substring(0,10) <= dateTo; });
+  return movs;
+}
+
+async function exportMovementsCSV(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var movs = await getMovementsData();
+    if (btn) btn.classList.remove('loading');
+    if (!movs.length) { showToast('Nenhuma movimentação no período', 'warning'); return; }
+    var headers = ['Produto','Tipo','Quantidade','Custo Unitário','Total','NF','Usuário','Projeto','Observação','Data'];
+    var rows = movs.map(function(m) {
+      var typeLabel = m.type === 'entry' ? 'Entrada' : m.type === 'exit' ? 'Saída' : 'Ajuste';
+      return [
+        '"' + (m.product_name || '') + '"',
+        typeLabel,
+        m.quantity,
+        m.unit_cost || 0,
+        (m.unit_cost && m.quantity) ? Math.abs(m.quantity * m.unit_cost).toFixed(2) : 0,
+        '"' + (m.invoice_number || '') + '"',
+        '"' + (m.user_name || '') + '"',
+        '"' + (m.project_id || '') + '"',
+        '"' + (m.observation || '').replace(/"/g, '""') + '"',
+        m.created_at || '',
+      ].join(',');
+    });
+    downloadCSV([headers.join(',')].concat(rows).join('\n'), 'movimentacoes_' + dateStr() + '.csv');
+    showToast('CSV de movimentações exportado!');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function previewMovements(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var movs = await getMovementsData();
+    if (btn) btn.classList.remove('loading');
+    if (!movs.length) { showToast('Nenhuma movimentação no período', 'warning'); return; }
+    var html = '<table><thead><tr>' +
+      '<th>Produto</th><th>Tipo</th><th>Quantidade</th><th>Custo Unit.</th><th>Total</th>' +
+      '<th>NF</th><th>Usuário</th><th>Data</th>' +
+      '</tr></thead><tbody>' +
+      movs.slice(0, 100).map(function(m) {
+        var totalVal = (m.unit_cost && m.quantity) ? fmtCurrency(Math.abs(m.quantity) * m.unit_cost) : '—';
+        return '<tr>' +
+          '<td><strong>' + (m.product_name || '—') + '</strong></td>' +
+          '<td>' + movBadge(m.type) + '</td>' +
+          '<td class="text-mono">' + (m.quantity > 0 ? '+' : '') + m.quantity + '</td>' +
+          '<td class="text-mono">' + (m.unit_cost ? fmtCurrency(m.unit_cost) : '—') + '</td>' +
+          '<td class="text-mono">' + totalVal + '</td>' +
+          '<td class="text-sm">' + (m.invoice_number || '—') + '</td>' +
+          '<td class="text-muted text-sm">' + (m.user_name || '—') + '</td>' +
+          '<td class="text-muted text-sm">' + fmtDate(m.created_at) + '</td>' +
+          '</tr>';
+      }).join('') +
+      (movs.length > 100 ? '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:12px">' + (movs.length - 100) + ' registros adicionais não exibidos. Exporte o CSV para ver todos.</td></tr>' : '') +
+      '</tbody></table>';
+    showPreview('Movimentações por Período', html, movs.length, exportMovementsCSV);
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ===== PROJETOS =====
+async function getProjectsData() {
+  var status = document.getElementById('rep-proj-status').value;
+  var url = '/projects/' + (status ? '?status=' + status : '');
+  var projects = await api.get(url);
+  var result = [];
+  for (var i = 0; i < projects.length; i++) {
+    var proj = projects[i];
+    try {
+      var needs = await api.get('/projects/' + proj.id + '/needs');
+      result.push({ project: proj, needs: needs });
+    } catch(e) {
+      result.push({ project: proj, needs: [] });
+    }
+  }
+  return result;
+}
+
+async function exportProjectsCSV(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var data = await getProjectsData();
+    if (btn) btn.classList.remove('loading');
+    var rows = [];
+    var headers = ['Projeto','Centro de Custo','Status Projeto','Produto','SKU','Necessário','Reservado','Faltando','Status Necessidade'];
+    data.forEach(function(d) {
+      if (!d.needs.length) {
+        rows.push(['"' + d.project.name + '"', '"' + (d.project.cost_center || '') + '"', d.project.status, '—', '—', 0, 0, 0, '—'].join(','));
+      } else {
+        d.needs.forEach(function(n) {
+          rows.push([
+            '"' + d.project.name + '"',
+            '"' + (d.project.cost_center || '') + '"',
+            d.project.status,
+            '"' + (n.product_name || '') + '"',
+            '"' + (n.product_sku || '') + '"',
+            n.quantity_needed,
+            n.quantity_reserved,
+            n.quantity_missing,
+            n.status,
+          ].join(','));
+        });
+      }
+    });
+    downloadCSV([headers.join(',')].concat(rows).join('\n'), 'projetos_' + dateStr() + '.csv');
+    showToast('CSV de projetos exportado!');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function previewProjects(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var data = await getProjectsData();
+    if (btn) btn.classList.remove('loading');
+    if (!data.length) { showToast('Nenhum projeto encontrado', 'warning'); return; }
+    var statusBadge = { active: 'badge-success', completed: 'badge-info', cancelled: 'badge-gray' };
+    var needsBadge = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success' };
+    var html = '<table><thead><tr>' +
+      '<th>Projeto</th><th>CC</th><th>Status</th><th>Produto</th><th>Necessário</th>' +
+      '<th>Reservado</th><th>Faltando</th><th>Status</th>' +
+      '</tr></thead><tbody>';
+    var totalNeeds = 0;
+    data.forEach(function(d) {
+      if (!d.needs.length) {
+        html += '<tr><td><strong>' + d.project.name + '</strong></td>' +
+          '<td class="text-muted text-sm">' + (d.project.cost_center || '—') + '</td>' +
+          '<td><span class="badge ' + (statusBadge[d.project.status] || 'badge-gray') + '">' + d.project.status + '</span></td>' +
+          '<td colspan="5" class="text-muted text-sm">Sem necessidades cadastradas</td></tr>';
+      } else {
+        d.needs.forEach(function(n, idx) {
+          totalNeeds++;
+          html += '<tr>' +
+            (idx === 0 ? '<td rowspan="' + d.needs.length + '"><strong>' + d.project.name + '</strong></td>' +
+              '<td rowspan="' + d.needs.length + '" class="text-muted text-sm">' + (d.project.cost_center || '—') + '</td>' +
+              '<td rowspan="' + d.needs.length + '"><span class="badge ' + (statusBadge[d.project.status] || 'badge-gray') + '">' + d.project.status + '</span></td>' : '') +
+            '<td>' + (n.product_name || '—') + '</td>' +
+            '<td>' + n.quantity_needed + '</td>' +
+            '<td class="text-success">' + n.quantity_reserved + '</td>' +
+            '<td>' + (n.quantity_missing > 0 ? '<span class="badge badge-danger">' + n.quantity_missing + '</span>' : '<span class="badge badge-success">0</span>') + '</td>' +
+            '<td><span class="badge ' + (needsBadge[n.status] || 'badge-gray') + '">' + n.status + '</span></td>' +
+            '</tr>';
+        });
+      }
+    });
+    html += '</tbody></table>';
+    showPreview('Necessidades de Projetos', html, totalNeeds, exportProjectsCSV);
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+// ===== COTAÇÕES =====
+async function getQuotationsData() {
+  var status = document.getElementById('rep-quot-status').value;
+  var quotations = await api.get('/suppliers/quotations/');
+  if (status) quotations = quotations.filter(function(q) { return q.status === status; });
+  return quotations;
+}
+
+async function exportQuotationsCSV(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var quotations = await getQuotationsData();
+    if (btn) btn.classList.remove('loading');
+    if (!quotations.length) { showToast('Nenhuma cotação encontrada', 'warning'); return; }
+    var headers = ['Produto','Quantidade','Status','Fornecedor','Preço Unit.','Lead Time','Status Item','Data'];
+    var rows = [];
+    quotations.forEach(function(q) {
+      if (!q.items || !q.items.length) {
+        rows.push(['"' + (q.product_name || '') + '"', q.quantity, q.status, '—', 0, 0, '—', q.created_at || ''].join(','));
+      } else {
+        q.items.forEach(function(item) {
+          rows.push([
+            '"' + (q.product_name || '') + '"',
+            q.quantity,
+            q.status,
+            '"' + (item.supplier_name || '') + '"',
+            item.unit_price || 0,
+            item.lead_time || 0,
+            item.status,
+            q.created_at || '',
+          ].join(','));
+        });
+      }
+    });
+    downloadCSV([headers.join(',')].concat(rows).join('\n'), 'cotacoes_' + dateStr() + '.csv');
+    showToast('CSV de cotações exportado!');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function previewQuotations(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var quotations = await getQuotationsData();
+    if (btn) btn.classList.remove('loading');
+    if (!quotations.length) { showToast('Nenhuma cotação encontrada', 'warning'); return; }
+    var statusBadge = { open: 'badge-warning', received: 'badge-info', approved: 'badge-success', cancelled: 'badge-gray' };
+    var html = '<table><thead><tr>' +
+      '<th>Produto</th><th>Quantidade</th><th>Status</th><th>Fornecedores</th><th>Melhor Preço</th><th>Data</th>' +
+      '</tr></thead><tbody>' +
+      quotations.map(function(q) {
+        var validPrices = (q.items || []).filter(function(i) { return i.unit_price > 0; });
+        var bestPrice = validPrices.length ? Math.min.apply(null, validPrices.map(function(i) { return i.unit_price; })) : null;
+        return '<tr>' +
+          '<td><strong>' + (q.product_name || '—') + '</strong></td>' +
+          '<td class="text-mono">' + q.quantity + '</td>' +
+          '<td><span class="badge ' + (statusBadge[q.status] || 'badge-gray') + '">' + q.status + '</span></td>' +
+          '<td>' + ((q.items || []).length) + ' fornecedor(es)</td>' +
+          '<td class="text-mono">' + (bestPrice ? fmtCurrency(bestPrice) : '—') + '</td>' +
+          '<td class="text-muted text-sm">' + fmtDateShort(q.created_at) + '</td>' +
+          '</tr>';
+      }).join('') + '</tbody></table>';
+    showPreview('Análise de Cotações', html, quotations.length, exportQuotationsCSV);
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+// ===== Utilities =====
+function dateStr() {
+  return new Date().toISOString().substring(0,10);
+}
+
+function downloadCSV(csv, filename) {
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+loadSummary();
+setDefaultDates();
+</script>
+</body>
+{% endblock %}

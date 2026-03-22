@@ -1,0 +1,123 @@
+{% macro sidebar(active_page) %}
+<aside class="sidebar" role="navigation" aria-label="Menu principal">
+  <div class="sidebar-logo">
+    <div class="logo-text">StockOS</div>
+    <div class="logo-sub">Enterprise v1.0</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">Principal</div>
+      <a href="/dashboard"
+         class="nav-item {% if active_page == 'dashboard' %}active{% endif %}"
+         data-page="dashboard"
+         title="Dashboard"
+         data-tooltip="Dashboard"
+         {% if active_page == 'dashboard' %}aria-current="page"{% endif %}>
+        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="/products"
+         class="nav-item {% if active_page == 'products' %}active{% endif %}"
+         data-page="products"
+         title="Produtos"
+         data-tooltip="Produtos"
+         {% if active_page == 'products' %}aria-current="page"{% endif %}>
+        <i class="fas fa-boxes" aria-hidden="true"></i>
+        <span>Produtos</span>
+      </a>
+      <a href="/movements"
+         class="nav-item {% if active_page == 'movements' %}active{% endif %}"
+         data-page="movements"
+         title="Movimentações"
+         data-tooltip="Movimentações"
+         {% if active_page == 'movements' %}aria-current="page"{% endif %}>
+        <i class="fas fa-exchange-alt" aria-hidden="true"></i>
+        <span>Movimentações</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Operações</div>
+      <a href="/projects"
+         class="nav-item {% if active_page == 'projects' %}active{% endif %}"
+         data-page="projects"
+         title="Projetos"
+         data-tooltip="Projetos"
+         {% if active_page == 'projects' %}aria-current="page"{% endif %}>
+        <i class="fas fa-project-diagram" aria-hidden="true"></i>
+        <span>Projetos</span>
+      </a>
+      <a href="/invoices"
+         class="nav-item {% if active_page == 'invoices' %}active{% endif %}"
+         data-page="invoices"
+         title="Notas Fiscais"
+         data-tooltip="Notas Fiscais"
+         {% if active_page == 'invoices' %}aria-current="page"{% endif %}>
+        <i class="fas fa-file-invoice" aria-hidden="true"></i>
+        <span>Notas Fiscais</span>
+      </a>
+      <a href="/suppliers"
+         class="nav-item {% if active_page == 'suppliers' %}active{% endif %}"
+         data-page="suppliers"
+         title="Fornecedores"
+         data-tooltip="Fornecedores"
+         {% if active_page == 'suppliers' %}aria-current="page"{% endif %}>
+        <i class="fas fa-truck" aria-hidden="true"></i>
+        <span>Fornecedores</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Análise</div>
+      <a href="/reports"
+         class="nav-item {% if active_page == 'reports' %}active{% endif %}"
+         data-page="reports"
+         title="Relatórios"
+         data-tooltip="Relatórios"
+         {% if active_page == 'reports' %}aria-current="page"{% endif %}>
+        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+        <span>Relatórios</span>
+      </a>
+    </div>
+
+    <div class="nav-section" id="nav-admin-section">
+      <div class="nav-section-label">Admin</div>
+      <a href="/users"
+         class="nav-item {% if active_page == 'users' %}active{% endif %}"
+         data-page="users"
+         title="Usuários"
+         data-tooltip="Usuários"
+         {% if active_page == 'users' %}aria-current="page"{% endif %}>
+        <i class="fas fa-users" aria-hidden="true"></i>
+        <span>Usuários</span>
+      </a>
+    </div>
+  </nav>
+  <script>
+    (function () {
+      try {
+        var u = JSON.parse(localStorage.getItem('user') || '{}');
+        var role = u.role || '';
+        if (role !== 'admin' && role !== 'manager') {
+          var sec = document.getElementById('nav-admin-section');
+          if (sec) sec.style.display = 'none';
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <div class="sidebar-bottom">
+    <div class="user-info">
+      <div class="user-avatar" id="user-avatar" aria-hidden="true">A</div>
+      <div>
+        <div class="user-name" id="user-name">Carregando...</div>
+        <div class="user-role" id="user-role"></div>
+      </div>
+      <button class="btn-logout" onclick="logout()" title="Sair" aria-label="Sair do sistema">
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</aside>
+{% endmacro %}

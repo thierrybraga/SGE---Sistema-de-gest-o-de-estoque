@@ -1,0 +1,745 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Notas Fiscais{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('invoices') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Notas Fiscais (NF-e)</div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="openModal('modal-import-pdf')">
+          <i class="fas fa-file-pdf"></i> Importar PDF
+        </button>
+        <button class="btn btn-primary" onclick="openModal('modal-import')">
+          <i class="fas fa-file-upload"></i> Importar XML NF-e
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Nº NF</th>
+                <th>Fornecedor</th>
+                <th>CNPJ</th>
+                <th>Emissão</th>
+                <th>Valor Total</th>
+                <th>Itens</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Import XML -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">📄 Importar NF-e XML</h2>
+      <button class="modal-close" onclick="closeModal('modal-import')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="file-drop" id="file-drop" onclick="document.getElementById('xml-file').click()">
+      <i class="fas fa-file-code"></i>
+      <p>Arraste o arquivo XML da NF-e aqui ou <span>clique para selecionar</span></p>
+      <p style="margin-top:6px;font-size:11px;color:var(--text3)">Formatos: .xml (NF-e padrão SEFAZ)</p>
+      <input type="file" id="xml-file" accept=".xml" style="display:none" onchange="handleFileSelect(this, 'xml')" />
+    </div>
+
+    <div id="import-preview" style="display:none;margin-top:16px">
+      <div class="alert alert-success" id="import-info"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-import" onclick="importXml()" disabled>
+        <i class="fas fa-upload"></i> Importar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Import PDF -->
+<div class="modal-overlay" id="modal-import-pdf">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">🤖 Importar Nota via PDF (IA)</h2>
+      <button class="modal-close" onclick="closeModal('modal-import-pdf')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div class="alert alert-info" style="display:flex;gap:10px;align-items:flex-start">
+        <i class="fas fa-robot" style="margin-top:2px;flex-shrink:0"></i>
+        <div>
+          <strong>OCR com Inteligência Artificial</strong><br>
+          <span style="font-size:13px">O PDF será enviado para análise pela OpenAI (GPT-4o). O resultado é salvo em cache — reimportar o mesmo arquivo não gera nova chamada à API.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="file-drop" id="pdf-file-drop" onclick="document.getElementById('pdf-file').click()">
+      <i class="fas fa-file-pdf" style="color:#e74c3c"></i>
+      <p>Arraste o arquivo PDF da nota fiscal aqui ou <span>clique para selecionar</span></p>
+      <p style="margin-top:6px;font-size:11px;color:var(--text3)">Formato: .pdf (NF-e, NFS-e, boleto, cupom fiscal, etc.)</p>
+      <input type="file" id="pdf-file" accept=".pdf" style="display:none" onchange="handleFileSelect(this, 'pdf')" />
+    </div>
+
+    <div id="pdf-import-status" style="display:none;margin-top:16px">
+      <div class="alert" id="pdf-status-alert"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import-pdf')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-import-pdf" onclick="importPdf()" disabled>
+        <i class="fas fa-robot"></i> Analisar e Importar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Process Invoice -->
+<div class="modal-overlay" id="modal-process">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">Processar Nota Fiscal</h2>
+      <button class="modal-close" onclick="closeModal('modal-process')"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-muted text-sm mb-4">Mapeie os itens da NF-e com produtos do estoque para registrar as entradas automaticamente.</p>
+
+    <!-- Validation warnings (CNPJ/NCM) -->
+    <div id="process-validation-warnings" style="display:none;margin-bottom:12px"></div>
+
+    <!-- Item cards injected by JS -->
+    <div id="process-items"></div>
+
+    <!-- Summary section -->
+    <div id="process-summary" style="margin-top:16px;padding:12px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span id="summary-mapped" style="font-size:13px"></span>
+        <span id="summary-total" style="font-size:13px;font-weight:700"></span>
+      </div>
+      <div id="summary-ignored-warning" style="display:none;margin-top:8px">
+        <span class="badge badge-warning" id="summary-ignored-text"></span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-process')">Cancelar</button>
+      <button class="btn btn-success" id="btn-process-invoice" onclick="processInvoice()" disabled>
+        <i class="fas fa-check"></i> Registrar Entradas
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Product Inline (opened from Process modal) -->
+<div class="modal-overlay" id="modal-create-product-inline">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-plus-circle"></i> Novo Produto</h2>
+      <button class="modal-close" onclick="closeModal('modal-create-product-inline')"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-muted text-sm mb-4">Crie um produto e ele será automaticamente selecionado no item da nota.</p>
+
+    <input type="hidden" id="new-prod-item-idx" />
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input id="new-prod-name" type="text" class="form-control" placeholder="Nome do produto" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">SKU (opcional)</label>
+        <input id="new-prod-sku" type="text" class="form-control" placeholder="SKU-001" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <select id="new-prod-category" class="form-control">
+          <option value="">Sem categoria</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidade</label>
+        <select id="new-prod-unit" class="form-control">
+          <option value="un">un</option>
+          <option value="kg">kg</option>
+          <option value="m">m</option>
+          <option value="l">l</option>
+          <option value="cx">cx</option>
+          <option value="pc">pc</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estoque Mínimo (alerta)</label>
+      <input id="new-prod-min" type="number" class="form-control" placeholder="0" value="0" />
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-create-product-inline')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-inline-product" onclick="saveInlineProduct()">
+        <i class="fas fa-save"></i> Criar e Selecionar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let selectedXmlFile = null;
+let selectedPdfFile = null;
+let currentInvoiceId = null;
+let allProductsForMatch = [];
+let currentUserRole = getUser()?.role || "";
+
+// ─────────────────────────────────────────────
+// Load data
+// ─────────────────────────────────────────────
+
+async function loadInvoices() {
+  const tbody = document.getElementById("invoices-table");
+  tbody.innerHTML = skeletonRows(8, 5);
+  try {
+    const invoices = await api.get("/invoices/");
+    if (!invoices.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
+        <i class="fas fa-file-invoice"></i><h3>Nenhuma nota importada</h3>
+        <p>Importe uma NF-e XML ou PDF para começar</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = invoices.map(inv => {
+      const statusBadge = {
+        pending: 'badge-warning',
+        processed: 'badge-success',
+        rejected: 'badge-danger',
+        reversed: 'badge-gray'
+      };
+
+      const isPdf = inv.xml_content && inv.xml_content.startsWith("[PDF");
+      const sourceIcon = isPdf
+        ? `<i class="fas fa-file-pdf" title="Importado via PDF" style="color:#e74c3c;margin-right:4px"></i>`
+        : `<i class="fas fa-file-code" title="Importado via XML" style="color:var(--accent);margin-right:4px"></i>`;
+
+      const cnpjWarning = inv.cnpj_valid === 0
+        ? `<i class="fas fa-exclamation-triangle" title="CNPJ possivelmente inválido" style="color:var(--warning);margin-left:4px;font-size:11px"></i>`
+        : "";
+
+      const actions = [];
+      if (inv.status === 'pending') {
+        actions.push(`<button class="btn btn-primary btn-sm" onclick="openProcess('${inv.id}')">
+          <i class="fas fa-cogs"></i> Processar
+        </button>`);
+      }
+      if (inv.status === 'processed' && currentUserRole === 'admin') {
+        actions.push(`<button class="btn btn-danger btn-sm" onclick="reverseInvoice('${inv.id}', '${(inv.invoice_number || '').replace(/'/g, "\\'")}')">
+          <i class="fas fa-undo"></i> Estornar
+        </button>`);
+      }
+      if (inv.status === 'reversed') {
+        actions.push(`<span class="text-muted text-sm"><i class="fas fa-ban"></i> Estornado</span>`);
+      }
+      if (!actions.length) actions.push('—');
+
+      return `<tr>
+        <td class="text-mono font-bold">${sourceIcon}${inv.invoice_number || '—'}</td>
+        <td>${inv.supplier_name || '—'}</td>
+        <td class="text-mono text-sm">${inv.supplier_cnpj || '—'}${cnpjWarning}</td>
+        <td>${fmtDateShort(inv.issue_date)}</td>
+        <td class="text-mono">${fmtCurrency(inv.total_value)}</td>
+        <td>${inv.items?.length || 0} itens</td>
+        <td><span class="badge ${statusBadge[inv.status] || 'badge-gray'}">${inv.status}</span></td>
+        <td><div style="display:flex;gap:6px;flex-wrap:wrap">${actions.join('')}</div></td>
+      </tr>`;
+    }).join("");
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadInvoices);
+    showToast(e.message, "error");
+  }
+}
+
+async function loadProductsForMatch() {
+  try { allProductsForMatch = await api.get("/products/"); } catch(e) {}
+}
+
+// ─────────────────────────────────────────────
+// File selection & drag/drop
+// ─────────────────────────────────────────────
+
+function handleFileSelect(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (type === 'xml') {
+    selectedXmlFile = file;
+    const drop = document.getElementById("file-drop");
+    drop.innerHTML = `<i class="fas fa-file-check" style="color:var(--accent3)"></i>
+      <p><strong>${file.name}</strong></p>
+      <p style="font-size:12px;color:var(--text2)">${(file.size/1024).toFixed(1)} KB</p>`;
+    document.getElementById("btn-import").disabled = false;
+  } else {
+    selectedPdfFile = file;
+    const drop = document.getElementById("pdf-file-drop");
+    drop.innerHTML = `<i class="fas fa-file-pdf" style="color:#e74c3c"></i>
+      <p><strong>${file.name}</strong></p>
+      <p style="font-size:12px;color:var(--text2)">${(file.size/1024).toFixed(1)} KB</p>`;
+    document.getElementById("btn-import-pdf").disabled = false;
+    document.getElementById("pdf-import-status").style.display = "none";
+  }
+}
+
+// Drag and drop XML
+const fileDrop = document.getElementById("file-drop");
+fileDrop.addEventListener("dragover", (e) => { e.preventDefault(); fileDrop.classList.add("dragover"); });
+fileDrop.addEventListener("dragleave", () => fileDrop.classList.remove("dragover"));
+fileDrop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  fileDrop.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect({ files: [file] }, 'xml');
+});
+
+// Drag and drop PDF
+const pdfDrop = document.getElementById("pdf-file-drop");
+pdfDrop.addEventListener("dragover", (e) => { e.preventDefault(); pdfDrop.classList.add("dragover"); });
+pdfDrop.addEventListener("dragleave", () => pdfDrop.classList.remove("dragover"));
+pdfDrop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  pdfDrop.classList.remove("dragover");
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect({ files: [file] }, 'pdf');
+});
+
+// ─────────────────────────────────────────────
+// Import XML
+// ─────────────────────────────────────────────
+
+async function importXml() {
+  if (!selectedXmlFile) return;
+  const btn = document.getElementById("btn-import");
+  btn.innerHTML = '<span class="spinner"></span> Importando...';
+  btn.disabled = true;
+  try {
+    const invoice = await api.uploadFile("/invoices/import-xml", selectedXmlFile);
+
+    let successHtml = `NF-e importada! ${invoice.items?.length || 0} itens encontrados.`;
+    document.getElementById("import-info").innerHTML = successHtml;
+    document.getElementById("import-preview").style.display = "block";
+
+    if (invoice.validation_warnings && invoice.validation_warnings.length > 0) {
+      const warnHtml = invoice.validation_warnings.map(w =>
+        `<div class="alert alert-warning" style="padding:8px 12px;margin-top:6px;font-size:13px">
+           <i class="fas fa-exclamation-triangle"></i> ${w}
+         </div>`
+      ).join("");
+      document.getElementById("import-info").innerHTML += warnHtml;
+    }
+
+    showToast(`NF-e importada! ${invoice.items?.length || 0} itens encontrados.`);
+    setTimeout(() => {
+      closeModal("modal-import");
+      loadInvoices();
+    }, 2000);
+  } catch(e) {
+    showToast(e.message, "error");
+    btn.innerHTML = '<i class="fas fa-upload"></i> Importar';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Import PDF
+// ─────────────────────────────────────────────
+
+async function importPdf() {
+  if (!selectedPdfFile) return;
+  const btn = document.getElementById("btn-import-pdf");
+  const statusDiv = document.getElementById("pdf-import-status");
+  const statusAlert = document.getElementById("pdf-status-alert");
+
+  btn.innerHTML = '<span class="spinner"></span> Analisando com IA...';
+  btn.disabled = true;
+
+  statusDiv.style.display = "block";
+  statusAlert.className = "alert alert-info";
+  statusAlert.innerHTML = `<i class="fas fa-robot"></i> &nbsp;Enviando PDF para análise (isso pode levar alguns segundos)...`;
+
+  try {
+    const invoice = await api.uploadFile("/invoices/import-pdf", selectedPdfFile);
+
+    const sourceLabel = invoice.ocr_source === 'cache'
+      ? ' <span class="badge badge-info" style="font-size:11px">cache</span>'
+      : invoice.ocr_source === 'local'
+        ? ' <span class="badge badge-warning" style="font-size:11px">fallback local</span>'
+        : '';
+
+    statusAlert.className = "alert alert-success";
+    statusAlert.innerHTML = `<i class="fas fa-check-circle"></i> &nbsp;<strong>Nota importada com sucesso!${sourceLabel}</strong><br>
+      <span style="font-size:13px">
+        <strong>${invoice.invoice_number || 'S/N'}</strong> — ${invoice.supplier_name || 'Fornecedor não identificado'}<br>
+        ${invoice.items?.length || 0} itens encontrados · Total: ${fmtCurrency(invoice.total_value)}
+      </span>`;
+
+    if (invoice.validation_warnings && invoice.validation_warnings.length > 0) {
+      const warnHtml = invoice.validation_warnings.map(w =>
+        `<div style="margin-top:6px;font-size:12px;color:var(--warning)">
+           <i class="fas fa-exclamation-triangle"></i> ${w}
+         </div>`
+      ).join("");
+      statusAlert.innerHTML += warnHtml;
+    }
+
+    btn.innerHTML = '<i class="fas fa-robot"></i> Analisar e Importar';
+    btn.disabled = true;
+
+    showToast(`PDF processado! ${invoice.items?.length || 0} itens importados.`, "success");
+    setTimeout(() => {
+      closeModal("modal-import-pdf");
+      loadInvoices();
+    }, 2500);
+  } catch(e) {
+    statusAlert.className = "alert alert-danger";
+    statusAlert.innerHTML = `<i class="fas fa-exclamation-circle"></i> &nbsp;<strong>Erro:</strong> ${e.message}`;
+    btn.innerHTML = '<i class="fas fa-robot"></i> Analisar e Importar';
+    btn.disabled = false;
+    showToast(e.message, "error");
+  }
+}
+
+// ─────────────────────────────────────────────
+// Process Invoice Modal
+// ─────────────────────────────────────────────
+
+async function openProcess(invoiceId) {
+  currentInvoiceId = invoiceId;
+  try {
+    const invoice = await api.get(`/invoices/${invoiceId}`);
+    const container = document.getElementById("process-items");
+
+    // Validation warnings
+    const warnDiv = document.getElementById("process-validation-warnings");
+    if (invoice.validation_warnings && invoice.validation_warnings.length > 0) {
+      warnDiv.style.display = "block";
+      warnDiv.innerHTML = invoice.validation_warnings.map(w =>
+        `<div class="alert alert-warning" style="padding:8px 12px;margin-bottom:6px;font-size:13px">
+           <i class="fas fa-exclamation-triangle"></i> ${w}
+         </div>`
+      ).join("");
+    } else {
+      warnDiv.style.display = "none";
+      warnDiv.innerHTML = "";
+    }
+
+    container.innerHTML = invoice.items.map((item, idx) => {
+      // Match confidence badge
+      const conf = item.match_confidence || 0;
+      let confBadge = "";
+      if (item.matched && conf > 0) {
+        const cls = conf >= 0.8 ? "badge-success" : conf >= 0.6 ? "badge-warning" : "badge-danger";
+        confBadge = `<span class="badge ${cls}" title="Confiança do match automático" style="margin-left:6px">${Math.round(conf * 100)}%</span>`;
+      }
+
+      const escapedDesc = item.description.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      const escapedUnit = (item.unit || "un").replace(/'/g, "\\'");
+
+      return `
+        <div class="card card-sm mb-4" id="item-card-${idx}">
+          <div class="flex justify-between items-center mb-2">
+            <div>
+              <strong>${item.description}</strong>
+              ${item.ncm ? `<span class="text-muted text-sm" style="margin-left:8px">NCM: ${item.ncm}</span>` : ""}
+              ${confBadge}
+            </div>
+            <span class="text-mono text-sm">${fmtCurrency(item.unit_price)} × ${item.quantity}</span>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Mapear para produto do estoque</label>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <select class="form-control item-product-map"
+                      data-item-id="${item.id}"
+                      data-qty="${item.quantity}"
+                      data-total="${item.total_price}"
+                      onchange="onProductSelect(this)">
+                <option value="">Ignorar este item</option>
+                ${allProductsForMatch.map(p =>
+                  `<option value="${p.id}" ${item.matched && item.product_id === p.id ? 'selected' : ''}>${p.name}</option>`
+                ).join("")}
+              </select>
+              <button class="btn btn-secondary btn-sm"
+                      style="white-space:nowrap;flex-shrink:0"
+                      onclick="openCreateProductModal(${idx}, '${escapedDesc}', '${escapedUnit}')"
+                      title="Criar novo produto">
+                <i class="fas fa-plus"></i> Criar
+              </button>
+            </div>
+          </div>
+          <!-- Stock impact preview -->
+          <div id="stock-preview-${idx}" style="margin-top:8px;display:none"></div>
+        </div>
+      `;
+    }).join("");
+
+    // Trigger preview for pre-matched items
+    document.querySelectorAll(".item-product-map").forEach(sel => {
+      if (sel.value) onProductSelect(sel);
+    });
+
+    updateProcessSummary();
+    openModal("modal-process");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+// ─────────────────────────────────────────────
+// Stock impact preview on product select
+// ─────────────────────────────────────────────
+
+async function onProductSelect(selectEl) {
+  const card = selectEl.closest(".card");
+  const idx = card.id.replace("item-card-", "");
+  const previewDiv = document.getElementById(`stock-preview-${idx}`);
+  const productId = selectEl.value;
+  const qty = parseFloat(selectEl.dataset.qty) || 0;
+
+  if (!productId) {
+    previewDiv.style.display = "none";
+    previewDiv.innerHTML = "";
+    updateProcessSummary();
+    return;
+  }
+
+  previewDiv.innerHTML = `<span class="text-muted text-sm"><i class="fas fa-spinner fa-spin"></i> Carregando estoque...</span>`;
+  previewDiv.style.display = "block";
+
+  try {
+    const product = await api.get(`/products/${productId}`);
+    const currentStock = product.stock || 0;
+    const minStock = product.min_stock || 0;
+    const afterImport = currentStock + qty;
+    const isBelowMin = minStock > 0 && afterImport < minStock;
+
+    previewDiv.innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;
+                  padding:8px 12px;background:var(--bg2);border-radius:6px;
+                  border:1px solid var(--border);align-items:center">
+        <span><i class="fas fa-boxes" style="color:var(--accent);margin-right:4px"></i>
+          Estoque atual: <strong>${currentStock}</strong>
+        </span>
+        <i class="fas fa-arrow-right" style="color:var(--text3)"></i>
+        <span><i class="fas fa-box" style="color:var(--accent3);margin-right:4px"></i>
+          Após entrada: <strong>${afterImport}</strong>
+        </span>
+        ${minStock > 0 ? `<span style="color:var(--text3)">Mín: ${minStock}</span>` : ""}
+        ${isBelowMin
+          ? `<span class="badge badge-warning">
+               <i class="fas fa-exclamation-triangle"></i> Ainda abaixo do mínimo
+             </span>`
+          : afterImport > 0
+            ? `<span class="badge badge-success"><i class="fas fa-check"></i> OK</span>`
+            : ""}
+      </div>
+    `;
+  } catch(e) {
+    previewDiv.innerHTML = `<span class="badge badge-danger text-sm">Erro ao buscar estoque</span>`;
+  }
+
+  updateProcessSummary();
+}
+
+// ─────────────────────────────────────────────
+// Process summary footer
+// ─────────────────────────────────────────────
+
+function updateProcessSummary() {
+  const allSelects = document.querySelectorAll(".item-product-map");
+  let mappedCount = 0;
+  let ignoredCount = 0;
+  let totalValue = 0;
+
+  allSelects.forEach(sel => {
+    const total = parseFloat(sel.dataset.total) || 0;
+    if (sel.value) {
+      mappedCount++;
+      totalValue += total;
+    } else {
+      ignoredCount++;
+    }
+  });
+
+  document.getElementById("summary-mapped").textContent =
+    `Total de entradas: ${mappedCount} ite${mappedCount !== 1 ? "ns" : "m"}`;
+  document.getElementById("summary-total").textContent =
+    mappedCount > 0 ? `Valor total: ${fmtCurrency(totalValue)}` : "";
+
+  const ignoredWarn = document.getElementById("summary-ignored-warning");
+  const ignoredText = document.getElementById("summary-ignored-text");
+  if (ignoredCount > 0) {
+    ignoredWarn.style.display = "block";
+    ignoredText.textContent =
+      `Nenhum produto selecionado: ${ignoredCount} ite${ignoredCount !== 1 ? "ns" : "m"} serão ignorados`;
+  } else {
+    ignoredWarn.style.display = "none";
+  }
+
+  document.getElementById("btn-process-invoice").disabled = mappedCount === 0;
+}
+
+// ─────────────────────────────────────────────
+// Register stock entries
+// ─────────────────────────────────────────────
+
+async function processInvoice() {
+  const mappings = [];
+  document.querySelectorAll(".item-product-map").forEach(sel => {
+    if (sel.value) {
+      mappings.push({ item_id: sel.dataset.itemId, product_id: sel.value });
+    }
+  });
+  const btn = document.getElementById("btn-process-invoice");
+  btn.innerHTML = '<span class="spinner"></span> Registrando...';
+  btn.disabled = true;
+  try {
+    await api.post(`/invoices/${currentInvoiceId}/process`, { item_mappings: mappings });
+    showToast("Nota processada! Entradas registradas no estoque.", "success");
+    closeModal("modal-process");
+    loadInvoices();
+  } catch(e) {
+    showToast(e.message, "error");
+    btn.innerHTML = '<i class="fas fa-check"></i> Registrar Entradas';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Invoice reversal (Estorno)
+// ─────────────────────────────────────────────
+
+function reverseInvoice(invoiceId, invoiceNumber) {
+  showConfirm({
+    title: "Estornar Nota Fiscal",
+    message: `<strong>Atenção:</strong> Esta ação irá reverter todas as entradas de estoque da NF-e <strong>${invoiceNumber}</strong>. O estoque será decrementado e a nota marcada como "Estornado". Esta ação não pode ser desfeita.`,
+    confirmText: "Confirmar Estorno",
+    cancelText: "Cancelar",
+    type: "danger",
+    icon: "fa-undo",
+    onConfirm: async () => {
+      try {
+        await api.post(`/invoices/${invoiceId}/reverse`, {});
+        showToast(`NF-e ${invoiceNumber} estornada com sucesso.`, "success");
+        loadInvoices();
+      } catch(e) {
+        showToast(e.message, "error");
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// Create product inline from process modal
+// ─────────────────────────────────────────────
+
+async function openCreateProductModal(itemIdx, description, unit) {
+  document.getElementById("new-prod-item-idx").value = itemIdx;
+  document.getElementById("new-prod-name").value = description;
+  document.getElementById("new-prod-sku").value = "";
+  document.getElementById("new-prod-min").value = "0";
+
+  // Set unit
+  const unitSel = document.getElementById("new-prod-unit");
+  const unitLower = (unit || "un").toLowerCase();
+  const matchingOption = Array.from(unitSel.options).find(o => o.value === unitLower);
+  unitSel.value = matchingOption ? unitLower : "un";
+
+  // Load categories
+  try {
+    const cats = await api.get("/products/categories/");
+    const catSel = document.getElementById("new-prod-category");
+    catSel.innerHTML = '<option value="">Sem categoria</option>' +
+      cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  } catch(e) {}
+
+  openModal("modal-create-product-inline");
+}
+
+async function saveInlineProduct() {
+  const name = document.getElementById("new-prod-name").value.trim();
+  if (!name) {
+    showToast("Nome do produto é obrigatório", "error");
+    return;
+  }
+
+  const itemIdx = document.getElementById("new-prod-item-idx").value;
+  const payload = {
+    name,
+    sku: document.getElementById("new-prod-sku").value.trim() || null,
+    category_id: document.getElementById("new-prod-category").value || null,
+    min_stock: parseInt(document.getElementById("new-prod-min").value) || 0,
+    unit: document.getElementById("new-prod-unit").value,
+    stock: 0,
+    cost_price: 0,
+    sale_price: 0,
+  };
+
+  const btn = document.getElementById("btn-save-inline-product");
+  btn.innerHTML = '<span class="spinner"></span> Criando...';
+  btn.disabled = true;
+
+  try {
+    const newProduct = await api.post("/products/", payload);
+
+    // Add to global product list
+    allProductsForMatch.push(newProduct);
+
+    // Add option to ALL item dropdowns
+    document.querySelectorAll(".item-product-map").forEach(sel => {
+      const opt = document.createElement("option");
+      opt.value = newProduct.id;
+      opt.textContent = newProduct.name;
+      sel.appendChild(opt);
+    });
+
+    // Auto-select in the correct item card
+    const card = document.getElementById(`item-card-${itemIdx}`);
+    if (card) {
+      const sel = card.querySelector(".item-product-map");
+      if (sel) {
+        sel.value = newProduct.id;
+        onProductSelect(sel);
+      }
+    }
+
+    showToast(`Produto "${newProduct.name}" criado e selecionado!`, "success");
+    closeModal("modal-create-product-inline");
+    updateProcessSummary();
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.innerHTML = '<i class="fas fa-save"></i> Criar e Selecionar';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+
+loadInvoices();
+loadProductsForMatch();
+</script>
+</body>
+{% endblock %}

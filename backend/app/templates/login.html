@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="/static/css/login.css" />
+{% endblock %}
+{% block body %}
+<body class="login-page">
+  <div class="login-bg">
+    <div class="login-bg-grid"></div>
+    <div class="login-bg-glow"></div>
+  </div>
+
+  <div class="login-container">
+    <div class="login-brand">
+      <div class="login-logo">StockOS</div>
+      <div class="login-tagline">Sistema de Controle de Estoque</div>
+    </div>
+
+    <div class="login-card">
+      <h1 class="login-title">Bem-vindo</h1>
+      <p class="login-subtitle">Faça login para acessar o sistema</p>
+
+      <div id="login-error" class="alert alert-danger login-error">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="error-msg">Credenciais inválidas</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input id="email" type="email" class="form-control" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input id="password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+
+      <button id="btn-login" class="btn btn-primary btn-login" onclick="doLogin()">
+        <i class="fas fa-sign-in-alt"></i>
+        Entrar
+      </button>
+
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("password").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
+    });
+
+    async function doLogin() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const btn = document.getElementById("btn-login");
+      const errBox = document.getElementById("login-error");
+
+      if (!email || !password) {
+        errBox.style.display = "flex";
+        document.getElementById("error-msg").textContent = "Preencha email e senha.";
+        return;
+      }
+
+      btn.innerHTML = '<span class="spinner"></span> Entrando...';
+      btn.disabled = true;
+      errBox.style.display = "none";
+
+      try {
+        const data = await api.post("/auth/login", { email, password });
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        window.location.href = "/dashboard";
+      } catch (err) {
+        errBox.style.display = "flex";
+        document.getElementById("error-msg").textContent = err.message || "Credenciais inválidas.";
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+{% endblock %}

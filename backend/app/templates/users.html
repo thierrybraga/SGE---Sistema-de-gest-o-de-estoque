@@ -1,0 +1,620 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Usuários{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('users') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Gestão do Sistema</div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="openModal('modal-my-profile')" title="Meu Perfil">
+          <i class="fas fa-user-circle"></i> Meu Perfil
+        </button>
+        <button class="btn btn-primary" id="btn-new-user" onclick="openNewUser()" style="display:none">
+          <i class="fas fa-user-plus"></i> Novo Usuário
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Role cards — visible to admin/manager -->
+      <div id="role-cards-section" style="display:none;margin-bottom:24px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px" id="role-cards">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div id="filters-section" style="display:none;margin-bottom:16px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <input id="search-users" type="text" class="form-control" style="width:220px"
+                 placeholder="Buscar por nome ou email..." oninput="filterUsers()" />
+          <select id="filter-role" class="form-control" style="width:160px" onchange="filterUsers()">
+            <option value="">Todos os perfis</option>
+            <option value="admin">Administrador</option>
+            <option value="manager">Gerente</option>
+            <option value="operator">Operador</option>
+            <option value="buyer">Compras</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer" id="filter-inactive-wrap" style="display:none">
+            <input type="checkbox" id="filter-inactive" onchange="reloadUsers()" />
+            Mostrar inativos
+          </label>
+        </div>
+      </div>
+
+      <!-- User table -->
+      <div class="card" id="users-card" style="display:none">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>Status</th>
+                <th>Criado em</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="users-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- No-permission message for operator/buyer -->
+      <div id="no-permission-section" style="display:none">
+        <div class="card" style="text-align:center;padding:48px 24px">
+          <i class="fas fa-lock" style="font-size:40px;color:var(--text3);margin-bottom:16px"></i>
+          <h3 style="color:var(--text2);margin-bottom:8px">Acesso restrito</h3>
+          <p class="text-muted">Você não tem permissão para visualizar outros usuários.<br>
+          Use o botão <strong>Meu Perfil</strong> para atualizar suas informações.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal: My Profile ─── -->
+<div class="modal-overlay" id="modal-my-profile">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-user-circle"></i> Meu Perfil</h2>
+      <button class="modal-close" onclick="closeModal('modal-my-profile')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Profile info display -->
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:16px;background:var(--bg2);border-radius:10px">
+      <div id="profile-avatar" style="width:52px;height:52px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0">A</div>
+      <div>
+        <div id="profile-name-display" style="font-size:16px;font-weight:600"></div>
+        <div id="profile-email-display" style="font-size:13px;color:var(--text3)"></div>
+        <div style="margin-top:4px">
+          <span id="profile-role-badge" class="badge"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input id="profile-name" type="text" class="form-control" placeholder="Seu nome" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Nova senha <span class="text-muted text-sm">(opcional)</span></label>
+        <input id="profile-password" type="password" class="form-control" placeholder="Nova senha (mín. 6 chars)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirmar senha</label>
+        <input id="profile-password-confirm" type="password" class="form-control" placeholder="Repita a senha" />
+      </div>
+    </div>
+    <p class="text-muted text-sm" style="margin-top:-8px;margin-bottom:12px">
+      <i class="fas fa-info-circle"></i> Email e perfil só podem ser alterados por um administrador.
+    </p>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-my-profile')">Fechar</button>
+      <button class="btn btn-primary" id="btn-save-profile" onclick="saveProfile()">
+        <i class="fas fa-save"></i> Salvar Alterações
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal: Create / Edit User ─── -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-user-title">Novo Usuário</h2>
+      <button class="modal-close" onclick="closeModal('modal-user')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="user-id" />
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input id="user-name" type="text" class="form-control" placeholder="Nome completo" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input id="user-email" type="email" class="form-control" placeholder="email@empresa.com" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Perfil de Acesso *</label>
+      <select id="user-role" class="form-control" onchange="onRoleChange()">
+        <!-- populated by JS based on actor role -->
+      </select>
+      <!-- Role description injected below -->
+      <div id="role-description-hint" style="margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:8px;font-size:12px;color:var(--text2);display:none">
+        <strong id="role-hint-label"></strong><br>
+        <span id="role-hint-desc"></span>
+      </div>
+    </div>
+
+    <div class="form-group" id="user-active-group" style="display:none">
+      <label class="form-label">Status</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="user-active" />
+        Usuário ativo
+      </label>
+      <div id="user-active-hint" class="text-muted text-sm" style="margin-top:6px"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Senha <span class="text-muted text-sm" id="pwd-hint">(obrigatória)</span></label>
+        <input id="user-password" type="password" class="form-control" placeholder="••••••••" />
+      </div>
+      <div class="form-group" id="pwd-confirm-group">
+        <label class="form-label">Confirmar senha</label>
+        <input id="user-password-confirm" type="password" class="form-control" placeholder="••••••••" />
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-user')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-user" onclick="saveUser()">
+        <i class="fas fa-save"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Modal: View Roles Reference ─── -->
+<div class="modal-overlay" id="modal-roles-ref">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-shield-alt"></i> Perfis e Permissões</h2>
+      <button class="modal-close" onclick="closeModal('modal-roles-ref')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="roles-ref-content" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- injected by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-roles-ref')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+
+const me = getUser();
+const myRole = me?.role || "";
+let allUsers = [];
+let allRoles = [];
+
+const ROLE_LABELS = { admin: 'Administrador', manager: 'Gerente', operator: 'Operador', buyer: 'Compras' };
+const ROLE_BADGE  = { admin: 'badge-danger', manager: 'badge-purple', operator: 'badge-info', buyer: 'badge-warning' };
+
+// ─────────────────────────────────────────────
+// Page init
+// ─────────────────────────────────────────────
+
+async function initPage() {
+  // Load roles from API (includes can_assign flag)
+  try { allRoles = await api.get("/auth/roles"); } catch(e) {}
+
+  // Always load my own profile
+  loadMyProfile();
+
+  if (myRole === 'admin' || myRole === 'manager') {
+    document.getElementById("btn-new-user").style.display = "";
+    document.getElementById("role-cards-section").style.display = "";
+    document.getElementById("filters-section").style.display = "";
+    document.getElementById("users-card").style.display = "";
+
+    // Only admin sees inactive toggle and full role filter
+    if (myRole === 'admin') {
+      document.getElementById("filter-inactive-wrap").style.display = "flex";
+    } else {
+      // Manager: hide admin/manager from filter
+      const sel = document.getElementById("filter-role");
+      Array.from(sel.options).forEach(o => {
+        if (o.value === 'admin' || o.value === 'manager') o.remove();
+      });
+    }
+
+    renderRoleCards();
+    reloadUsers();
+  } else {
+    document.getElementById("no-permission-section").style.display = "";
+  }
+}
+
+// ─────────────────────────────────────────────
+// Role cards
+// ─────────────────────────────────────────────
+
+function renderRoleCards() {
+  const container = document.getElementById("role-cards");
+  const visibleRoles = myRole === 'admin'
+    ? allRoles
+    : allRoles.filter(r => r.value === 'operator' || r.value === 'buyer');
+
+  container.innerHTML = visibleRoles.map(r => `
+    <div class="card card-sm" style="cursor:pointer;transition:box-shadow 0.15s"
+         onclick="openRolesRef('${r.value}')"
+         onmouseenter="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'"
+         onmouseleave="this.style.boxShadow=''">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <span class="badge ${r.color}">${r.label}</span>
+        <i class="fas fa-info-circle" style="color:var(--text3);font-size:13px" title="Ver permissões"></i>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${r.description}</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3)">
+        <i class="fas fa-check-circle" style="color:var(--accent3)"></i>
+        ${r.permissions.length} permissões
+      </div>
+    </div>
+  `).join("");
+}
+
+// ─────────────────────────────────────────────
+// Load users
+// ─────────────────────────────────────────────
+
+async function reloadUsers() {
+  const tbody = document.getElementById("users-table");
+  tbody.innerHTML = skeletonRows(6, 5);
+
+  const includeInactive = document.getElementById("filter-inactive")?.checked ? "1" : "0";
+
+  try {
+    const params = includeInactive === "1" ? "?include_inactive=1" : "";
+    allUsers = await api.get(`/auth/users${params}`);
+    renderUsers(allUsers);
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, reloadUsers);
+    showToast(e.message, "error");
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById("users-table");
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+      <i class="fas fa-users"></i><h3>Nenhum usuário encontrado</h3></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const isMe = u.id === me?.id;
+    const canEdit = allRoles.find(r => r.value === u.role)?.can_assign !== false;
+    const canDeactivate = myRole === 'admin' && !isMe && u.active;
+    const canActivate = myRole === 'admin' && !u.active;
+
+    return `<tr style="${!u.active ? 'opacity:0.5' : ''}">
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="user-avatar" style="width:32px;height:32px;font-size:13px;flex-shrink:0;
+               background:${u.active ? 'var(--accent2)' : 'var(--text3)'}">${getInitials(u.name)}</div>
+          <div>
+            <strong>${u.name}</strong>
+            ${isMe ? `<span class="badge badge-info" style="margin-left:6px;font-size:10px">Você</span>` : ""}
+          </div>
+        </div>
+      </td>
+      <td class="text-mono text-sm">${u.email}</td>
+      <td><span class="badge ${ROLE_BADGE[u.role] || 'badge-gray'}">${ROLE_LABELS[u.role] || u.role}</span></td>
+      <td><span class="badge ${u.active ? 'badge-success' : 'badge-gray'}">${u.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td class="text-muted text-sm">${fmtDateShort(u.created_at)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${canEdit ? `
+            <button class="btn btn-secondary btn-sm btn-icon"
+                    onclick='editUser(${JSON.stringify(u).replace(/'/g,"\\'")})'
+                    title="Editar" data-tooltip="Editar">
+              <i class="fas fa-edit"></i>
+            </button>` : ""}
+          ${canDeactivate ? `
+            <button class="btn btn-danger btn-sm btn-icon"
+                    onclick="confirmDeactivate('${u.id}','${u.name.replace(/'/g, "\\'")}')"
+                    title="Desativar" data-tooltip="Desativar">
+              <i class="fas fa-user-slash"></i>
+            </button>` : ""}
+          ${canActivate ? `
+            <button class="btn btn-success btn-sm btn-icon"
+                    onclick="activateUser('${u.id}','${u.name.replace(/'/g, "\\'")}')"
+                    title="Reativar" data-tooltip="Reativar">
+              <i class="fas fa-user-check"></i>
+            </button>` : ""}
+          ${!canEdit && !canDeactivate && !canActivate ? `<span class="text-muted text-sm">—</span>` : ""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function filterUsers() {
+  const search = document.getElementById("search-users").value.toLowerCase();
+  const roleFilter = document.getElementById("filter-role").value;
+
+  const filtered = allUsers.filter(u => {
+    const matchSearch = !search
+      || u.name.toLowerCase().includes(search)
+      || u.email.toLowerCase().includes(search);
+    const matchRole = !roleFilter || u.role === roleFilter;
+    return matchSearch && matchRole;
+  });
+  renderUsers(filtered);
+}
+
+// ─────────────────────────────────────────────
+// Create / Edit user modal
+// ─────────────────────────────────────────────
+
+function buildRoleOptions(selectedRole) {
+  const assignable = allRoles.filter(r => r.can_assign);
+  return assignable.map(r =>
+    `<option value="${r.value}" ${r.value === selectedRole ? 'selected' : ''}>${r.label}</option>`
+  ).join("");
+}
+
+function onRoleChange() {
+  const val = document.getElementById("user-role").value;
+  const role = allRoles.find(r => r.value === val);
+  const hint = document.getElementById("role-description-hint");
+  if (role) {
+    document.getElementById("role-hint-label").textContent = role.label;
+    document.getElementById("role-hint-desc").textContent = role.description;
+    hint.style.display = "block";
+  } else {
+    hint.style.display = "none";
+  }
+}
+
+function openNewUser() {
+  document.getElementById("user-id").value = "";
+  document.getElementById("user-name").value = "";
+  document.getElementById("user-email").value = "";
+  document.getElementById("user-email").disabled = false;
+  document.getElementById("user-password").value = "";
+  document.getElementById("user-password-confirm").value = "";
+  document.getElementById("pwd-hint").textContent = "(obrigatória)";
+  document.getElementById("pwd-confirm-group").style.display = "";
+  document.getElementById("modal-user-title").textContent = "Novo Usuário";
+  document.getElementById("user-role").innerHTML = buildRoleOptions("operator");
+  document.getElementById("user-active-group").style.display = "none";
+  document.getElementById("user-active-hint").textContent = "";
+  onRoleChange();
+  openModal("modal-user");
+}
+
+function editUser(user) {
+  const isMe = user.id === me?.id;
+  document.getElementById("user-id").value = user.id;
+  document.getElementById("user-name").value = user.name;
+  document.getElementById("user-email").value = user.email;
+  document.getElementById("user-email").disabled = true;
+  document.getElementById("user-password").value = "";
+  document.getElementById("user-password-confirm").value = "";
+  document.getElementById("pwd-hint").textContent = "(deixe em branco para manter)";
+  document.getElementById("pwd-confirm-group").style.display = "";
+  document.getElementById("modal-user-title").textContent = "Editar Usuário";
+  document.getElementById("user-role").innerHTML = buildRoleOptions(user.role);
+  if (myRole === "admin") {
+    const activeGroup = document.getElementById("user-active-group");
+    const activeToggle = document.getElementById("user-active");
+    const activeHint = document.getElementById("user-active-hint");
+    activeGroup.style.display = "";
+    activeToggle.checked = !!user.active;
+    activeToggle.disabled = isMe;
+    activeHint.textContent = isMe ? "Sua conta não pode ser desativada." : "";
+  } else {
+    document.getElementById("user-active-group").style.display = "none";
+  }
+  onRoleChange();
+  openModal("modal-user");
+}
+
+async function saveUser() {
+  const id = document.getElementById("user-id").value;
+  const name = document.getElementById("user-name").value.trim();
+  const email = document.getElementById("user-email").value.trim();
+  const role = document.getElementById("user-role").value;
+  const password = document.getElementById("user-password").value;
+  const passwordConfirm = document.getElementById("user-password-confirm").value;
+
+  if (!name) { showToast("Nome é obrigatório", "error"); return; }
+  if (!id && !email) { showToast("Email é obrigatório", "error"); return; }
+  if (!id && !password) { showToast("Senha é obrigatória para novo usuário", "error"); return; }
+  if (password && password.length < 6) { showToast("Senha deve ter ao menos 6 caracteres", "error"); return; }
+  if (password && password !== passwordConfirm) { showToast("Senhas não conferem", "error"); return; }
+
+  const payload = { name, role };
+  if (!id) payload.email = email;
+  if (password) payload.password = password;
+  if (id && myRole === "admin") {
+    const activeToggle = document.getElementById("user-active");
+    payload.active = !!activeToggle?.checked;
+  }
+
+  const btn = document.getElementById("btn-save-user");
+  btn.innerHTML = '<span class="spinner"></span> Salvando...';
+  btn.disabled = true;
+
+  try {
+    if (id) {
+      await api.put(`/auth/users/${id}`, payload);
+    } else {
+      await api.post("/auth/register", payload);
+    }
+    showToast("Usuário salvo com sucesso!", "success");
+    closeModal("modal-user");
+    reloadUsers();
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Deactivate / Activate
+// ─────────────────────────────────────────────
+
+function confirmDeactivate(userId, userName) {
+  showConfirm({
+    title: "Desativar Usuário",
+    message: `Deseja desativar a conta de <strong>${userName}</strong>? O usuário não conseguirá mais fazer login, mas seus dados serão preservados.`,
+    confirmText: "Desativar",
+    cancelText: "Cancelar",
+    type: "danger",
+    icon: "fa-user-slash",
+    onConfirm: async () => {
+      try {
+        await api.post(`/auth/users/${userId}/deactivate`, {});
+        showToast("Usuário desativado.", "success");
+        reloadUsers();
+      } catch(e) {
+        showToast(e.message, "error");
+      }
+    }
+  });
+}
+
+async function activateUser(userId, userName) {
+  showConfirm({
+    title: "Reativar Usuário",
+    message: `Deseja reativar a conta de <strong>${userName}</strong>? O usuário poderá voltar a fazer login.`,
+    confirmText: "Reativar",
+    cancelText: "Cancelar",
+    type: "info",
+    icon: "fa-user-check",
+    onConfirm: async () => {
+      try {
+        await api.post(`/auth/users/${userId}/activate`, {});
+        showToast("Usuário reativado.", "success");
+        reloadUsers();
+      } catch(e) {
+        showToast(e.message, "error");
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// My profile modal
+// ─────────────────────────────────────────────
+
+function loadMyProfile() {
+  if (!me) return;
+  document.getElementById("profile-avatar").textContent = getInitials(me.name);
+  document.getElementById("profile-name-display").textContent = me.name;
+  document.getElementById("profile-email-display").textContent = me.email;
+  const badge = document.getElementById("profile-role-badge");
+  badge.className = `badge ${ROLE_BADGE[me.role] || 'badge-gray'}`;
+  badge.textContent = ROLE_LABELS[me.role] || me.role;
+  document.getElementById("profile-name").value = me.name;
+  document.getElementById("profile-password").value = "";
+  document.getElementById("profile-password-confirm").value = "";
+}
+
+async function saveProfile() {
+  const name = document.getElementById("profile-name").value.trim();
+  const password = document.getElementById("profile-password").value;
+  const confirm = document.getElementById("profile-password-confirm").value;
+
+  if (!name) { showToast("Nome é obrigatório", "error"); return; }
+  if (password && password.length < 6) { showToast("Senha deve ter ao menos 6 caracteres", "error"); return; }
+  if (password && password !== confirm) { showToast("Senhas não conferem", "error"); return; }
+
+  const payload = { name };
+  if (password) payload.password = password;
+
+  const btn = document.getElementById("btn-save-profile");
+  btn.innerHTML = '<span class="spinner"></span> Salvando...';
+  btn.disabled = true;
+
+  try {
+    const updated = await api.put("/auth/me", payload);
+    // Update localStorage user info
+    const stored = JSON.parse(localStorage.getItem("user") || "{}");
+    stored.name = updated.name;
+    localStorage.setItem("user", JSON.stringify(stored));
+
+    // Refresh avatar and name in sidebar
+    document.getElementById("user-name")?.textContent && (document.getElementById("user-name").textContent = updated.name);
+    document.getElementById("user-avatar")?.textContent && (document.getElementById("user-avatar").textContent = getInitials(updated.name));
+
+    showToast("Perfil atualizado com sucesso!", "success");
+    document.getElementById("profile-password").value = "";
+    document.getElementById("profile-password-confirm").value = "";
+    document.getElementById("profile-name-display").textContent = updated.name;
+  document.getElementById("profile-avatar").textContent = getInitials(updated.name);
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
+    btn.disabled = false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Roles reference modal
+// ─────────────────────────────────────────────
+
+function openRolesRef(highlightRole) {
+  const container = document.getElementById("roles-ref-content");
+  container.innerHTML = allRoles.map(r => `
+    <div style="padding:16px;border-radius:10px;border:2px solid ${r.value === highlightRole ? 'var(--accent)' : 'var(--border)'};
+                background:${r.value === highlightRole ? 'var(--bg2)' : 'transparent'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span class="badge ${r.color}" style="font-size:13px">${r.label}</span>
+        ${r.can_assign ? '<span style="font-size:11px;color:var(--accent3)"><i class="fas fa-check-circle"></i> Você pode atribuir</span>' : ''}
+      </div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">${r.description}</p>
+      <ul style="list-style:none;padding:0;margin:0">
+        ${r.permissions.map(p => `
+          <li style="font-size:12px;padding:3px 0;color:var(--text2)">
+            <i class="fas fa-check" style="color:var(--accent3);margin-right:6px;font-size:10px"></i>${p}
+          </li>`).join("")}
+      </ul>
+    </div>
+  `).join("");
+  openModal("modal-roles-ref");
+}
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+
+initPage();
+</script>
+</body>
+{% endblock %}

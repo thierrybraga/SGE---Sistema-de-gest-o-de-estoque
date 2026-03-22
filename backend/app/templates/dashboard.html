@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Dashboard{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('dashboard') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <span id="topbar-date" class="text-muted text-sm text-mono"></span>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card cyan">
+          <div class="stat-label">Total Produtos</div>
+          <div class="stat-value cyan" id="stat-products">—</div>
+          <i class="fas fa-boxes stat-icon"></i>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Valor em Estoque</div>
+          <div class="stat-value green" id="stat-value" style="font-size:20px">—</div>
+          <i class="fas fa-dollar-sign stat-icon"></i>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Estoque Crítico</div>
+          <div class="stat-value amber" id="stat-lowstock">—</div>
+          <i class="fas fa-exclamation-triangle stat-icon"></i>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Projetos Ativos</div>
+          <div class="stat-value purple" id="stat-projects">—</div>
+          <i class="fas fa-project-diagram stat-icon"></i>
+        </div>
+        <div class="stat-card cyan">
+          <div class="stat-label">Entradas (7d)</div>
+          <div class="stat-value cyan" id="stat-entries">—</div>
+          <i class="fas fa-arrow-down stat-icon"></i>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Saídas (7d)</div>
+          <div class="stat-value red" id="stat-exits">—</div>
+          <i class="fas fa-arrow-up stat-icon"></i>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Low Stock -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <div class="card-title" style="margin-bottom:0">⚠ Estoque Crítico</div>
+            <a href="/products" class="btn btn-secondary btn-sm">Ver todos</a>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>SKU</th>
+                  <th>Estoque</th>
+                  <th>Mínimo</th>
+                </tr>
+              </thead>
+              <tbody id="low-stock-table">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Movements -->
+        <div class="card">
+          <div class="flex items-center justify-between mb-4">
+            <div class="card-title" style="margin-bottom:0">↕ Movimentações Recentes</div>
+            <a href="/movements" class="btn btn-secondary btn-sm">Ver todas</a>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Tipo</th>
+                  <th>Qtd</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody id="movements-table">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Needs -->
+      <div class="card mt-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="card-title" style="margin-bottom:0">📋 Necessidades Pendentes de Projetos</div>
+          <a href="/projects" class="btn btn-secondary btn-sm">Gerenciar</a>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Projeto</th>
+                <th>Produto</th>
+                <th>Necessário</th>
+                <th>Reservado</th>
+                <th>Faltando</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="needs-table">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+document.getElementById("topbar-date").textContent = new Date().toLocaleString("pt-BR");
+
+async function loadSummary() {
+  try {
+    const summary = await api.get("/dashboard/summary");
+    document.getElementById("stat-products").textContent = summary.total_products;
+    document.getElementById("stat-value").textContent = fmtCurrency(summary.total_stock_value);
+    document.getElementById("stat-lowstock").textContent = summary.low_stock_count;
+    document.getElementById("stat-projects").textContent = summary.active_projects;
+    document.getElementById("stat-entries").textContent = summary.recent_entries;
+    document.getElementById("stat-exits").textContent = summary.recent_exits;
+  } catch(e) {
+    console.error(e);
+    showToast("Erro ao carregar resumo: " + e.message, "error");
+  }
+}
+
+async function loadLowStock() {
+  const tbody = document.getElementById("low-stock-table");
+  tbody.innerHTML = skeletonRows(4, 4);
+  try {
+    const low = await api.get("/dashboard/low-stock");
+    if (!low.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px">
+        <i class="fas fa-check-circle" style="color:var(--accent3)"></i> Nenhum produto crítico
+      </td></tr>`;
+    } else {
+      tbody.innerHTML = low.map(p => `
+        <tr>
+          <td>${p.name}</td>
+          <td class="text-mono text-sm">${p.sku || '—'}</td>
+          <td><span class="badge badge-danger">${p.stock}</span></td>
+          <td class="text-muted">${p.min_stock}</td>
+        </tr>
+      `).join("");
+    }
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadLowStock);
+  }
+}
+
+async function loadRecentMovements() {
+  const tbody = document.getElementById("movements-table");
+  tbody.innerHTML = skeletonRows(4, 5);
+  try {
+    const movs = await api.get("/dashboard/recent-movements");
+    if (!movs.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="text-muted" style="text-align:center;padding:24px">Sem movimentações</td></tr>`;
+    } else {
+      tbody.innerHTML = movs.map(m => `
+        <tr>
+          <td>${m.product_name || '—'}</td>
+          <td>${movBadge(m.type)}</td>
+          <td class="text-mono">${Math.abs(m.quantity)}</td>
+          <td class="text-muted text-sm">${fmtDate(m.created_at)}</td>
+        </tr>
+      `).join("");
+    }
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadRecentMovements);
+  }
+}
+
+async function loadPendingNeeds() {
+  const tbody = document.getElementById("needs-table");
+  tbody.innerHTML = skeletonRows(6, 4);
+  try {
+    const needs = await api.get("/dashboard/pending-needs");
+    if (!needs.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-muted" style="text-align:center;padding:24px">Sem necessidades pendentes</td></tr>`;
+    } else {
+      const statusMap = { pending: "badge-warning", partial: "badge-info", fulfilled: "badge-success" };
+      tbody.innerHTML = needs.map(n => `
+        <tr>
+          <td>${n.project_name || '—'}</td>
+          <td>${n.product_name || '—'}</td>
+          <td>${n.quantity_needed}</td>
+          <td>${n.quantity_reserved}</td>
+          <td><span class="badge badge-danger">${n.quantity_missing}</span></td>
+          <td><span class="badge ${statusMap[n.status] || 'badge-gray'}">${n.status}</span></td>
+        </tr>
+      `).join("");
+    }
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadPendingNeeds);
+  }
+}
+
+loadSummary();
+loadLowStock();
+loadRecentMovements();
+loadPendingNeeds();
+</script>
+</body>
+{% endblock %}

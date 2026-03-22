@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Projetos{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('projects') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Projetos & Match de Suprimentos</div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" onclick="openNewProject()">
+          <i class="fas fa-plus"></i> Novo Projeto
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div id="projects-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Project -->
+<div class="modal-overlay" id="modal-project">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-proj-title">Novo Projeto</h2>
+      <button class="modal-close" onclick="closeModal('modal-project')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="proj-id" />
+    <div class="form-group">
+      <label class="form-label">Nome do Projeto *</label>
+      <input id="proj-name" type="text" class="form-control" placeholder="Nome do projeto" />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Centro de Custo</label>
+        <input id="proj-cc" type="text" class="form-control" placeholder="CC-001" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="proj-status" class="form-control">
+          <option value="active">Ativo</option>
+          <option value="completed">Concluído</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea id="proj-desc" class="form-control"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-project')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Need -->
+<div class="modal-overlay" id="modal-need">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Adicionar Necessidade</h2>
+      <button class="modal-close" onclick="closeModal('modal-need')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="need-project-id" />
+    <div class="form-group">
+      <label class="form-label">Produto *</label>
+      <select id="need-product" class="form-control">
+        <option value="">Selecione o produto...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quantidade Necessária *</label>
+      <input id="need-qty" type="number" min="1" class="form-control" placeholder="1" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação</label>
+      <textarea id="need-obs" class="form-control"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-need')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNeed()"><i class="fas fa-plus"></i> Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Match Results -->
+<div class="modal-overlay" id="modal-match">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title">🎯 Resultado do Match</h2>
+      <button class="modal-close" onclick="closeModal('modal-match')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="match-results"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="closeModal('modal-match')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let allProjects = [];
+let allProducts = [];
+
+async function loadProjects() {
+  const container = document.getElementById("projects-list");
+  container.innerHTML = `
+    <div class="card mb-4">
+      <div class="skeleton skeleton-text" style="width:200px;margin-bottom:16px"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>`;
+  try {
+    allProjects = await api.get("/projects/");
+    renderProjects();
+  } catch(e) {
+    container.innerHTML = `<div class="section-error">
+      <i class="fas fa-exclamation-circle"></i>
+      <p>${e.message || "Erro ao carregar projetos."}</p>
+      <button class="btn btn-secondary btn-sm" onclick="loadProjects()">
+        <i class="fas fa-redo"></i> Tentar novamente
+      </button>
+    </div>`;
+    showToast(e.message, "error");
+  }
+}
+
+async function loadProducts() {
+  try {
+    allProducts = await api.get("/products/");
+    const sel = document.getElementById("need-product");
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      allProducts.map(p => `<option value="${p.id}">${p.name} (disponível: ${p.available_stock})</option>`).join("");
+  } catch(e) {}
+}
+
+function renderProjects() {
+  const container = document.getElementById("projects-list");
+  if (!allProjects.length) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-project-diagram"></i>
+      <h3>Nenhum projeto</h3><p>Crie o primeiro projeto</p></div>`;
+    return;
+  }
+
+  container.innerHTML = allProjects.map(p => {
+    const statusBadge = { active: 'badge-success', completed: 'badge-info', cancelled: 'badge-gray' };
+    return `
+    <div class="card mb-4" id="proj-card-${p.id}">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 style="font-size:16px;font-weight:700">${p.name}</h3>
+          <div class="flex gap-2 mt-1">
+            <span class="badge ${statusBadge[p.status] || 'badge-gray'}">${p.status}</span>
+            ${p.cost_center ? `<span class="badge badge-purple">${p.cost_center}</span>` : ''}
+            ${p.description ? `<span class="text-muted text-sm">${p.description}</span>` : ''}
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary btn-sm" onclick="openAddNeed('${p.id}')">
+            <i class="fas fa-plus"></i> Necessidade
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="runMatch('${p.id}')">
+            <i class="fas fa-bolt"></i> Match
+          </button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editProject('${p.id}')">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
+      </div>
+      <div id="needs-${p.id}">
+        <div style="padding:8px 0"><span class="skeleton skeleton-text" style="width:180px"></span></div>
+      </div>
+    </div>`;
+  }).join("");
+
+  allProjects.forEach(p => loadNeeds(p.id));
+}
+
+async function loadNeeds(projectId) {
+  try {
+    const needs = await api.get(`/projects/${projectId}/needs`);
+    const container = document.getElementById(`needs-${projectId}`);
+    if (!needs.length) {
+      container.innerHTML = `<div class="text-muted text-sm">Nenhuma necessidade cadastrada.</div>`;
+      return;
+    }
+    container.innerHTML = `
+      <table style="margin-top:8px">
+        <thead><tr>
+          <th>Produto</th><th>SKU</th><th>Necessário</th><th>Reservado</th>
+          <th>Faltando</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${needs.map(n => {
+            const statusMap = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success', quoted: 'badge-purple' };
+            return `<tr>
+              <td><strong>${n.product_name}</strong></td>
+              <td class="text-mono text-sm">${n.product_sku || '—'}</td>
+              <td>${n.quantity_needed}</td>
+              <td class="text-success">${n.quantity_reserved}</td>
+              <td>${n.quantity_missing > 0 ? `<span class="badge badge-danger">${n.quantity_missing}</span>` : '<span class="badge badge-success">0</span>'}</td>
+              <td><span class="badge ${statusMap[n.status] || 'badge-gray'}">${n.status}</span></td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById(`needs-${projectId}`).innerHTML = `<div class="section-error" style="padding:16px 0">
+      <i class="fas fa-exclamation-circle" style="font-size:20px"></i>
+      <p style="margin-bottom:8px">${e.message}</p>
+      <button class="btn btn-secondary btn-sm" onclick="loadNeeds('${projectId}')">
+        <i class="fas fa-redo"></i> Tentar novamente
+      </button>
+    </div>`;
+  }
+}
+
+function openNewProject() {
+  document.getElementById("proj-id").value = "";
+  document.getElementById("proj-name").value = "";
+  document.getElementById("proj-cc").value = "";
+  document.getElementById("proj-desc").value = "";
+  document.getElementById("proj-status").value = "active";
+  document.getElementById("modal-proj-title").textContent = "Novo Projeto";
+  openModal("modal-project");
+}
+
+function editProject(id) {
+  const p = allProjects.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("proj-id").value = p.id;
+  document.getElementById("proj-name").value = p.name;
+  document.getElementById("proj-cc").value = p.cost_center || "";
+  document.getElementById("proj-desc").value = p.description || "";
+  document.getElementById("proj-status").value = p.status;
+  document.getElementById("modal-proj-title").textContent = "Editar Projeto";
+  openModal("modal-project");
+}
+
+async function saveProject() {
+  const id = document.getElementById("proj-id").value;
+  const data = {
+    name: document.getElementById("proj-name").value.trim(),
+    cost_center: document.getElementById("proj-cc").value,
+    description: document.getElementById("proj-desc").value,
+    status: document.getElementById("proj-status").value,
+  };
+  if (!data.name) { showToast("Nome é obrigatório", "error"); return; }
+  try {
+    if (id) { await api.put(`/projects/${id}`, data); } 
+    else { await api.post("/projects/", data); }
+    showToast("Projeto salvo!");
+    closeModal("modal-project");
+    loadProjects();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+function openAddNeed(projectId) {
+  document.getElementById("need-project-id").value = projectId;
+  document.getElementById("need-qty").value = "";
+  document.getElementById("need-obs").value = "";
+  openModal("modal-need");
+}
+
+async function saveNeed() {
+  const projectId = document.getElementById("need-project-id").value;
+  const data = {
+    product_id: document.getElementById("need-product").value,
+    quantity_needed: parseInt(document.getElementById("need-qty").value),
+    observation: document.getElementById("need-obs").value,
+  };
+  if (!data.product_id || !data.quantity_needed) { showToast("Preencha produto e quantidade", "error"); return; }
+  try {
+    await api.post(`/projects/${projectId}/needs`, data);
+    showToast("Necessidade adicionada!");
+    closeModal("modal-need");
+    loadNeeds(projectId);
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function runMatch(projectId) {
+  try {
+    const result = await api.post(`/projects/${projectId}/match`, {});
+    const container = document.getElementById("match-results");
+    container.innerHTML = `
+      <div class="alert alert-success mb-4">
+        <i class="fas fa-check-circle"></i> Match executado com sucesso!
+      </div>
+      <table>
+        <thead><tr>
+          <th>Produto</th><th>Necessário</th><th>Reservado</th><th>Faltando</th><th>Status</th>
+        </tr></thead>
+        <tbody>
+          ${result.results.map(r => {
+            const statusMap = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success' };
+            return `<tr>
+              <td>${r.product_name}</td>
+              <td>${r.needed}</td>
+              <td class="text-success">${r.reserved}</td>
+              <td>${r.missing > 0 ? `<span class="badge badge-danger">${r.missing}</span>` : '—'}</td>
+              <td><span class="badge ${statusMap[r.status] || 'badge-gray'}">${r.status}</span></td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>`;
+    openModal("modal-match");
+    loadNeeds(projectId);
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+loadProjects();
+loadProducts();
+</script>
+</body>
+{% endblock %}

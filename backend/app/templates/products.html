@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Produtos{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('products') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Produtos</div>
+      <div class="topbar-actions">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="search" placeholder="Buscar por nome, SKU, código..." oninput="filterProducts()" />
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-product')">
+          <i class="fas fa-plus"></i> Novo Produto
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="table-wrapper">
+          <table id="products-main-table">
+            <thead>
+              <tr>
+                <th data-sort="name">Produto</th>
+                <th data-sort="sku">SKU</th>
+                <th data-sort="category">Categoria</th>
+                <th data-sort="stock">Estoque</th>
+                <th data-sort="min_stock">Mín.</th>
+                <th data-sort="cost_price">Custo</th>
+                <th data-sort="sale_price">Venda</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="products-table">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create/Edit Product -->
+<div class="modal-overlay" id="modal-product">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-product-title">Novo Produto</h2>
+      <button class="modal-close" onclick="closeModal('modal-product')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <input type="hidden" id="prod-id" />
+    <div class="form-row">
+      <div class="form-group" id="group-prod-name">
+        <label class="form-label">Nome *</label>
+        <input id="prod-name" type="text" class="form-control" placeholder="Nome do produto"
+          oninput="clearFieldError('prod-name','group-prod-name')" />
+        <div class="invalid-feedback">Nome é obrigatório</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">SKU</label>
+        <input id="prod-sku" type="text" class="form-control" placeholder="SKU-001" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Código de Barras</label>
+        <input id="prod-barcode" type="text" class="form-control" placeholder="7891234567890" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <select id="prod-category" class="form-control">
+          <option value="">Sem categoria</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea id="prod-desc" class="form-control" placeholder="Descrição opcional..."></textarea>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label class="form-label">Preço de Custo</label>
+        <input id="prod-cost" type="number" step="0.01" class="form-control" placeholder="0.00" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preço de Venda</label>
+        <input id="prod-price" type="number" step="0.01" class="form-control" placeholder="0.00" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidade</label>
+        <select id="prod-unit" class="form-control">
+          <option value="un">un</option>
+          <option value="kg">kg</option>
+          <option value="m">m</option>
+          <option value="l">l</option>
+          <option value="cx">cx</option>
+          <option value="pc">pc</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Estoque Inicial</label>
+        <input id="prod-stock" type="number" class="form-control" placeholder="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estoque Mínimo (alerta)</label>
+        <input id="prod-min" type="number" class="form-control" placeholder="0" />
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-product')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct()">
+        <i class="fas fa-save"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Movement -->
+<div class="modal-overlay" id="modal-movement">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-mov-title">Registrar Movimentação</h2>
+      <button class="modal-close" onclick="closeModal('modal-movement')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <input type="hidden" id="mov-product-id" />
+    <input type="hidden" id="mov-type" />
+
+    <div class="form-group">
+      <label class="form-label">Produto</label>
+      <input id="mov-product-name" type="text" class="form-control" disabled />
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantidade *</label>
+        <input id="mov-qty" type="number" min="1" class="form-control" placeholder="1" />
+      </div>
+      <div class="form-group" id="mov-cost-group">
+        <label class="form-label">Custo Unitário</label>
+        <input id="mov-cost" type="number" step="0.01" class="form-control" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="form-group" id="mov-adj-group" style="display:none">
+      <label class="form-label">Novo Estoque Total</label>
+      <input id="mov-new-stock" type="number" class="form-control" placeholder="Quantidade final" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nº Nota Fiscal</label>
+      <input id="mov-invoice" type="text" class="form-control" placeholder="NF-12345" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação <span id="mov-obs-required" style="color:var(--danger)"></span></label>
+      <textarea id="mov-obs" class="form-control" placeholder="Observação ou justificativa..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-movement')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMovement()">
+        <i class="fas fa-check"></i> Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let allProducts = [];
+
+function clearFieldError(inputId, groupId) {
+  document.getElementById(inputId)?.classList.remove("is-invalid");
+  document.getElementById(groupId)?.classList.remove("has-error");
+}
+
+function showFieldError(inputId, groupId) {
+  document.getElementById(inputId)?.classList.add("is-invalid");
+  document.getElementById(groupId)?.classList.add("has-error");
+}
+
+async function loadProducts() {
+  const tbody = document.getElementById("products-table");
+  tbody.innerHTML = skeletonRows(9, 6);
+  try {
+    allProducts = await api.get("/products/");
+    await loadCategories();
+    renderProducts(allProducts);
+    makeTableSortable("products-main-table");
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadProducts);
+    showToast(e.message, "error");
+  }
+}
+
+let allCategories = [];
+async function loadCategories() {
+  try {
+    allCategories = await api.get("/products/categories/");
+    const sel = document.getElementById("prod-category");
+    sel.innerHTML = '<option value="">Sem categoria</option>' +
+      allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  } catch(e) {}
+}
+
+function renderProducts(products) {
+  const tbody = document.getElementById("products-table");
+  if (!products.length) {
+    tbody.innerHTML = `<tr><td colspan="9">
+      <div class="empty-state"><i class="fas fa-boxes"></i><h3>Nenhum produto</h3><p>Cadastre o primeiro produto</p></div>
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td data-col="name" data-val="${p.name}"><strong>${p.name}</strong></td>
+      <td data-col="sku" data-val="${p.sku || ''}" class="text-mono text-sm">${p.sku || '—'}</td>
+      <td data-col="category" data-val="${p.category?.name || ''}">${p.category?.name || '—'}</td>
+      <td data-col="stock" data-val="${p.stock}" class="text-mono">
+        <strong>${p.stock}</strong>
+        ${p.reserved_stock > 0 ? `<span class="text-muted text-sm"> (${p.reserved_stock} res.)</span>` : ''}
+      </td>
+      <td data-col="min_stock" data-val="${p.min_stock}" class="text-muted">${p.min_stock}</td>
+      <td data-col="cost_price" data-val="${p.cost_price}" class="text-mono">${fmtCurrency(p.cost_price)}</td>
+      <td data-col="sale_price" data-val="${p.sale_price}" class="text-mono">${fmtCurrency(p.sale_price)}</td>
+      <td>${stockBadge(p)}</td>
+      <td>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openEntry('${p.id}','${p.name.replace(/'/g,"\\'")}') " title="Entrada" data-tooltip="Entrada">
+            <i class="fas fa-arrow-down" style="color:var(--accent3)"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openExit('${p.id}','${p.name.replace(/'/g,"\\'")}') " title="Saída" data-tooltip="Saída">
+            <i class="fas fa-arrow-up" style="color:var(--danger)"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editProduct('${p.id}')" title="Editar" data-tooltip="Editar">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}') " title="Inativar" data-tooltip="Inativar">
+            <i class="fas fa-trash" style="color:var(--danger)"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function filterProducts() {
+  const q = document.getElementById("search").value.toLowerCase();
+  if (!q) { renderProducts(allProducts); return; }
+  renderProducts(allProducts.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    (p.sku || "").toLowerCase().includes(q) ||
+    (p.barcode || "").toLowerCase().includes(q)
+  ));
+}
+
+function editProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("prod-id").value = p.id;
+  document.getElementById("prod-name").value = p.name;
+  document.getElementById("prod-sku").value = p.sku || "";
+  document.getElementById("prod-barcode").value = p.barcode || "";
+  document.getElementById("prod-desc").value = p.description || "";
+  document.getElementById("prod-cost").value = p.cost_price || "";
+  document.getElementById("prod-price").value = p.sale_price || "";
+  document.getElementById("prod-stock").value = p.stock || "";
+  document.getElementById("prod-min").value = p.min_stock || "";
+  document.getElementById("prod-unit").value = p.unit || "un";
+  document.getElementById("prod-category").value = p.category_id || "";
+  document.getElementById("modal-product-title").textContent = "Editar Produto";
+  // Clear any previous validation errors
+  clearFieldError("prod-name", "group-prod-name");
+  openModal("modal-product");
+}
+
+function openProductModal() {
+  document.getElementById("prod-id").value = "";
+  document.getElementById("prod-name").value = "";
+  document.getElementById("prod-sku").value = "";
+  document.getElementById("prod-barcode").value = "";
+  document.getElementById("prod-desc").value = "";
+  document.getElementById("prod-cost").value = "";
+  document.getElementById("prod-price").value = "";
+  document.getElementById("prod-stock").value = "0";
+  document.getElementById("prod-min").value = "0";
+  document.getElementById("modal-product-title").textContent = "Novo Produto";
+  clearFieldError("prod-name", "group-prod-name");
+  openModal("modal-product");
+}
+document.querySelector('[onclick="openModal(\'modal-product\')"]').onclick = openProductModal;
+
+async function saveProduct() {
+  const name = document.getElementById("prod-name").value.trim();
+  if (!name) {
+    showFieldError("prod-name", "group-prod-name");
+    document.getElementById("prod-name").focus();
+    return;
+  }
+
+  const id = document.getElementById("prod-id").value;
+  const data = {
+    name,
+    sku: document.getElementById("prod-sku").value || null,
+    barcode: document.getElementById("prod-barcode").value || null,
+    description: document.getElementById("prod-desc").value,
+    cost_price: parseFloat(document.getElementById("prod-cost").value) || 0,
+    sale_price: parseFloat(document.getElementById("prod-price").value) || 0,
+    stock: parseInt(document.getElementById("prod-stock").value) || 0,
+    min_stock: parseInt(document.getElementById("prod-min").value) || 0,
+    unit: document.getElementById("prod-unit").value,
+    category_id: document.getElementById("prod-category").value || null,
+  };
+
+  const btn = document.querySelector('#modal-product .btn-primary');
+  btn.classList.add("loading");
+  try {
+    if (id) {
+      await api.put(`/products/${id}`, data);
+      showToast("Produto atualizado com sucesso!");
+    } else {
+      await api.post("/products/", data);
+      showToast("Produto criado com sucesso!");
+    }
+    closeModal("modal-product");
+    loadProducts();
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.classList.remove("loading");
+  }
+}
+
+async function deleteProduct(id, name) {
+  showConfirm({
+    title: "Inativar produto",
+    message: `Deseja inativar <strong>${name}</strong>? O produto não aparecerá mais nas listagens.`,
+    confirmText: "Inativar",
+    cancelText: "Cancelar",
+    type: "danger",
+    onConfirm: async () => {
+      try {
+        await api.delete(`/products/${id}`);
+        showToast("Produto inativado");
+        loadProducts();
+      } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+function openEntry(id, name) {
+  document.getElementById("mov-product-id").value = id;
+  document.getElementById("mov-type").value = "entry";
+  document.getElementById("mov-product-name").value = name;
+  document.getElementById("modal-mov-title").textContent = "📥 Registrar Entrada";
+  document.getElementById("mov-cost-group").style.display = "";
+  document.getElementById("mov-adj-group").style.display = "none";
+  document.getElementById("mov-obs-required").textContent = "";
+  document.getElementById("mov-qty").value = "";
+  document.getElementById("mov-obs").value = "";
+  openModal("modal-movement");
+}
+
+function openExit(id, name) {
+  document.getElementById("mov-product-id").value = id;
+  document.getElementById("mov-type").value = "exit";
+  document.getElementById("mov-product-name").value = name;
+  document.getElementById("modal-mov-title").textContent = "📤 Registrar Saída";
+  document.getElementById("mov-cost-group").style.display = "none";
+  document.getElementById("mov-adj-group").style.display = "none";
+  document.getElementById("mov-obs-required").textContent = "";
+  document.getElementById("mov-qty").value = "";
+  document.getElementById("mov-obs").value = "";
+  openModal("modal-movement");
+}
+
+async function saveMovement() {
+  const type = document.getElementById("mov-type").value;
+  const productId = document.getElementById("mov-product-id").value;
+  const qty = parseInt(document.getElementById("mov-qty").value);
+  const obs = document.getElementById("mov-obs").value;
+
+  if (!productId) { showToast("Produto é obrigatório", "error"); return; }
+  if (!qty || qty <= 0) { showToast("Informe a quantidade", "error"); return; }
+
+  const data = { product_id: productId, quantity: qty, observation: obs,
+    invoice_number: document.getElementById("mov-invoice").value,
+    unit_cost: parseFloat(document.getElementById("mov-cost").value) || 0,
+  };
+
+  const endpoints = { entry: "/movements/entry", exit: "/movements/exit", adjustment: "/movements/adjustment" };
+
+  const btn = document.querySelector('#modal-movement .btn-primary');
+  btn.classList.add("loading");
+  try {
+    await api.post(endpoints[type], data);
+    showToast("Movimentação registrada!");
+    closeModal("modal-movement");
+    loadProducts();
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.classList.remove("loading");
+  }
+}
+
+loadProducts();
+</script>
+</body>
+{% endblock %}

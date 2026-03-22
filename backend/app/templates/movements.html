@@ -1,0 +1,320 @@
+{%- extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Movimentações{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('movements') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Movimentações</div>
+      <div class="topbar-actions">
+        <select id="filter-type" class="form-control" style="width:140px" onchange="loadMovements()">
+          <option value="">Todos os tipos</option>
+          <option value="entry">Entradas</option>
+          <option value="exit">Saídas</option>
+          <option value="adjustment">Ajustes</option>
+        </select>
+        <input type="date" id="filter-date-from" class="form-control" style="width:140px" onchange="loadMovements()" title="Data inicial" />
+        <input type="date" id="filter-date-to" class="form-control" style="width:140px" onchange="loadMovements()" title="Data final" />
+        <button class="btn btn-secondary btn-icon" onclick="clearFilters()" title="Limpar filtros">
+          <i class="fas fa-times"></i>
+        </button>
+        <button class="btn btn-secondary" onclick="exportCSV()" title="Exportar CSV">
+          <i class="fas fa-download"></i> CSV
+        </button>
+        <button class="btn btn-primary" onclick="openModal('modal-mov')">
+          <i class="fas fa-plus"></i> Nova Movimentação
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-muted text-sm" id="mov-count">Carregando...</div>
+          <select id="filter-product" class="form-control" style="width:220px" onchange="loadMovements()">
+            <option value="">Todos os produtos</option>
+          </select>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th><th>Tipo</th><th>Quantidade</th><th>Custo Unit.</th>
+                <th>Total</th><th>NF</th><th>Usuário</th><th>Projeto</th><th>Observação</th><th>Data</th>
+              </tr>
+            </thead>
+            <tbody id="mov-table">
+            </tbody>
+          </table>
+        </div>
+        <div id="mov-pagination" class="flex justify-between items-center mt-3" style="display:none">
+          <button class="btn btn-secondary btn-sm" id="btn-prev" onclick="changePage(-1)" disabled>
+            <i class="fas fa-chevron-left"></i> Anterior
+          </button>
+          <span class="text-muted text-sm" id="page-info"></span>
+          <button class="btn btn-secondary btn-sm" id="btn-next" onclick="changePage(1)">
+            Próxima <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Nova Movimentação -->
+<div class="modal-overlay" id="modal-mov">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Nova Movimentação</h2>
+      <button class="modal-close" onclick="closeModal('modal-mov')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Tipo *</label>
+        <select id="mov-type" class="form-control" onchange="toggleMovType()">
+          <option value="entry">Entrada</option>
+          <option value="exit">Saída</option>
+          <option value="adjustment">Ajuste Manual</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Produto *</label>
+        <select id="mov-product" class="form-control">
+          <option value="">Selecione...</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="mov-qty-label">Quantidade *</label>
+        <input id="mov-qty" type="number" min="1" class="form-control" placeholder="1" />
+      </div>
+      <div class="form-group" id="mov-cost-group">
+        <label class="form-label">Custo Unitário (R$)</label>
+        <input id="mov-cost" type="number" step="0.01" class="form-control" placeholder="0.00" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Projeto (opcional)</label>
+      <select id="mov-project" class="form-control">
+        <option value="">Sem projeto</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nº Nota Fiscal</label>
+      <input id="mov-invoice" type="text" class="form-control" placeholder="NF-12345" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação <span id="obs-req" style="color:var(--danger)"></span></label>
+      <textarea id="mov-obs" class="form-control" placeholder="Observação..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-mov')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMovement()"><i class="fas fa-check"></i> Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let allMovements = [];
+let currentPage = 1;
+const PAGE_SIZE = 50;
+
+async function loadMovements() {
+  const tbody = document.getElementById('mov-table');
+  tbody.innerHTML = skeletonRows(10, 6);
+  document.getElementById('mov-count').innerHTML = '<span class="skeleton skeleton-text" style="width:200px"></span>';
+
+  const type = document.getElementById('filter-type').value;
+  const productId = document.getElementById('filter-product').value;
+  const dateFrom = document.getElementById('filter-date-from').value;
+  const dateTo = document.getElementById('filter-date-to').value;
+
+  let url = '/movements/?limit=500';
+  if (type) url += '&type=' + type;
+  if (productId) url += '&product_id=' + productId;
+
+  try {
+    let movs = await api.get(url);
+    if (dateFrom) movs = movs.filter(m => m.created_at && m.created_at.substring(0,10) >= dateFrom);
+    if (dateTo) movs = movs.filter(m => m.created_at && m.created_at.substring(0,10) <= dateTo);
+    allMovements = movs;
+    currentPage = 1;
+    renderMovements();
+    updateCount();
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadMovements);
+    document.getElementById('mov-count').textContent = '';
+    showToast(e.message, 'error');
+  }
+}
+
+function renderMovements() {
+  const tbody = document.getElementById('mov-table');
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = allMovements.slice(start, start + PAGE_SIZE);
+  const total = allMovements.length;
+
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">' +
+      '<i class="fas fa-exchange-alt"></i><h3>Sem movimentações</h3>' +
+      '<p>Registre a primeira movimentação de estoque</p></div></td></tr>';
+    document.getElementById('mov-pagination').style.display = 'none';
+    return;
+  }
+
+  tbody.innerHTML = page.map(function(m) {
+    const totalVal = (m.unit_cost && m.quantity) ? fmtCurrency(Math.abs(m.quantity) * m.unit_cost) : '—';
+    return '<tr>' +
+      '<td><strong>' + (m.product_name || '—') + '</strong></td>' +
+      '<td>' + movBadge(m.type) + '</td>' +
+      '<td class="text-mono"><strong>' + (m.quantity > 0 ? '+' : '') + m.quantity + '</strong></td>' +
+      '<td class="text-mono">' + (m.unit_cost ? fmtCurrency(m.unit_cost) : '—') + '</td>' +
+      '<td class="text-mono">' + totalVal + '</td>' +
+      '<td class="text-sm text-mono">' + (m.invoice_number || '—') + '</td>' +
+      '<td class="text-muted text-sm">' + (m.user_name || '—') + '</td>' +
+      '<td class="text-muted text-sm">' + (m.project_id ? '<span class="badge badge-purple">Proj.</span>' : '—') + '</td>' +
+      '<td class="text-muted text-sm" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (m.observation || '') + '">' + (m.observation || '—') + '</td>' +
+      '<td class="text-muted text-sm">' + fmtDate(m.created_at) + '</td>' +
+      '</tr>';
+  }).join('');
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages > 1) {
+    document.getElementById('mov-pagination').style.display = 'flex';
+    document.getElementById('page-info').textContent = 'Página ' + currentPage + ' de ' + totalPages;
+    document.getElementById('btn-prev').disabled = currentPage <= 1;
+    document.getElementById('btn-next').disabled = currentPage >= totalPages;
+  } else {
+    document.getElementById('mov-pagination').style.display = 'none';
+  }
+}
+
+function updateCount() {
+  var entries = allMovements.filter(function(m) { return m.type === 'entry'; }).length;
+  var exits = allMovements.filter(function(m) { return m.type === 'exit'; }).length;
+  var adjs = allMovements.filter(function(m) { return m.type === 'adjustment'; }).length;
+  document.getElementById('mov-count').innerHTML =
+    '<strong>' + allMovements.length + '</strong> registros — ' +
+    '<span style="color:var(--accent3)">' + entries + ' entradas</span> | ' +
+    '<span style="color:var(--danger)">' + exits + ' saídas</span> | ' +
+    '<span style="color:var(--accent)">' + adjs + ' ajustes</span>';
+}
+
+function changePage(dir) {
+  var totalPages = Math.ceil(allMovements.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+  renderMovements();
+}
+
+function clearFilters() {
+  document.getElementById('filter-type').value = '';
+  document.getElementById('filter-product').value = '';
+  document.getElementById('filter-date-from').value = '';
+  document.getElementById('filter-date-to').value = '';
+  loadMovements();
+}
+
+function exportCSV() {
+  if (!allMovements.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
+  var headers = ['Produto','Tipo','Quantidade','Custo Unitário','Total','NF','Usuário','Observação','Data'];
+  var rows = allMovements.map(function(m) {
+    return [
+      '"' + (m.product_name || '') + '"',
+      m.type,
+      m.quantity,
+      m.unit_cost || 0,
+      (m.unit_cost && m.quantity) ? Math.abs(m.quantity * m.unit_cost) : 0,
+      '"' + (m.invoice_number || '') + '"',
+      '"' + (m.user_name || '') + '"',
+      '"' + (m.observation || '').replace(/"/g, '""') + '"',
+      m.created_at || '',
+    ].join(',');
+  });
+  var csv = [headers.join(',')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'movimentacoes_' + new Date().toISOString().substring(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado!');
+}
+
+async function loadProductOptions() {
+  try {
+    var products = await api.get('/products/');
+    var selMov = document.getElementById('mov-product');
+    var selFilter = document.getElementById('filter-product');
+    selMov.innerHTML = '<option value="">Selecione...</option>' +
+      products.map(function(p) { return '<option value="' + p.id + '">' + p.name + ' (' + p.stock + ' em estoque)</option>'; }).join('');
+    selFilter.innerHTML = '<option value="">Todos os produtos</option>' +
+      products.map(function(p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('');
+  } catch(e) {}
+}
+
+async function loadProjectOptions() {
+  try {
+    var projects = await api.get('/projects/');
+    var sel = document.getElementById('mov-project');
+    sel.innerHTML = '<option value="">Sem projeto</option>' +
+      projects.filter(function(p) { return p.status === 'active'; })
+        .map(function(p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('');
+  } catch(e) {}
+}
+
+function toggleMovType() {
+  var type = document.getElementById('mov-type').value;
+  document.getElementById('mov-cost-group').style.display = type === 'entry' ? '' : 'none';
+  document.getElementById('obs-req').textContent = type === 'adjustment' ? '(obrigatório)' : '';
+  document.getElementById('mov-qty-label').textContent = type === 'adjustment' ? 'Novo Estoque Total *' : 'Quantidade *';
+}
+
+async function saveMovement() {
+  var type = document.getElementById('mov-type').value;
+  var productId = document.getElementById('mov-product').value;
+  var qty = parseInt(document.getElementById('mov-qty').value);
+  var obs = document.getElementById('mov-obs').value;
+
+  if (!productId) { showToast('Selecione um produto', 'error'); return; }
+  if (!qty || qty <= 0) { showToast('Informe a quantidade', 'error'); return; }
+  if (type === 'adjustment' && !obs) { showToast('Ajuste requer observação', 'error'); return; }
+
+  var data = {
+    product_id: productId,
+    quantity: qty,
+    observation: obs,
+    invoice_number: document.getElementById('mov-invoice').value,
+    unit_cost: parseFloat(document.getElementById('mov-cost').value) || 0,
+    project_id: document.getElementById('mov-project').value || null,
+  };
+
+  var eps = { entry: '/movements/entry', exit: '/movements/exit', adjustment: '/movements/adjustment' };
+  var btn = document.querySelector('#modal-mov .btn-primary');
+  btn.classList.add('loading');
+  try {
+    await api.post(eps[type], data);
+    showToast('Movimentação registrada com sucesso!');
+    closeModal('modal-mov');
+    loadMovements();
+    loadProductOptions();
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+loadMovements();
+loadProductOptions();
+loadProjectOptions();
+</script>
+</body>
+{% endblock %}

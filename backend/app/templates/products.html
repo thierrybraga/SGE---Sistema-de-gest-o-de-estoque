@@ -14,7 +14,14 @@
           <i class="fas fa-search"></i>
           <input type="text" id="search" placeholder="Buscar por nome, SKU, código..." oninput="filterProducts()" />
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-product')">
+        <button class="btn btn-secondary" onclick="openManageCategories()">
+          <i class="fas fa-tags"></i> Categorias
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('csv-upload').click()">
+          <i class="fas fa-file-import"></i> Importar CSV
+        </button>
+        <input type="file" id="csv-upload" accept=".csv" style="display:none" onchange="handleCSVUpload(this)" />
+        <button class="btn btn-primary" id="btn-open-product" onclick="openProductModal()">
           <i class="fas fa-plus"></i> Novo Produto
         </button>
       </div>
@@ -41,6 +48,7 @@
             </tbody>
           </table>
         </div>
+        <div class="pagination" id="products-pagination" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -74,9 +82,14 @@
       </div>
       <div class="form-group">
         <label class="form-label">Categoria</label>
-        <select id="prod-category" class="form-control">
-          <option value="">Sem categoria</option>
-        </select>
+        <div class="flex gap-2">
+          <select id="prod-category" class="form-control">
+            <option value="">Sem categoria</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="openCategoryModal()" title="Nova categoria" data-tooltip="Nova categoria">
+            <i class="fas fa-folder-plus"></i>
+          </button>
+        </div>
       </div>
     </div>
     <div class="form-group">
@@ -95,12 +108,27 @@
       <div class="form-group">
         <label class="form-label">Unidade</label>
         <select id="prod-unit" class="form-control">
-          <option value="un">un</option>
-          <option value="kg">kg</option>
-          <option value="m">m</option>
-          <option value="l">l</option>
-          <option value="cx">cx</option>
-          <option value="pc">pc</option>
+          <option value="un">un — Unidade</option>
+          <option value="pç">pç — Peça</option>
+          <option value="pc">pc — Pacote</option>
+          <option value="cx">cx — Caixa</option>
+          <option value="par">par — Par</option>
+          <option value="gl">gl — Global</option>
+          <option value="kg">kg — Quilograma</option>
+          <option value="g">g — Grama</option>
+          <option value="t">t — Tonelada</option>
+          <option value="m">m — Metro linear</option>
+          <option value="m2">m² — Metro quadrado</option>
+          <option value="m3">m³ — Metro cúbico</option>
+          <option value="cm">cm — Centímetro</option>
+          <option value="l">l — Litro</option>
+          <option value="ml">ml — Mililitro</option>
+          <option value="rolo">rolo — Rolo</option>
+          <option value="saco">saco — Saco</option>
+          <option value="bd">bd — Balde</option>
+          <option value="lata">lata — Lata</option>
+          <option value="hr">hr — Hora</option>
+          <option value="serv">serv — Serviço</option>
         </select>
       </div>
     </div>
@@ -120,6 +148,52 @@
       <button class="btn btn-primary" onclick="saveProduct()">
         <i class="fas fa-save"></i> Salvar
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create/Edit Category -->
+<div class="modal-overlay" id="modal-category">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-cat-title">Nova Categoria</h2>
+      <button class="modal-close" onclick="closeModal('modal-category')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="cat-id" />
+    <div class="form-group" id="group-cat-name">
+      <label class="form-label">Nome *</label>
+      <input id="cat-name" type="text" class="form-control" placeholder="Ex: Hidráulica"
+        oninput="clearFieldError('cat-name','group-cat-name')" />
+      <div class="invalid-feedback">Nome é obrigatório</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea id="cat-desc" class="form-control" placeholder="Descrição opcional..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-category')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-category" onclick="saveCategory()">
+        <i class="fas fa-save"></i> Salvar Categoria
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Manage Categories -->
+<div class="modal-overlay" id="modal-manage-categories">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-tags"></i> Gerenciar Categorias</h2>
+      <button class="modal-close" onclick="closeModal('modal-manage-categories')"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
+      <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">
+        <i class="fas fa-plus"></i> Nova Categoria
+      </button>
+    </div>
+    <div id="categories-list-table"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-manage-categories')">Fechar</button>
     </div>
   </div>
 </div>
@@ -171,11 +245,72 @@
   </div>
 </div>
 
+<!-- Modal: Product History Timeline -->
+<div class="modal-overlay" id="modal-history">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="history-title"><i class="fas fa-history"></i> Histórico do Produto</h2>
+      <button class="modal-close" onclick="closeModal('modal-history')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="history-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div class="history-filters" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-primary history-filter active" data-filter="all" onclick="filterTimeline('all',this)">Todos</button>
+      <button class="btn btn-sm btn-secondary history-filter" data-filter="movement" onclick="filterTimeline('movement',this)"><i class="fas fa-exchange-alt"></i> Movimentações</button>
+      <button class="btn btn-sm btn-secondary history-filter" data-filter="invoice" onclick="filterTimeline('invoice',this)"><i class="fas fa-file-invoice"></i> Notas Fiscais</button>
+      <button class="btn btn-sm btn-secondary history-filter" data-filter="quotation" onclick="filterTimeline('quotation',this)"><i class="fas fa-tags"></i> Cotações</button>
+      <button class="btn btn-sm btn-secondary history-filter" data-filter="project" onclick="filterTimeline('project',this)"><i class="fas fa-project-diagram"></i> Projetos</button>
+    </div>
+    <div class="timeline-container" id="history-timeline" style="max-height:480px;overflow-y:auto">
+      <div class="notif-loading">Carregando histórico...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-history')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .timeline-item {
+    display: flex; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border); position: relative;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 14px;
+  }
+  .timeline-icon.movement { background: rgba(16,185,129,0.15); color: var(--accent3); }
+  .timeline-icon.movement.exit { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .timeline-icon.movement.adjustment { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .timeline-icon.invoice { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .timeline-icon.quotation { background: rgba(124,58,237,0.15); color: var(--accent2); }
+  .timeline-icon.project { background: rgba(0,229,255,0.15); color: var(--accent); }
+  .timeline-body { flex: 1; min-width: 0; }
+  .timeline-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .timeline-desc { font-size: 11px; color: var(--text2); }
+  .timeline-details { font-size: 11px; color: var(--text2); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .timeline-details span { display: inline-flex; align-items: center; gap: 4px; }
+  .timeline-date { font-size: 10px; color: var(--text2); font-family: var(--font-mono); white-space: nowrap; margin-top: 2px; }
+  .history-stat {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .history-stat .stat-num { font-family: var(--font-mono); font-weight: 700; font-size: 16px; }
+  .timeline-empty { padding: 32px; text-align: center; color: var(--text2); font-size: 13px; }
+</style>
+
 <script>
 requireAuth();
 initUserInfo();
 
 let allProducts = [];
+let allCategories = [];
+let currentPage = 1;
+let totalPages = 1;
+let totalProducts = 0;
+const perPage = 50;
+let searchDebounce = null;
 
 function clearFieldError(inputId, groupId) {
   document.getElementById(inputId)?.classList.remove("is-invalid");
@@ -187,13 +322,22 @@ function showFieldError(inputId, groupId) {
   document.getElementById(groupId)?.classList.add("has-error");
 }
 
-async function loadProducts() {
+async function loadProducts(page = 1) {
   const tbody = document.getElementById("products-table");
   tbody.innerHTML = skeletonRows(9, 6);
+  const search = document.getElementById("search").value.trim();
+  const categoryId = "";
   try {
-    allProducts = await api.get("/products/");
+    let url = `/products/?page=${page}&per_page=${perPage}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    const res = await api.get(url);
+    allProducts = res.data;
+    currentPage = res.page;
+    totalPages = res.pages;
+    totalProducts = res.total;
     await loadCategories();
     renderProducts(allProducts);
+    renderPagination();
     makeTableSortable("products-main-table");
   } catch(e) {
     tbody.innerHTML = sectionError(e.message, loadProducts);
@@ -201,13 +345,38 @@ async function loadProducts() {
   }
 }
 
-let allCategories = [];
+function renderPagination() {
+  const container = document.getElementById("products-pagination");
+  if (totalPages <= 1) { container.style.display = "none"; return; }
+  container.style.display = "flex";
+  let html = `<span class="pagination-info">${totalProducts} produtos — Pág. ${currentPage}/${totalPages}</span>`;
+  html += `<div class="pagination-btns">`;
+  html += `<button class="btn btn-secondary btn-sm" ${currentPage <= 1 ? 'disabled' : ''} onclick="loadProducts(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(totalPages, currentPage + 2);
+  if (startPage > 1) html += `<button class="btn btn-secondary btn-sm" onclick="loadProducts(1)">1</button>`;
+  if (startPage > 2) html += `<span class="pagination-dots">...</span>`;
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="loadProducts(${i})">${i}</button>`;
+  }
+  if (endPage < totalPages - 1) html += `<span class="pagination-dots">...</span>`;
+  if (endPage < totalPages) html += `<button class="btn btn-secondary btn-sm" onclick="loadProducts(${totalPages})">${totalPages}</button>`;
+  html += `<button class="btn btn-secondary btn-sm" ${currentPage >= totalPages ? 'disabled' : ''} onclick="loadProducts(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderCategoryOptions(selectedValue = "") {
+  const sel = document.getElementById("prod-category");
+  sel.innerHTML = '<option value="">Sem categoria</option>' +
+    allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  sel.value = selectedValue || "";
+}
+
 async function loadCategories() {
   try {
     allCategories = await api.get("/products/categories/");
-    const sel = document.getElementById("prod-category");
-    sel.innerHTML = '<option value="">Sem categoria</option>' +
-      allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+    renderCategoryOptions(document.getElementById("prod-category").value || "");
   } catch(e) {}
 }
 
@@ -240,6 +409,9 @@ function renderProducts(products) {
           <button class="btn btn-secondary btn-sm btn-icon" onclick="openExit('${p.id}','${p.name.replace(/'/g,"\\'")}') " title="Saída" data-tooltip="Saída">
             <i class="fas fa-arrow-up" style="color:var(--danger)"></i>
           </button>
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openHistory('${p.id}')" title="Histórico" data-tooltip="Histórico">
+            <i class="fas fa-history" style="color:var(--accent)"></i>
+          </button>
           <button class="btn btn-secondary btn-sm btn-icon" onclick="editProduct('${p.id}')" title="Editar" data-tooltip="Editar">
             <i class="fas fa-edit"></i>
           </button>
@@ -253,13 +425,8 @@ function renderProducts(products) {
 }
 
 function filterProducts() {
-  const q = document.getElementById("search").value.toLowerCase();
-  if (!q) { renderProducts(allProducts); return; }
-  renderProducts(allProducts.filter(p =>
-    p.name.toLowerCase().includes(q) ||
-    (p.sku || "").toLowerCase().includes(q) ||
-    (p.barcode || "").toLowerCase().includes(q)
-  ));
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => loadProducts(1), 300);
 }
 
 function editProduct(id) {
@@ -275,7 +442,7 @@ function editProduct(id) {
   document.getElementById("prod-stock").value = p.stock || "";
   document.getElementById("prod-min").value = p.min_stock || "";
   document.getElementById("prod-unit").value = p.unit || "un";
-  document.getElementById("prod-category").value = p.category_id || "";
+  renderCategoryOptions(p.category_id || "");
   document.getElementById("modal-product-title").textContent = "Editar Produto";
   // Clear any previous validation errors
   clearFieldError("prod-name", "group-prod-name");
@@ -292,11 +459,118 @@ function openProductModal() {
   document.getElementById("prod-price").value = "";
   document.getElementById("prod-stock").value = "0";
   document.getElementById("prod-min").value = "0";
+  document.getElementById("prod-unit").value = "un";
+  renderCategoryOptions("");
   document.getElementById("modal-product-title").textContent = "Novo Produto";
   clearFieldError("prod-name", "group-prod-name");
   openModal("modal-product");
 }
-document.querySelector('[onclick="openModal(\'modal-product\')"]').onclick = openProductModal;
+
+function openCategoryModal(catId = null) {
+  document.getElementById("cat-id").value = catId || "";
+  document.getElementById("cat-name").value = "";
+  document.getElementById("cat-desc").value = "";
+  document.getElementById("modal-cat-title").textContent = catId ? "Editar Categoria" : "Nova Categoria";
+  clearFieldError("cat-name", "group-cat-name");
+  if (catId) {
+    const cat = allCategories.find(c => c.id === catId);
+    if (cat) {
+      document.getElementById("cat-name").value = cat.name || "";
+      document.getElementById("cat-desc").value = cat.description || "";
+    }
+  }
+  openModal("modal-category");
+  setTimeout(() => document.getElementById("cat-name").focus(), 50);
+}
+
+async function saveCategory() {
+  const name = document.getElementById("cat-name").value.trim();
+  if (!name) {
+    showFieldError("cat-name", "group-cat-name");
+    document.getElementById("cat-name").focus();
+    return;
+  }
+  const catId = document.getElementById("cat-id").value;
+  const btn = document.getElementById("btn-save-category");
+  btn.classList.add("loading");
+  try {
+    let category;
+    if (catId) {
+      category = await api.put(`/products/categories/${catId}`, {
+        name, description: document.getElementById("cat-desc").value.trim() || null,
+      });
+      const idx = allCategories.findIndex(c => c.id === catId);
+      if (idx >= 0) allCategories[idx] = category;
+      showToast("Categoria atualizada!");
+    } else {
+      category = await api.post("/products/categories/", {
+        name, description: document.getElementById("cat-desc").value.trim() || null,
+      });
+      allCategories.push(category);
+      showToast("Categoria criada com sucesso!");
+    }
+    allCategories.sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR", { sensitivity: "base" }));
+    renderCategoryOptions(category.id);
+    closeModal("modal-category");
+    renderCategoriesTable();
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.classList.remove("loading");
+  }
+}
+
+async function deleteCategory(catId, catName) {
+  showConfirm({
+    title: "Remover categoria",
+    message: `Deseja remover a categoria <strong>${catName}</strong>?<br><small class="text-muted">Apenas categorias sem produtos podem ser removidas.</small>`,
+    confirmText: "Remover",
+    cancelText: "Cancelar",
+    type: "danger",
+    onConfirm: async () => {
+      try {
+        await api.delete(`/products/categories/${catId}`);
+        allCategories = allCategories.filter(c => c.id !== catId);
+        renderCategoryOptions(document.getElementById("prod-category").value || "");
+        renderCategoriesTable();
+        showToast("Categoria removida");
+      } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+function openManageCategories() {
+  renderCategoriesTable();
+  openModal("modal-manage-categories");
+}
+
+function renderCategoriesTable() {
+  const container = document.getElementById("categories-list-table");
+  if (!container) return;
+  if (!allCategories.length) {
+    container.innerHTML = `<div class="empty-state"><i class="fas fa-tags"></i><p>Nenhuma categoria cadastrada</p></div>`;
+    return;
+  }
+  container.innerHTML = `<table>
+    <thead><tr><th>Nome</th><th>Descrição</th><th style="width:120px">Ações</th></tr></thead>
+    <tbody>
+      ${allCategories.map(c => `<tr>
+        <td><strong>${c.name}</strong></td>
+        <td class="text-muted text-sm">${c.description || '—'}</td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openCategoryModal('${c.id}')" title="Editar">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCategory('${c.id}','${c.name.replace(/'/g,"\\'")}') " title="Remover">
+              <i class="fas fa-trash" style="color:var(--danger)"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`).join("")}
+    </tbody>
+  </table>`;
+}
 
 async function saveProduct() {
   const name = document.getElementById("prod-name").value.trim();
@@ -336,6 +610,43 @@ async function saveProduct() {
     showToast(e.message, "error");
   } finally {
     btn.classList.remove("loading");
+  }
+}
+
+async function handleCSVUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  showToast("Iniciando importação...", "info");
+  
+  try {
+    const response = await fetch("/api/products/import/csv", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+      body: formData
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) throw new Error(result.error || "Erro na importação");
+
+    let msg = `Importação concluída: ${result.created} criados, ${result.updated} atualizados.`;
+    if (result.errors && result.errors.length > 0) {
+      msg += ` Houve ${result.errors.length} erros. Verifique o console.`;
+      console.error("Erros na importação CSV:", result.errors);
+    }
+    
+    showToast(msg, result.errors?.length > 0 ? "warning" : "success");
+    loadProducts();
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    input.value = ""; // Clear input
   }
 }
 
@@ -410,6 +721,95 @@ async function saveMovement() {
   } finally {
     btn.classList.remove("loading");
   }
+}
+
+let historyData = null;
+
+async function openHistory(productId) {
+  openModal('modal-history');
+  const timeline = document.getElementById('history-timeline');
+  const summary = document.getElementById('history-summary');
+  timeline.innerHTML = '<div class="notif-loading">Carregando histórico...</div>';
+  summary.innerHTML = '';
+  document.getElementById('history-title').innerHTML = '<i class="fas fa-history"></i> Histórico do Produto';
+
+  // Reset filter buttons
+  document.querySelectorAll('.history-filter').forEach(b => {
+    b.classList.remove('btn-primary','active');
+    b.classList.add('btn-secondary');
+  });
+  const allBtn = document.querySelector('.history-filter[data-filter="all"]');
+  if (allBtn) { allBtn.classList.add('btn-primary','active'); allBtn.classList.remove('btn-secondary'); }
+
+  try {
+    historyData = await api.get('/products/' + productId + '/history');
+    document.getElementById('history-title').innerHTML =
+      '<i class="fas fa-history"></i> ' + historyData.product.name;
+
+    const c = historyData.counts;
+    summary.innerHTML =
+      '<div class="history-stat"><span class="stat-num" style="color:var(--accent3)">' + c.movements + '</span> Movimentações</div>' +
+      '<div class="history-stat"><span class="stat-num" style="color:var(--warn)">' + c.invoices + '</span> Notas Fiscais</div>' +
+      '<div class="history-stat"><span class="stat-num" style="color:var(--accent2)">' + c.quotations + '</span> Cotações</div>' +
+      '<div class="history-stat"><span class="stat-num" style="color:var(--accent)">' + c.projects + '</span> Projetos</div>';
+
+    renderTimeline(historyData.timeline);
+  } catch(e) {
+    timeline.innerHTML = '<div class="timeline-empty"><i class="fas fa-exclamation-circle" style="color:var(--danger)"></i><br>Erro: ' + e.message + '</div>';
+  }
+}
+
+function filterTimeline(category, btn) {
+  document.querySelectorAll('.history-filter').forEach(b => {
+    b.classList.remove('btn-primary','active');
+    b.classList.add('btn-secondary');
+  });
+  btn.classList.add('btn-primary','active');
+  btn.classList.remove('btn-secondary');
+
+  if (!historyData) return;
+  const filtered = category === 'all'
+    ? historyData.timeline
+    : historyData.timeline.filter(t => t.category === category);
+  renderTimeline(filtered);
+}
+
+function renderTimeline(items) {
+  const container = document.getElementById('history-timeline');
+  if (!items.length) {
+    container.innerHTML = '<div class="timeline-empty"><i class="fas fa-inbox" style="font-size:24px;margin-bottom:8px;display:block"></i>Nenhum registro encontrado</div>';
+    return;
+  }
+
+  const iconMap = {
+    movement: 'fa-exchange-alt', invoice: 'fa-file-invoice',
+    quotation: 'fa-tags', project: 'fa-project-diagram'
+  };
+
+  container.innerHTML = items.map(function(t) {
+    const iconClass = t.category + (t.type === 'exit' ? ' exit' : t.type === 'adjustment' ? ' adjustment' : '');
+    let detailsHtml = '';
+    if (t.details) {
+      const d = t.details;
+      const parts = [];
+      if (d.user) parts.push('<span><i class="fas fa-user"></i> ' + d.user + '</span>');
+      if (d.project) parts.push('<span><i class="fas fa-project-diagram"></i> ' + d.project + '</span>');
+      if (d.supplier) parts.push('<span><i class="fas fa-truck"></i> ' + d.supplier + '</span>');
+      if (d.invoice) parts.push('<span><i class="fas fa-file-invoice"></i> ' + d.invoice + '</span>');
+      if (d.observation) parts.push('<span><i class="fas fa-comment"></i> ' + d.observation + '</span>');
+      if (d.unit_cost && d.unit_cost > 0) parts.push('<span><i class="fas fa-dollar-sign"></i> R$ ' + Number(d.unit_cost).toFixed(2) + '</span>');
+      if (parts.length) detailsHtml = '<div class="timeline-details">' + parts.join('') + '</div>';
+    }
+    return '<div class="timeline-item" data-category="' + t.category + '">' +
+      '<div class="timeline-icon ' + iconClass + '"><i class="fas ' + (iconMap[t.category] || 'fa-circle') + '"></i></div>' +
+      '<div class="timeline-body">' +
+        '<div class="timeline-title">' + t.title + '</div>' +
+        '<div class="timeline-desc">' + t.description + '</div>' +
+        detailsHtml +
+      '</div>' +
+      '<div class="timeline-date">' + (t.date ? fmtDate(t.date) : '—') + '</div>' +
+    '</div>';
+  }).join('');
 }
 
 loadProducts();

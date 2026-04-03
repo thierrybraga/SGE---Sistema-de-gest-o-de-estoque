@@ -1,7 +1,7 @@
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, jsonify, redirect, current_app, g
+from flask import request, jsonify, current_app, g
 
 
 def create_token(payload: dict) -> str:
@@ -37,17 +37,15 @@ def get_current_user():
 
 
 def page_login_required(f):
-    """Decorator para rotas HTML: valida o cookie session_token e redireciona para /login se invalido."""
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.cookies.get("session_token", "")
-        if not token:
-            return redirect("/login")
-        try:
-            payload = decode_token(token)
-            g.current_user = payload
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return redirect("/login")
+        if token:
+            try:
+                payload = decode_token(token)
+                g.current_user = payload
+            except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+                pass
         return f(*args, **kwargs)
     return decorated
 

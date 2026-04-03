@@ -1,0 +1,1224 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Ferramentas{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('tools') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Gestão de Ferramentas</div>
+      <div class="topbar-actions">
+        <button class="btn btn-secondary" onclick="showTab('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+        <button class="btn btn-secondary" onclick="showTab('inventory')"><i class="fas fa-toolbox"></i> Inventário</button>
+        <button class="btn btn-secondary" onclick="showTab('checkouts')"><i class="fas fa-hand-holding"></i> Retiradas</button>
+        <button class="btn btn-secondary" id="btn-tab-report" onclick="showTab('report')"><i class="fas fa-chart-bar"></i> Por Operador</button>
+        <button class="btn btn-primary" id="btn-new-checkout" onclick="openNewCheckout()"><i class="fas fa-plus"></i> Nova Retirada</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- ===== TAB: DASHBOARD ===== -->
+      <div id="tab-dashboard">
+        <div id="dashboard-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i> Ferramentas Críticas / Esgotadas
+            </div>
+            <div id="dashboard-critical"></div>
+          </div>
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <i class="fas fa-clock" style="color:var(--warn)"></i> Retiradas Vencidas
+            </div>
+            <div id="dashboard-overdue"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: INVENTORY ===== -->
+      <div id="tab-inventory" style="display:none">
+        <div class="flex gap-3 mb-4 items-center" style="flex-wrap:wrap">
+          <input id="inv-search" type="text" class="form-control" style="width:220px" placeholder="Buscar por nome, marca, SKU..." oninput="filterInventory()" />
+          <select id="inv-cat-filter" class="form-control" style="width:160px" onchange="filterInventory()">
+            <option value="">Todas categorias</option>
+          </select>
+          <select id="inv-cond-filter" class="form-control" style="width:140px" onchange="filterInventory()">
+            <option value="">Todas condições</option>
+            <option value="new">Novo</option>
+            <option value="good">Bom</option>
+            <option value="regular">Regular</option>
+            <option value="poor">Ruim</option>
+            <option value="maintenance">Manutenção</option>
+          </select>
+          <div class="flex gap-2 ml-auto">
+            <button class="btn btn-secondary" id="btn-import-csv" onclick="openModal('modal-import-csv')"><i class="fas fa-file-csv"></i> Importar CSV</button>
+            <button class="btn btn-primary" id="btn-new-tool" onclick="openNewTool()"><i class="fas fa-plus"></i> Nova Ferramenta</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ferramenta</th><th>Marca / SKU</th><th>Categoria</th>
+                  <th>Unidades</th><th>Em Uso</th><th>Disponível</th>
+                  <th>Valor Unit.</th><th>Condição</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: CHECKOUTS ===== -->
+      <div id="tab-checkouts" style="display:none">
+        <div class="flex gap-3 mb-4 items-center" style="flex-wrap:wrap">
+          <select id="co-status-filter" class="form-control" style="width:140px" onchange="loadCheckouts()">
+            <option value="">Todos status</option>
+            <option value="active">Ativo</option>
+            <option value="renewed">Renovado</option>
+            <option value="overdue">Vencido</option>
+            <option value="partial">Parcial</option>
+            <option value="returned">Devolvido</option>
+          </select>
+          <div id="co-operator-wrap">
+            <select id="co-operator-filter" class="form-control" style="width:200px" onchange="loadCheckouts()">
+              <option value="">Todos operadores</option>
+            </select>
+          </div>
+          <input id="co-date-from" type="date" class="form-control" style="width:140px" onchange="loadCheckouts()" title="Data inicial" />
+          <input id="co-date-to" type="date" class="form-control" style="width:140px" onchange="loadCheckouts()" title="Data final" />
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Operador</th><th>Ferramentas</th><th>Qtd</th>
+                  <th>Retirada</th><th>Devolução Prevista</th><th>Status</th>
+                  <th>Renovações</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="checkouts-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: OPERATOR REPORT ===== -->
+      <div id="tab-report" style="display:none">
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Operador</th><th>Perfil</th><th>Retiradas Ativas</th>
+                  <th>Vencidas</th><th>Total Retiradas</th>
+                  <th>Ferramentas Retiradas</th><th>Devolvidas</th><th>Última Retirada</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="report-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- page-body -->
+  </div>
+</div>
+
+<!-- ===== Modal: Create/Edit Tool ===== -->
+<div class="modal-overlay" id="modal-tool">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-tool-title">Nova Ferramenta</h2>
+      <button class="modal-close" onclick="closeModal('modal-tool')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="tool-id" />
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Nome *</label>
+        <input id="tool-name" type="text" class="form-control" placeholder="Ex: Furadeira de Impacto 750W" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Marca / Fabricante</label>
+        <input id="tool-brand" type="text" class="form-control" placeholder="Ex: Bosch" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">SKU (opcional)</label>
+        <input id="tool-sku" type="text" class="form-control" placeholder="SKU-001" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <input id="tool-category" type="text" class="form-control" list="tool-cat-list" placeholder="Ex: Elétrica" />
+        <datalist id="tool-cat-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Condição</label>
+        <select id="tool-condition" class="form-control">
+          <option value="new">Novo</option>
+          <option value="good" selected>Bom</option>
+          <option value="regular">Regular</option>
+          <option value="poor">Ruim</option>
+          <option value="maintenance">Manutenção</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Total de Unidades *</label>
+        <input id="tool-units" type="number" min="1" class="form-control" value="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidades Mínimas (alerta)</label>
+        <input id="tool-min-units" type="number" min="0" class="form-control" value="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor Unitário (R$)</label>
+        <input id="tool-value" type="number" step="0.01" min="0" class="form-control" value="0" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Número da NF (opcional)</label>
+        <input id="tool-invoice-number" type="text" class="form-control" placeholder="NF-0001" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <input id="tool-description" type="text" class="form-control" placeholder="Detalhes técnicos..." />
+      </div>
+    </div>
+    <!-- Photo upload -->
+    <div class="form-group">
+      <label class="form-label">Foto da Ferramenta (opcional)</label>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <label style="cursor:pointer;border:1px dashed var(--border);border-radius:8px;padding:12px 20px;font-size:13px;color:var(--text2);text-align:center">
+          <i class="fas fa-camera" style="font-size:20px;display:block;margin-bottom:6px"></i>
+          Selecionar foto
+          <input type="file" id="tool-photo-file" accept="image/*" style="display:none" onchange="handleToolPhotoSelect(this)" />
+        </label>
+        <div id="tool-photo-preview" style="display:none">
+          <img id="tool-photo-img" style="max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border)" />
+          <button type="button" class="btn btn-secondary btn-sm" style="display:block;margin-top:6px" onclick="clearToolPhoto()">Remover</button>
+        </div>
+      </div>
+      <input type="hidden" id="tool-photo-b64" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-tool')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTool()"><i class="fas fa-save"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Import CSV ===== -->
+<div class="modal-overlay" id="modal-import-csv">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">📂 Importar Ferramentas via CSV</h2>
+      <button class="modal-close" onclick="closeModal('modal-import-csv')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="alert alert-info" style="font-size:13px;margin-bottom:16px">
+      <strong>Colunas esperadas (cabeçalho na 1ª linha):</strong><br>
+      <code>nome*</code>, <code>marca</code>, <code>sku</code>, <code>categoria</code>, <code>descricao</code>,
+      <code>valor_unitario</code>, <code>total_unidades*</code>, <code>unidades_minimas</code>,
+      <code>condicao</code>, <code>numero_nota</code><br>
+      <span style="color:var(--text3)">* obrigatório</span>
+    </div>
+    <div class="file-drop" onclick="document.getElementById('csv-file').click()">
+      <i class="fas fa-file-csv" style="font-size:32px;color:var(--accent);margin-bottom:8px"></i>
+      <p>Arraste o arquivo CSV aqui ou <span>clique para selecionar</span></p>
+      <input type="file" id="csv-file" accept=".csv,.txt" style="display:none" onchange="handleCsvSelect(this)" />
+    </div>
+    <div id="csv-preview" style="display:none;margin-top:12px"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import-csv')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-import-csv" onclick="doImportCsv()" disabled><i class="fas fa-upload"></i> Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: New Checkout ===== -->
+<div class="modal-overlay" id="modal-checkout">
+  <div class="modal modal-lg" style="max-width:740px">
+    <div class="modal-header">
+      <h2 class="modal-title">🛠 Nova Retirada de Ferramenta</h2>
+      <button class="modal-close" onclick="closeModal('modal-checkout')"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Operador *</label>
+        <select id="co-operator-sel" class="form-control"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data de Devolução Prevista</label>
+        <input id="co-return-date" type="date" class="form-control" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Projeto (opcional)</label>
+        <select id="co-project-sel" class="form-control"><option value="">Nenhum</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação</label>
+        <input id="co-observation" type="text" class="form-control" placeholder="Finalidade, local de uso..." />
+      </div>
+    </div>
+
+    <!-- Tools selector -->
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div class="flex justify-between items-center mb-3">
+        <strong style="font-size:14px">Ferramentas Selecionadas</strong>
+        <button class="btn btn-secondary btn-sm" onclick="addToolRow()"><i class="fas fa-plus"></i> Adicionar</button>
+      </div>
+      <div id="co-tools-list">
+        <!-- rows injected by JS -->
+      </div>
+    </div>
+
+    <!-- Checkout photo -->
+    <div class="form-group">
+      <label class="form-label">Foto na Retirada (opcional)</label>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <label style="cursor:pointer;border:1px dashed var(--border);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--text2)">
+          <i class="fas fa-camera"></i> Foto
+          <input type="file" id="co-photo-file" accept="image/*" style="display:none" onchange="handlePhotoSelect(this,'co-photo-b64','co-photo-preview','co-photo-img')" />
+        </label>
+        <div id="co-photo-preview" style="display:none">
+          <img id="co-photo-img" style="max-width:100px;max-height:100px;border-radius:6px;border:1px solid var(--border)" />
+          <button type="button" class="btn btn-secondary btn-sm" style="display:block;margin-top:4px" onclick="clearPhoto('co-photo-b64','co-photo-preview')">Remover</button>
+        </div>
+      </div>
+      <input type="hidden" id="co-photo-b64" />
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-checkout')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCheckout()"><i class="fas fa-check"></i> Confirmar Retirada</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Checkout Detail ===== -->
+<div class="modal-overlay" id="modal-checkout-detail">
+  <div class="modal modal-lg" style="max-width:760px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="detail-title">Detalhe da Retirada</h2>
+      <button class="modal-close" onclick="closeModal('modal-checkout-detail')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="detail-info" style="margin-bottom:16px"></div>
+    <div id="detail-items-table"></div>
+    <div class="modal-footer" id="detail-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-checkout-detail')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Return Tools ===== -->
+<div class="modal-overlay" id="modal-return">
+  <div class="modal modal-lg" style="max-width:680px">
+    <div class="modal-header">
+      <h2 class="modal-title">📦 Devolver Ferramentas</h2>
+      <button class="modal-close" onclick="closeModal('modal-return')"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-muted text-sm mb-4" id="return-subtitle"></p>
+    <div id="return-items-list"></div>
+    <div class="form-group">
+      <label class="form-label">Observação Geral</label>
+      <input id="return-observation" type="text" class="form-control" placeholder="Condição geral na devolução..." />
+    </div>
+    <!-- Return photo -->
+    <div class="form-group">
+      <label class="form-label">Foto na Devolução (opcional)</label>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <label style="cursor:pointer;border:1px dashed var(--border);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--text2)">
+          <i class="fas fa-camera"></i> Foto
+          <input type="file" id="ret-photo-file" accept="image/*" style="display:none" onchange="handlePhotoSelect(this,'ret-photo-b64','ret-photo-preview','ret-photo-img')" />
+        </label>
+        <div id="ret-photo-preview" style="display:none">
+          <img id="ret-photo-img" style="max-width:100px;max-height:100px;border-radius:6px;border:1px solid var(--border)" />
+          <button type="button" class="btn btn-secondary btn-sm" style="display:block;margin-top:4px" onclick="clearPhoto('ret-photo-b64','ret-photo-preview')">Remover</button>
+        </div>
+      </div>
+      <input type="hidden" id="ret-photo-b64" />
+    </div>
+    <input type="hidden" id="return-checkout-id" />
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-return')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmReturn()"><i class="fas fa-undo"></i> Confirmar Devolução</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Renew ===== -->
+<div class="modal-overlay" id="modal-renew">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">🔄 Renovar Prazo de Devolução</h2>
+      <button class="modal-close" onclick="closeModal('modal-renew')"><i class="fas fa-times"></i></button>
+    </div>
+    <p class="text-muted text-sm mb-4" id="renew-subtitle"></p>
+    <div class="form-group">
+      <label class="form-label">Nova Data de Devolução *</label>
+      <input id="renew-new-date" type="date" class="form-control" />
+    </div>
+    <input type="hidden" id="renew-checkout-id" />
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-renew')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmRenew()"><i class="fas fa-calendar-check"></i> Renovar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Operator Detail ===== -->
+<div class="modal-overlay" id="modal-op-detail">
+  <div class="modal modal-lg" style="max-width:860px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="op-detail-title">Histórico do Operador</h2>
+      <button class="modal-close" onclick="closeModal('modal-op-detail')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="op-detail-current" style="margin-bottom:16px"></div>
+    <h4 style="font-size:14px;font-weight:700;margin-bottom:8px">Ferramentas Atualmente com o Operador</h4>
+    <div id="op-detail-tools" style="margin-bottom:16px"></div>
+    <h4 style="font-size:14px;font-weight:700;margin-bottom:8px">Histórico de Retiradas</h4>
+    <div id="op-detail-history"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-op-detail')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+const userRole = getUser()?.role || '';
+const canManage = ['admin','manager'].includes(userRole);
+const canOperate = ['admin','manager','operator'].includes(userRole);
+
+// Hide admin-only UI
+if (!canManage) {
+  document.getElementById('btn-tab-report').style.display = 'none';
+  document.getElementById('btn-import-csv').style.display = 'none';
+}
+if (!canOperate) {
+  document.getElementById('btn-new-checkout').style.display = 'none';
+  document.getElementById('btn-new-tool').style.display = 'none';
+}
+
+let allToolsCache = [];
+let allUsersCache = [];
+let allProjectsCache = [];
+let selectedCsvFile = null;
+
+const COND_LABEL = { new:'Novo', good:'Bom', regular:'Regular', poor:'Ruim', maintenance:'Manutenção' };
+const COND_BADGE = { new:'badge-info', good:'badge-success', regular:'badge-warning', poor:'badge-danger', maintenance:'badge-gray' };
+const STATUS_LABEL = { active:'Ativo', returned:'Devolvido', overdue:'Vencido', renewed:'Renovado', partial:'Parcial' };
+const STATUS_BADGE = { active:'badge-success', returned:'badge-gray', overdue:'badge-danger', renewed:'badge-info', partial:'badge-warning' };
+
+// ─────────────────────────────────────────────
+// Tab management
+// ─────────────────────────────────────────────
+
+let currentTab = 'dashboard';
+function showTab(tab) {
+  currentTab = tab;
+  ['dashboard','inventory','checkouts','report'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'dashboard') loadDashboard();
+  else if (tab === 'inventory') loadInventory();
+  else if (tab === 'checkouts') loadCheckouts();
+  else if (tab === 'report') loadReport();
+}
+
+// ─────────────────────────────────────────────
+// Dashboard
+// ─────────────────────────────────────────────
+
+async function loadDashboard() {
+  document.getElementById('dashboard-stats').innerHTML = `<div style="grid-column:1/-1">${skeletonRows(1,4)}</div>`;
+  try {
+    const d = await api.get('/tools/report/summary');
+    document.getElementById('dashboard-stats').innerHTML = [
+      { icon:'fa-toolbox', label:'Total Ferramentas', val:d.total_tools, color:'var(--accent)' },
+      { icon:'fa-boxes', label:'Total Unidades', val:d.total_units, color:'var(--text)' },
+      { icon:'fa-hand-holding', label:'Em Uso', val:d.units_in_use, color:'var(--warn)' },
+      { icon:'fa-check-circle', label:'Disponíveis', val:d.available_units, color:'var(--success)' },
+      { icon:'fa-dollar-sign', label:'Valor Total', val:fmtCurrency(d.total_value), color:'var(--accent2)' },
+      { icon:'fa-coins', label:'Valor em Uso', val:fmtCurrency(d.value_in_use), color:'var(--accent3)' },
+      { icon:'fa-clock', label:'Retiradas Ativas', val:d.active_checkouts, color:'var(--accent)' },
+      { icon:'fa-exclamation-circle', label:'Vencidas', val:d.overdue_checkouts, color: d.overdue_checkouts > 0 ? 'var(--danger)' : 'var(--text2)' },
+    ].map(s => `<div class="card card-sm" style="text-align:center">
+      <i class="fas ${s.icon}" style="font-size:20px;color:${s.color};margin-bottom:6px"></i>
+      <div style="font-size:20px;font-weight:700;color:${s.color}">${s.val}</div>
+      <div style="font-size:11px;color:var(--text2)">${s.label}</div>
+    </div>`).join('');
+
+    // Critical
+    const crit = d.critical_list || [];
+    document.getElementById('dashboard-critical').innerHTML = crit.length
+      ? `<div class="table-wrapper"><table><thead><tr><th>Ferramenta</th><th>Disponível</th><th>Mínimo</th><th>Total</th></tr></thead><tbody>${
+        crit.map(t => `<tr>
+          <td><strong>${t.name}</strong>${t.brand ? `<div class="text-muted text-sm">${t.brand}</div>` : ''}</td>
+          <td><span style="color:${t.available_units === 0 ? 'var(--danger)' : 'var(--warn)'}; font-weight:700">${t.available_units}</span></td>
+          <td>${t.min_units}</td>
+          <td>${t.total_units}</td>
+        </tr>`).join('')
+      }</tbody></table></div>`
+      : '<div class="empty-state" style="padding:20px"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>Nenhuma ferramenta crítica</p></div>';
+
+    // Overdue
+    const ov = d.overdue_list || [];
+    document.getElementById('dashboard-overdue').innerHTML = ov.length
+      ? ov.map(o => `<div class="card card-sm mb-3">
+          <div class="flex justify-between">
+            <strong>${o.operator_name || '—'}</strong>
+            <span class="text-mono text-sm" style="color:var(--danger)">${o.expected_return_date ? o.expected_return_date.substring(0,10) : '—'}</span>
+          </div>
+          <div class="text-muted text-sm">${o.tools_list || '—'}</div>
+          <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="openRenew('${o.id}','',null)">Renovar</button>
+        </div>`).join('')
+      : '<div class="empty-state" style="padding:20px"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>Sem retiradas vencidas</p></div>';
+  } catch(e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────────
+// Inventory
+// ─────────────────────────────────────────────
+
+async function loadInventory() {
+  const tbody = document.getElementById('inventory-table');
+  tbody.innerHTML = skeletonRows(9, 6);
+  try {
+    const tools = await api.get('/tools/');
+    allToolsCache = tools;
+    const cats = await api.get('/tools/categories').catch(() => []);
+    const catSel = document.getElementById('inv-cat-filter');
+    const prev = catSel.value;
+    catSel.innerHTML = '<option value="">Todas categorias</option>' +
+      cats.map(c => `<option value="${c}" ${c===prev?'selected':''}>${c}</option>`).join('');
+    // populate datalist for form
+    document.getElementById('tool-cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+    renderInventory(tools);
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadInventory);
+  }
+}
+
+function filterInventory() {
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const cat = document.getElementById('inv-cat-filter').value;
+  const cond = document.getElementById('inv-cond-filter').value;
+  const filtered = allToolsCache.filter(t =>
+    (!q || t.name.toLowerCase().includes(q) || (t.brand||'').toLowerCase().includes(q) || (t.sku||'').toLowerCase().includes(q)) &&
+    (!cat || t.category === cat) &&
+    (!cond || t.condition === cond)
+  );
+  renderInventory(filtered);
+}
+
+function renderInventory(tools) {
+  const tbody = document.getElementById('inventory-table');
+  if (!tools.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fas fa-toolbox"></i><h3>Nenhuma ferramenta</h3></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = tools.map(t => {
+    const avail = t.available_units;
+    const total = t.total_units;
+    const inUse = t.units_in_use || 0;
+    const critical = t.min_units > 0 && avail <= t.min_units;
+    const missing = avail === 0 && total > 0;
+    const availColor = missing ? 'var(--danger)' : critical ? 'var(--warn)' : 'var(--success)';
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div>
+            <strong>${t.name}</strong>
+            ${t.description ? `<div class="text-muted text-sm">${t.description.substring(0,50)}</div>` : ''}
+            ${t.invoice_number ? `<div class="text-muted text-sm">NF: ${t.invoice_number}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td>
+        ${t.brand ? `<div>${t.brand}</div>` : '—'}
+        ${t.sku ? `<div class="text-mono text-sm">${t.sku}</div>` : ''}
+      </td>
+      <td><span class="badge badge-gray">${t.category || '—'}</span></td>
+      <td class="text-mono text-center">${total}</td>
+      <td class="text-mono text-center" style="color:var(--warn);font-weight:600">${inUse}</td>
+      <td class="text-mono text-center">
+        <span style="color:${availColor};font-weight:700">${avail}</span>
+        ${critical ? ' <i class="fas fa-exclamation-triangle" style="color:var(--warn);font-size:11px" title="Estoque crítico"></i>' : ''}
+        ${missing ? ' <i class="fas fa-times-circle" style="color:var(--danger);font-size:11px" title="Sem disponibilidade"></i>' : ''}
+      </td>
+      <td class="text-mono">${t.unit_value > 0 ? fmtCurrency(t.unit_value) : '—'}</td>
+      <td><span class="badge ${COND_BADGE[t.condition]||'badge-gray'}">${COND_LABEL[t.condition]||t.condition}</span></td>
+      <td>
+        <div class="flex gap-2">
+          ${canOperate ? `<button class="btn btn-secondary btn-sm btn-icon" onclick="openNewCheckoutFor('${t.id}')" title="Retirar" ${avail<=0?'disabled':''}>
+            <i class="fas fa-hand-holding" style="color:var(--accent)"></i>
+          </button>` : ''}
+          ${canOperate ? `<button class="btn btn-secondary btn-sm btn-icon" onclick="editTool('${t.id}')" title="Editar">
+            <i class="fas fa-edit"></i>
+          </button>` : ''}
+          ${canManage ? `<button class="btn btn-secondary btn-sm btn-icon" onclick="deactivateTool('${t.id}')" title="Desativar">
+            <i class="fas fa-ban" style="color:var(--danger)"></i>
+          </button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// Checkouts
+// ─────────────────────────────────────────────
+
+async function loadCheckouts() {
+  const tbody = document.getElementById('checkouts-table');
+  tbody.innerHTML = skeletonRows(8, 6);
+  const status = document.getElementById('co-status-filter').value;
+  const opId = canManage ? document.getElementById('co-operator-filter').value : '';
+  const dateFrom = document.getElementById('co-date-from').value;
+  const dateTo = document.getElementById('co-date-to').value;
+  let url = '/tools/checkouts/?';
+  if (status) url += `status=${status}&`;
+  if (opId) url += `operator_id=${opId}&`;
+  if (dateFrom) url += `date_from=${dateFrom}&`;
+  if (dateTo) url += `date_to=${dateTo}&`;
+  try {
+    const checkouts = await api.get(url);
+    if (!checkouts.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="fas fa-hand-holding"></i><h3>Nenhuma retirada</h3></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = checkouts.map(co => {
+      const overdue = co.status === 'overdue' || (co.expected_return_date && new Date(co.expected_return_date) < new Date() && co.status !== 'returned');
+      return `<tr>
+        <td>
+          <strong>${co.operator_name || '—'}</strong>
+          <div class="text-muted text-sm">${co.operator_role || ''}</div>
+        </td>
+        <td><span class="badge badge-gray">${co.tool_count || 0} ferramenta${co.tool_count!=1?'s':''}</span></td>
+        <td class="text-mono">${co.total_qty || 0}</td>
+        <td class="text-muted text-sm">${fmtDatetime(co.checkout_date)}</td>
+        <td class="text-mono ${overdue && co.status!=='returned' ? 'text-danger' : ''}" style="${overdue && co.status!=='returned' ? 'color:var(--danger);font-weight:700' : ''}">
+          ${co.expected_return_date ? co.expected_return_date.substring(0,10) : '—'}
+        </td>
+        <td><span class="badge ${STATUS_BADGE[co.status]||'badge-gray'}">${STATUS_LABEL[co.status]||co.status}</span></td>
+        <td class="text-mono text-center">${co.renewed_count || 0}</td>
+        <td>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openCheckoutDetail('${co.id}')" title="Detalhe">
+              <i class="fas fa-eye" style="color:var(--accent)"></i>
+            </button>
+            ${co.status !== 'returned' && canOperate ? `
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openReturn('${co.id}')" title="Devolver">
+              <i class="fas fa-undo" style="color:var(--success)"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="openRenew('${co.id}','${co.operator_name||''}','${co.expected_return_date||''}')" title="Renovar prazo">
+              <i class="fas fa-calendar-plus" style="color:var(--warn)"></i>
+            </button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadCheckouts);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Report by operator
+// ─────────────────────────────────────────────
+
+async function loadReport() {
+  const tbody = document.getElementById('report-table');
+  tbody.innerHTML = skeletonRows(9, 4);
+  try {
+    const rows = await api.get('/tools/report/by-operator');
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><i class="fas fa-users"></i><h3>Sem dados</h3></div></td></tr>`;
+      return;
+    }
+    const roleLabel = { operator:'Operador', manager:'Gerente', admin:'Admin', buyer:'Comprador' };
+    tbody.innerHTML = rows.map(r => `<tr>
+      <td><strong>${r.operator_name}</strong></td>
+      <td><span class="badge badge-gray">${roleLabel[r.role]||r.role}</span></td>
+      <td class="text-mono text-center" style="color:${r.active_checkouts>0?'var(--accent)':'var(--text2)'}"><strong>${r.active_checkouts}</strong></td>
+      <td class="text-mono text-center" style="color:${r.overdue_checkouts>0?'var(--danger)':'var(--text2)'}"><strong>${r.overdue_checkouts}</strong></td>
+      <td class="text-mono text-center">${r.total_checkouts}</td>
+      <td class="text-mono text-center">${r.total_tools_taken}</td>
+      <td class="text-mono text-center">${r.total_returned}</td>
+      <td class="text-muted text-sm">${r.last_checkout_date ? fmtDatetime(r.last_checkout_date) : '—'}</td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openOpDetail('${r.operator_id}','${r.operator_name}')">
+          <i class="fas fa-list"></i> Detalhes
+        </button>
+      </td>
+    </tr>`).join('');
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadReport);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Tool Create / Edit
+// ─────────────────────────────────────────────
+
+function openNewTool() {
+  document.getElementById('tool-id').value = '';
+  ['tool-name','tool-brand','tool-sku','tool-category','tool-description','tool-invoice-number'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('tool-units').value = '1';
+  document.getElementById('tool-min-units').value = '0';
+  document.getElementById('tool-value').value = '0';
+  document.getElementById('tool-condition').value = 'good';
+  clearToolPhoto();
+  document.getElementById('modal-tool-title').textContent = 'Nova Ferramenta';
+  openModal('modal-tool');
+}
+
+async function editTool(toolId) {
+  try {
+    const t = await api.get(`/tools/${toolId}?photo=1`);
+    document.getElementById('tool-id').value = t.id;
+    document.getElementById('tool-name').value = t.name || '';
+    document.getElementById('tool-brand').value = t.brand || '';
+    document.getElementById('tool-sku').value = t.sku || '';
+    document.getElementById('tool-category').value = t.category || '';
+    document.getElementById('tool-description').value = t.description || '';
+    document.getElementById('tool-invoice-number').value = t.invoice_number || '';
+    document.getElementById('tool-units').value = t.total_units || 1;
+    document.getElementById('tool-min-units').value = t.min_units || 0;
+    document.getElementById('tool-value').value = t.unit_value || 0;
+    document.getElementById('tool-condition').value = t.condition || 'good';
+    if (t.photo_base64) {
+      document.getElementById('tool-photo-b64').value = t.photo_base64;
+      document.getElementById('tool-photo-img').src = t.photo_base64.startsWith('data:') ? t.photo_base64 : `data:image/jpeg;base64,${t.photo_base64}`;
+      document.getElementById('tool-photo-preview').style.display = '';
+    } else {
+      clearToolPhoto();
+    }
+    document.getElementById('modal-tool-title').textContent = 'Editar Ferramenta';
+    openModal('modal-tool');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function saveTool() {
+  const id = document.getElementById('tool-id').value;
+  const data = {
+    name: document.getElementById('tool-name').value.trim(),
+    brand: document.getElementById('tool-brand').value.trim() || null,
+    sku: document.getElementById('tool-sku').value.trim() || null,
+    category: document.getElementById('tool-category').value.trim() || null,
+    description: document.getElementById('tool-description').value.trim() || null,
+    invoice_number: document.getElementById('tool-invoice-number').value.trim() || null,
+    total_units: parseInt(document.getElementById('tool-units').value) || 1,
+    min_units: parseInt(document.getElementById('tool-min-units').value) || 0,
+    unit_value: parseFloat(document.getElementById('tool-value').value) || 0,
+    condition: document.getElementById('tool-condition').value,
+    photo_base64: document.getElementById('tool-photo-b64').value || null,
+  };
+  if (!data.name) { showToast('Nome é obrigatório', 'error'); return; }
+  try {
+    if (id) { await api.put(`/tools/${id}`, data); showToast('Ferramenta atualizada!'); }
+    else { await api.post('/tools/', data); showToast('Ferramenta cadastrada!'); }
+    closeModal('modal-tool');
+    loadInventory();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deactivateTool(toolId) {
+  if (!confirm('Confirma desativação desta ferramenta?')) return;
+  try {
+    await api.post(`/tools/${toolId}/deactivate`, {});
+    showToast('Ferramenta desativada.');
+    loadInventory();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function handleToolPhotoSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('tool-photo-b64').value = e.target.result;
+    document.getElementById('tool-photo-img').src = e.target.result;
+    document.getElementById('tool-photo-preview').style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearToolPhoto() {
+  document.getElementById('tool-photo-b64').value = '';
+  document.getElementById('tool-photo-preview').style.display = 'none';
+  document.getElementById('tool-photo-file').value = '';
+}
+
+// ─────────────────────────────────────────────
+// CSV Import
+// ─────────────────────────────────────────────
+
+function handleCsvSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedCsvFile = file;
+  document.getElementById('csv-preview').style.display = '';
+  document.getElementById('csv-preview').innerHTML = `<div class="alert alert-info">Arquivo: <strong>${file.name}</strong> (${(file.size/1024).toFixed(1)} KB)</div>`;
+  document.getElementById('btn-do-import-csv').disabled = false;
+}
+
+async function doImportCsv() {
+  if (!selectedCsvFile) return;
+  const formData = new FormData();
+  formData.append('file', selectedCsvFile);
+  try {
+    const result = await fetch('/api/tools/import-csv', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: formData,
+    }).then(async r => {
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || r.statusText);
+      return d;
+    });
+    const errMsg = result.errors?.length
+      ? `\n${result.errors.length} erro(s): ${result.errors.map(e => `Linha ${e.row}: ${e.error}`).join('; ')}`
+      : '';
+    showToast(`${result.created} ferramenta(s) importada(s)!${errMsg}`, result.errors?.length ? 'warn' : 'success');
+    closeModal('modal-import-csv');
+    selectedCsvFile = null;
+    document.getElementById('btn-do-import-csv').disabled = true;
+    document.getElementById('csv-file').value = '';
+    document.getElementById('csv-preview').style.display = 'none';
+    loadInventory();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Checkout creation
+// ─────────────────────────────────────────────
+
+let coToolRows = [];
+
+async function openNewCheckout() {
+  await _loadCheckoutFormData();
+  coToolRows = [];
+  document.getElementById('co-tools-list').innerHTML = '';
+  document.getElementById('co-observation').value = '';
+  document.getElementById('co-return-date').value = '';
+  clearPhoto('co-photo-b64','co-photo-preview');
+  addToolRow();
+  openModal('modal-checkout');
+}
+
+async function openNewCheckoutFor(toolId) {
+  await _loadCheckoutFormData();
+  coToolRows = [];
+  document.getElementById('co-tools-list').innerHTML = '';
+  document.getElementById('co-observation').value = '';
+  document.getElementById('co-return-date').value = '';
+  clearPhoto('co-photo-b64','co-photo-preview');
+  addToolRow(toolId);
+  openModal('modal-checkout');
+}
+
+async function _loadCheckoutFormData() {
+  try {
+    const [users, projects] = await Promise.all([
+      api.get('/auth/users').catch(() => []),
+      api.get('/projects/').catch(() => []),
+    ]);
+    allUsersCache = (users.users || users).filter(u => u.active);
+    allProjectsCache = projects || [];
+
+    const opSel = document.getElementById('co-operator-sel');
+    const curUser = getUser();
+    if (userRole === 'operator') {
+      opSel.innerHTML = `<option value="${curUser.id}" selected>${curUser.name}</option>`;
+      opSel.disabled = true;
+    } else {
+      opSel.disabled = false;
+      opSel.innerHTML = '<option value="">Selecione...</option>' +
+        allUsersCache
+          .filter(u => ['operator','manager','admin'].includes(u.role))
+          .map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join('');
+    }
+
+    const projSel = document.getElementById('co-project-sel');
+    projSel.innerHTML = '<option value="">Nenhum</option>' +
+      allProjectsCache.filter(p => p.status === 'active').map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+    // Populate operator filter in checkouts tab
+    const opFilter = document.getElementById('co-operator-filter');
+    if (canManage) {
+      const prev = opFilter.value;
+      opFilter.innerHTML = '<option value="">Todos operadores</option>' +
+        allUsersCache.map(u => `<option value="${u.id}" ${u.id===prev?'selected':''}>${u.name}</option>`).join('');
+    }
+  } catch(e) {
+    console.warn('Error loading checkout form data:', e);
+  }
+}
+
+function addToolRow(presetToolId) {
+  const rowId = Date.now();
+  coToolRows.push(rowId);
+  const available = allToolsCache.filter(t => t.available_units > 0);
+  const div = document.createElement('div');
+  div.id = `co-tool-row-${rowId}`;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 80px auto;gap:8px;margin-bottom:8px;align-items:flex-end';
+  div.innerHTML = `
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Ferramenta</label>
+      <select class="form-control co-tool-sel" data-row="${rowId}">
+        <option value="">Selecione...</option>
+        ${available.map(t => `<option value="${t.id}" ${t.id===presetToolId?'selected':''}>${t.name}${t.brand?' ('+t.brand+')':''} — disp: ${t.available_units}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Qtd</label>
+      <input type="number" min="1" value="1" class="form-control co-tool-qty" data-row="${rowId}" />
+    </div>
+    <button type="button" class="btn btn-secondary btn-icon" onclick="removeToolRow(${rowId})" title="Remover" style="margin-bottom:1px">
+      <i class="fas fa-trash" style="color:var(--danger)"></i>
+    </button>
+  `;
+  document.getElementById('co-tools-list').appendChild(div);
+}
+
+function removeToolRow(rowId) {
+  const el = document.getElementById(`co-tool-row-${rowId}`);
+  if (el) el.remove();
+  coToolRows = coToolRows.filter(r => r !== rowId);
+}
+
+async function saveCheckout() {
+  const operatorId = document.getElementById('co-operator-sel').value;
+  if (!operatorId) { showToast('Selecione o operador', 'error'); return; }
+  const items = [];
+  const sels = document.querySelectorAll('.co-tool-sel');
+  const qtys = document.querySelectorAll('.co-tool-qty');
+  for (let i = 0; i < sels.length; i++) {
+    const toolId = sels[i].value;
+    const qty = parseInt(qtys[i].value) || 1;
+    if (!toolId) { showToast('Selecione a ferramenta em todos os itens', 'error'); return; }
+    items.push({ tool_id: toolId, quantity: qty });
+  }
+  if (!items.length) { showToast('Adicione ao menos uma ferramenta', 'error'); return; }
+  const data = {
+    operator_id: operatorId,
+    items,
+    expected_return_date: document.getElementById('co-return-date').value || null,
+    project_id: document.getElementById('co-project-sel').value || null,
+    observation: document.getElementById('co-observation').value || null,
+    checkout_photo: document.getElementById('co-photo-b64').value || null,
+  };
+  try {
+    await api.post('/tools/checkouts/', data);
+    showToast('Retirada registrada com sucesso!');
+    closeModal('modal-checkout');
+    loadInventory();
+    if (currentTab === 'checkouts') loadCheckouts();
+    if (currentTab === 'dashboard') loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Checkout detail
+// ─────────────────────────────────────────────
+
+async function openCheckoutDetail(checkoutId) {
+  openModal('modal-checkout-detail');
+  document.getElementById('detail-info').innerHTML = skeletonRows(1, 4);
+  document.getElementById('detail-items-table').innerHTML = '';
+  try {
+    const co = await api.get(`/tools/checkouts/${checkoutId}?photos=1`);
+    document.getElementById('detail-title').innerHTML =
+      `Retirada — <span class="badge ${STATUS_BADGE[co.status]||'badge-gray'}">${STATUS_LABEL[co.status]||co.status}</span>`;
+    document.getElementById('detail-info').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+        <div><span class="text-muted text-sm">Operador</span><div><strong>${co.operator_name||'—'}</strong> <span class="text-muted text-sm">(${co.operator_role||''})</span></div></div>
+        <div><span class="text-muted text-sm">Retirada em</span><div>${fmtDatetime(co.checkout_date)}</div></div>
+        <div><span class="text-muted text-sm">Devolução Prevista</span><div>${co.expected_return_date ? co.expected_return_date.substring(0,10) : '—'}</div></div>
+        <div><span class="text-muted text-sm">Projeto</span><div>${co.project_name||'—'}</div></div>
+        <div><span class="text-muted text-sm">Devolução Real</span><div>${co.actual_return_date ? fmtDatetime(co.actual_return_date) : '—'}</div></div>
+        <div><span class="text-muted text-sm">Renovações</span><div>${co.renewed_count||0}×</div></div>
+      </div>
+      ${co.observation ? `<div class="alert alert-info" style="margin-bottom:12px"><i class="fas fa-comment"></i> ${co.observation}</div>` : ''}
+      ${co.checkout_photo ? `<div style="margin-bottom:12px"><img src="${co.checkout_photo.startsWith('data:')?co.checkout_photo:'data:image/jpeg;base64,'+co.checkout_photo}" style="max-height:160px;border-radius:8px;border:1px solid var(--border)" /><div class="text-muted text-sm">Foto na retirada</div></div>` : ''}
+      ${co.return_photo ? `<div style="margin-bottom:12px"><img src="${co.return_photo.startsWith('data:')?co.return_photo:'data:image/jpeg;base64,'+co.return_photo}" style="max-height:160px;border-radius:8px;border:1px solid var(--border)" /><div class="text-muted text-sm">Foto na devolução</div></div>` : ''}
+    `;
+    const items = co.items || [];
+    document.getElementById('detail-items-table').innerHTML = `
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Ferramenta</th><th>Marca</th><th>Categoria</th><th>Retirado</th><th>Devolvido</th><th>Condição Devolução</th><th>Obs.</th></tr></thead>
+        <tbody>${items.map(i => `<tr>
+          <td><strong>${i.tool_name||'—'}</strong></td>
+          <td>${i.brand||'—'}</td>
+          <td>${i.category||'—'}</td>
+          <td class="text-mono text-center">${i.quantity}</td>
+          <td class="text-mono text-center" style="color:${(i.returned_quantity||0)>=i.quantity?'var(--success)':'var(--warn)'}">
+            ${i.returned_quantity||0}/${i.quantity}
+          </td>
+          <td>${i.condition_on_return ? `<span class="badge ${COND_BADGE[i.condition_on_return]||'badge-gray'}">${COND_LABEL[i.condition_on_return]||i.condition_on_return}</span>` : '—'}</td>
+          <td class="text-muted text-sm">${i.observation||'—'}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table></div>
+    `;
+    const footer = document.getElementById('detail-footer');
+    footer.innerHTML = `<button class="btn btn-secondary" onclick="closeModal('modal-checkout-detail')">Fechar</button>`;
+    if (co.status !== 'returned' && canOperate) {
+      footer.innerHTML += `
+        <button class="btn btn-secondary" onclick="closeModal('modal-checkout-detail');openRenew('${checkoutId}','${co.operator_name||''}','${co.expected_return_date||''}')">
+          <i class="fas fa-calendar-plus"></i> Renovar
+        </button>
+        <button class="btn btn-primary" onclick="closeModal('modal-checkout-detail');openReturn('${checkoutId}')">
+          <i class="fas fa-undo"></i> Devolver
+        </button>`;
+    }
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Return
+// ─────────────────────────────────────────────
+
+async function openReturn(checkoutId) {
+  document.getElementById('return-checkout-id').value = checkoutId;
+  document.getElementById('return-observation').value = '';
+  clearPhoto('ret-photo-b64','ret-photo-preview');
+  openModal('modal-return');
+  document.getElementById('return-subtitle').textContent = 'Carregando...';
+  document.getElementById('return-items-list').innerHTML = '';
+  try {
+    const co = await api.get(`/tools/checkouts/${checkoutId}`);
+    document.getElementById('return-subtitle').textContent = `Operador: ${co.operator_name} | Retirada: ${fmtDatetime(co.checkout_date)}`;
+    const pending = (co.items||[]).filter(i => (i.returned_quantity||0) < i.quantity);
+    document.getElementById('return-items-list').innerHTML = pending.map(item => {
+      const remaining = item.quantity - (item.returned_quantity||0);
+      return `<div class="card card-sm mb-3">
+        <div class="flex justify-between items-center mb-3">
+          <strong>${item.tool_name||'—'}</strong>
+          <span class="text-muted text-sm">Pendente: ${remaining}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Qtd Devolvida</label>
+            <input type="number" min="0" max="${remaining}" value="${remaining}" class="form-control ret-qty-input" data-item-id="${item.id}" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Condição</label>
+            <select class="form-control ret-cond-input" data-item-id="${item.id}">
+              ${['new','good','regular','poor','maintenance'].map(c => `<option value="${c}" ${c===item.tool_condition?'selected':''}>${COND_LABEL[c]}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Observação</label>
+            <input type="text" class="form-control ret-obs-input" data-item-id="${item.id}" placeholder="Ex: Danificado" />
+          </div>
+        </div>
+      </div>`;
+    }).join('') || '<div class="alert alert-info">Todos os itens já foram devolvidos.</div>';
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function confirmReturn() {
+  const checkoutId = document.getElementById('return-checkout-id').value;
+  const qtyInputs = document.querySelectorAll('.ret-qty-input');
+  const condInputs = document.querySelectorAll('.ret-cond-input');
+  const obsInputs = document.querySelectorAll('.ret-obs-input');
+  const items = [];
+  for (let i = 0; i < qtyInputs.length; i++) {
+    const qty = parseInt(qtyInputs[i].value) || 0;
+    if (qty > 0) {
+      items.push({
+        item_id: qtyInputs[i].dataset.itemId,
+        returned_quantity: qty,
+        condition_on_return: condInputs[i]?.value,
+        observation: obsInputs[i]?.value || null,
+      });
+    }
+  }
+  if (!items.length) { showToast('Nenhum item a devolver', 'error'); return; }
+  try {
+    await api.post(`/tools/checkouts/${checkoutId}/return`, {
+      items,
+      observation: document.getElementById('return-observation').value || null,
+      return_photo: document.getElementById('ret-photo-b64').value || null,
+    });
+    showToast('Devolução registrada!');
+    closeModal('modal-return');
+    loadCheckouts();
+    loadInventory();
+    if (currentTab === 'dashboard') loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Renew
+// ─────────────────────────────────────────────
+
+function openRenew(checkoutId, operatorName, currentDate) {
+  document.getElementById('renew-checkout-id').value = checkoutId;
+  document.getElementById('renew-subtitle').textContent =
+    `Operador: ${operatorName || '—'} | Data atual: ${currentDate ? currentDate.substring(0,10) : '—'}`;
+  // Default to +7 days
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  document.getElementById('renew-new-date').value = d.toISOString().substring(0,10);
+  openModal('modal-renew');
+}
+
+async function confirmRenew() {
+  const checkoutId = document.getElementById('renew-checkout-id').value;
+  const newDate = document.getElementById('renew-new-date').value;
+  if (!newDate) { showToast('Selecione a nova data', 'error'); return; }
+  try {
+    await api.post(`/tools/checkouts/${checkoutId}/renew`, { new_return_date: newDate });
+    showToast('Prazo renovado com sucesso!');
+    closeModal('modal-renew');
+    loadCheckouts();
+    if (currentTab === 'dashboard') loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Operator Detail
+// ─────────────────────────────────────────────
+
+async function openOpDetail(operatorId, operatorName) {
+  document.getElementById('op-detail-title').textContent = `Histórico: ${operatorName}`;
+  document.getElementById('op-detail-current').innerHTML = skeletonRows(1,3);
+  document.getElementById('op-detail-tools').innerHTML = '';
+  document.getElementById('op-detail-history').innerHTML = '';
+  openModal('modal-op-detail');
+  try {
+    const d = await api.get(`/tools/report/operator/${operatorId}`);
+    document.getElementById('op-detail-current').innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div class="card card-sm" style="text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--accent)">${d.checkouts.filter(c=>['active','renewed','overdue','partial'].includes(c.status)).length}</div>
+          <div class="text-muted text-sm">Retiradas Ativas</div>
+        </div>
+        <div class="card card-sm" style="text-align:center">
+          <div style="font-size:20px;font-weight:700;color:var(--danger)">${d.checkouts.filter(c=>c.status==='overdue').length}</div>
+          <div class="text-muted text-sm">Vencidas</div>
+        </div>
+        <div class="card card-sm" style="text-align:center">
+          <div style="font-size:20px;font-weight:700">${d.checkouts.length}</div>
+          <div class="text-muted text-sm">Total Retiradas</div>
+        </div>
+      </div>`;
+
+    // Current tools
+    const ct = d.current_tools || [];
+    document.getElementById('op-detail-tools').innerHTML = ct.length
+      ? `<div class="table-wrapper"><table>
+          <thead><tr><th>Ferramenta</th><th>Categoria</th><th>Qtd</th><th>Desde</th><th>Devolução Prevista</th></tr></thead>
+          <tbody>${ct.map(t => `<tr>
+            <td><strong>${t.name}</strong>${t.brand?`<div class="text-muted text-sm">${t.brand}</div>`:''}</td>
+            <td>${t.category||'—'}</td>
+            <td class="text-mono text-center">${t.qty_with_operator}</td>
+            <td class="text-muted text-sm">${t.since_date?fmtDatetime(t.since_date):'—'}</td>
+            <td class="text-mono">${t.latest_due_date?t.latest_due_date.substring(0,10):'—'}</td>
+          </tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty-state" style="padding:16px"><i class="fas fa-check-circle" style="color:var(--success)"></i><p>Nenhuma ferramenta com este operador</p></div>';
+
+    // History
+    const hist = d.checkouts || [];
+    document.getElementById('op-detail-history').innerHTML = hist.length
+      ? `<div class="table-wrapper"><table>
+          <thead><tr><th>Retirada</th><th>Ferramentas</th><th>Projeto</th><th>Devolução Prev.</th><th>Devolução Real</th><th>Status</th><th>Renovações</th></tr></thead>
+          <tbody>${hist.map(co => `<tr>
+            <td class="text-muted text-sm">${fmtDatetime(co.checkout_date)}</td>
+            <td style="max-width:200px;white-space:normal;font-size:12px">${co.tools_summary||'—'}</td>
+            <td>${co.project_name||'—'}</td>
+            <td class="text-mono">${co.expected_return_date?co.expected_return_date.substring(0,10):'—'}</td>
+            <td class="text-mono">${co.actual_return_date?fmtDatetime(co.actual_return_date):'—'}</td>
+            <td><span class="badge ${STATUS_BADGE[co.status]||'badge-gray'}">${STATUS_LABEL[co.status]||co.status}</span></td>
+            <td class="text-mono text-center">${co.renewed_count||0}</td>
+          </tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty-state" style="padding:16px"><p>Sem histórico</p></div>';
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// ─────────────────────────────────────────────
+// Photo helpers
+// ─────────────────────────────────────────────
+
+function handlePhotoSelect(input, b64Id, previewId, imgId) {
+  const file = input.files[0];
+  if (!file) return;
+  // Resize/compress to max 640px
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 640;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const b64 = canvas.toDataURL('image/jpeg', 0.75);
+      document.getElementById(b64Id).value = b64;
+      document.getElementById(imgId).src = b64;
+      document.getElementById(previewId).style.display = '';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto(b64Id, previewId) {
+  document.getElementById(b64Id).value = '';
+  document.getElementById(previewId).style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function fmtDatetime(dt) {
+  if (!dt) return '—';
+  try { return new Date(dt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch { return dt; }
+}
+
+// api.delete helper
+if (!api.delete) {
+  api.delete = function(url) {
+    return fetch('/api' + url, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    }).then(async r => {
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || r.statusText);
+      return d;
+    });
+  };
+}
+
+// Initial load
+_loadCheckoutFormData();
+loadDashboard();
+</script>
+</body>
+{% endblock %}

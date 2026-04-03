@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% from "components/mobile_nav.html" import mobile_nav %}
+{% block title %}Inventário Mobile{% endblock %}
+
+{% block head %}
+<style>
+    .mobile-container {
+        width: min(100%, 1080px);
+        margin: 0 auto;
+        padding: 16px;
+    }
+    .inventory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .inventory-title {
+        margin: 0;
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .kpi-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .kpi-label {
+        font-size: 11px;
+        color: var(--text3);
+        margin-bottom: 6px;
+    }
+    .kpi-value {
+        font-size: 18px;
+        font-weight: 700;
+    }
+    .filters-wrap {
+        position: sticky;
+        top: 0;
+        z-index: 120;
+        background: color-mix(in srgb, var(--bg) 88%, transparent);
+        backdrop-filter: blur(8px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 14px;
+    }
+    .filters-row {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr;
+    }
+    .status-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .status-btn {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg2);
+        color: var(--text2);
+        font-size: 12px;
+        font-weight: 600;
+        padding: 8px;
+    }
+    .status-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+    .inventory-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .product-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    .product-info h3 {
+        font-size: 15px;
+        margin: 0 0 5px 0;
+        line-height: 1.25;
+    }
+    .product-meta {
+        font-size: 12px;
+        color: var(--text3);
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .stock-block {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    .stock-badge {
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        text-align: center;
+        min-width: 74px;
+    }
+    .min-stock-text {
+        font-size: 11px;
+        color: var(--text3);
+    }
+    .empty-state-panel {
+        text-align: center;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 28px 14px;
+        color: var(--text3);
+        background: var(--bg-card);
+    }
+    @media (min-width: 900px) {
+        .mobile-container {
+            padding: 24px;
+        }
+        .filters-row {
+            grid-template-columns: 2fr 1fr;
+        }
+        .inventory-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="mobile-container">
+    <div class="inventory-header">
+        <h1 class="inventory-title">Consulta de Estoque</h1>
+        <div id="user-avatar-mobile" class="user-avatar" style="width: 34px; height: 34px; font-size: 12px;"></div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Itens ativos</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Críticos</div>
+            <div class="kpi-value text-warning" id="kpi-critical">0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Zerados</div>
+            <div class="kpi-value text-danger" id="kpi-zero">0</div>
+        </div>
+    </div>
+
+    <div class="filters-wrap">
+        <div class="filters-row">
+            <div class="form-group" style="margin-bottom: 0;">
+                <div class="input-icon">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar produto, SKU ou código de barras" oninput="applyFilters()">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <select id="category-filter" class="form-control" onchange="applyFilters()">
+                    <option value="">Todas categorias</option>
+                </select>
+            </div>
+        </div>
+        <div class="status-row">
+            <button type="button" class="status-btn active" id="status-all" onclick="setStatusFilter('all')">Todos</button>
+            <button type="button" class="status-btn" id="status-critical" onclick="setStatusFilter('critical')">Críticos</button>
+            <button type="button" class="status-btn" id="status-zero" onclick="setStatusFilter('zero')">Zerados</button>
+        </div>
+    </div>
+
+    <div id="inventory-list" class="inventory-grid"></div>
+</div>
+
+{{ mobile_nav('inventory') }}
+
+<script>
+    const me = getUser();
+    if (!me) window.location.href = "/login";
+
+    let allProducts = [];
+    let currentStatusFilter = "all";
+
+    async function initInventory() {
+        if (me) {
+            const avatar = document.getElementById("user-avatar-mobile");
+            if (avatar) avatar.textContent = getInitials(me.name);
+        }
+        await loadInventory();
+    }
+
+    async function loadInventory() {
+        const list = document.getElementById("inventory-list");
+        list.innerHTML = '<div class="mobile-card"><span class="spinner"></span></div><div class="mobile-card"><span class="spinner"></span></div>';
+        
+        try {
+            allProducts = await api.get("/products/");
+            hydrateCategoryFilter();
+            applyFilters();
+        } catch(e) {
+            list.innerHTML = `<div class="empty-state-panel"><div class="text-danger">${e.message}</div></div>`;
+        }
+    }
+
+    function hydrateCategoryFilter() {
+        const sel = document.getElementById("category-filter");
+        const categories = [...new Set(allProducts.map(p => p.category_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+        sel.innerHTML = '<option value="">Todas categorias</option>' + categories.map(c => `<option value="${c}">${c}</option>`).join("");
+    }
+
+    function setStatusFilter(status) {
+        currentStatusFilter = status;
+        ["all", "critical", "zero"].forEach(s => {
+            const btn = document.getElementById(`status-${s}`);
+            if (btn) btn.classList.toggle("active", s === status);
+        });
+        applyFilters();
+    }
+
+    function updateKpis(products) {
+        const total = products.length;
+        const critical = products.filter(p => Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.min_stock || 0)).length;
+        const zero = products.filter(p => Number(p.stock || 0) <= 0).length;
+        document.getElementById("kpi-total").textContent = total;
+        document.getElementById("kpi-critical").textContent = critical;
+        document.getElementById("kpi-zero").textContent = zero;
+    }
+
+    function renderInventory(products) {
+        const list = document.getElementById("inventory-list");
+        if (products.length === 0) {
+            list.innerHTML = '<div class="empty-state-panel"><i class="fas fa-box-open" style="font-size:28px;display:block;margin-bottom:10px"></i>Nenhum produto encontrado para os filtros selecionados.</div>';
+            return;
+        }
+
+        list.innerHTML = products.map(p => {
+            const stock = Number(p.stock || 0);
+            const minStock = Number(p.min_stock || 0);
+            const isLow = stock > 0 && stock <= minStock;
+            const badgeClass = stock <= 0 ? "badge-danger" : (isLow ? "badge-warning" : "badge-success");
+            
+            return `
+                <div class="product-card">
+                    <div class="product-info">
+                        <h3>${p.name}</h3>
+                        <div class="product-meta">
+                            <span>SKU: ${p.sku || "—"}</span>
+                            <span>${p.category_name || "Geral"}</span>
+                            <span>Disponível: ${Number(p.available_stock || stock)} ${p.unit || "un"}</span>
+                        </div>
+                    </div>
+                    <div class="stock-block">
+                        <div class="stock-badge ${badgeClass}">
+                            ${stock} <small>${p.unit || "un"}</small>
+                        </div>
+                        <div class="min-stock-text">Mín: ${minStock}</div>
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    function applyFilters() {
+        const query = document.getElementById("search-input").value.toLowerCase();
+        const category = document.getElementById("category-filter").value;
+        const filtered = allProducts.filter(p => {
+            const stock = Number(p.stock || 0);
+            const minStock = Number(p.min_stock || 0);
+            const matchesQuery = !query || (p.name || "").toLowerCase().includes(query) || (p.sku || "").toLowerCase().includes(query) || (p.barcode || "").toLowerCase().includes(query);
+            const matchesCategory = !category || (p.category_name || "") === category;
+            const matchesStatus = currentStatusFilter === "all"
+                || (currentStatusFilter === "critical" && stock > 0 && stock <= minStock)
+                || (currentStatusFilter === "zero" && stock <= 0);
+            return matchesQuery && matchesCategory && matchesStatus;
+        });
+        updateKpis(allProducts);
+        renderInventory(filtered);
+    }
+
+    initInventory();
+</script>
+{% endblock %}

@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% from "components/mobile_nav.html" import mobile_nav %}
+{% block title %}Ferramentas Mobile{% endblock %}
+
+{% block head %}
+<style>
+    .mobile-container {
+        width: min(100%, 1080px);
+        margin: 0 auto;
+        padding: 16px;
+    }
+    .mobile-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    .mobile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .title-wrap h1 {
+        font-size: 22px;
+        margin: 0;
+        line-height: 1.2;
+    }
+    .title-wrap p {
+        margin: 4px 0 0;
+        color: var(--text3);
+        font-size: 12px;
+    }
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .kpi-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .kpi-label {
+        font-size: 11px;
+        color: var(--text3);
+        margin-bottom: 6px;
+    }
+    .kpi-value {
+        font-size: 18px;
+        font-weight: 700;
+    }
+    .action-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        color: var(--text1);
+        cursor: pointer;
+        transition: all 0.2s;
+        gap: 8px;
+    }
+    .action-btn i { font-size: 24px; color: var(--accent); }
+    .action-btn:active { transform: scale(0.95); background: var(--border); }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .toolbar-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .checkout-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .checkout-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+    }
+    .checkout-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .checkout-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .section-title h2 {
+        margin: 0;
+        font-size: 16px;
+    }
+    @media (min-width: 900px) {
+        .mobile-container {
+            padding: 24px;
+        }
+        .action-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .toolbar-row {
+            grid-template-columns: 1fr 1fr;
+        }
+        .checkout-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="mobile-container">
+    <div class="mobile-header">
+        <div class="title-wrap">
+            <h1>Ferramentas</h1>
+            <p>Painel operacional de retirada e devolução</p>
+        </div>
+        <div id="user-avatar-mobile" class="user-avatar" style="width: 36px; height: 36px;"></div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Disponíveis</div>
+            <div class="kpi-value" id="kpi-available">0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Em posse</div>
+            <div class="kpi-value text-info" id="kpi-active">0</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Atrasos</div>
+            <div class="kpi-value text-warning" id="kpi-overdue">0</div>
+        </div>
+    </div>
+
+    <div class="action-grid">
+        <div class="action-btn" onclick="openCheckoutFlow()">
+            <i class="fas fa-arrow-up"></i>
+            <span>Retirada</span>
+        </div>
+        <div class="action-btn" onclick="openReturnFlow()">
+            <i class="fas fa-arrow-down"></i>
+            <span>Devolução</span>
+        </div>
+        <div class="action-btn" onclick="openRenewFlow()">
+            <i class="fas fa-history"></i>
+            <span>Renovação</span>
+        </div>
+        <div class="action-btn" onclick="openReservationFlow()">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Agendar</span>
+        </div>
+    </div>
+
+    <div class="mobile-card">
+        <div class="section-title">
+            <h2>Inventário disponível</h2>
+        </div>
+        <div class="toolbar-row">
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Categoria</label>
+                <select id="filter-category" class="form-control" onchange="loadMobileInventory()">
+                    <option value="">Todas as categorias</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Filtrar ferramenta</label>
+                <input id="tool-search" class="form-control" placeholder="Digite o nome da ferramenta" oninput="loadMobileInventory()">
+            </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Ferramenta</label>
+            <select id="tool-selector" class="form-control">
+                <option value="">Selecione uma ferramenta</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:10px">
+            <button class="btn btn-primary" style="width:100%" onclick="openCheckoutFlow()">
+                <i class="fas fa-arrow-up"></i> Registrar retirada
+            </button>
+        </div>
+    </div>
+
+    <div id="active-checkouts-list">
+        <div class="section-title">
+            <h2>Minhas retiradas</h2>
+            <button class="btn btn-secondary btn-sm" onclick="loadMyCheckouts()">Atualizar</button>
+        </div>
+        <div class="checkout-list" id="checkout-list-content"></div>
+    </div>
+</div>
+
+{{ mobile_nav('tools') }}
+
+<!-- Modals for Flows -->
+<div class="modal-overlay" id="modal-mobile-flow">
+    <div class="modal" style="width: 90%; max-width: 400px;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="flow-title">Ação</h2>
+            <button class="modal-close" onclick="closeModal('modal-mobile-flow')"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="flow-content" style="padding: 16px 0;">
+            <!-- Dynamic content based on flow -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-mobile-flow')">Cancelar</button>
+            <button class="btn btn-primary" id="btn-flow-confirm">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const me = getUser();
+    if (!me) window.location.href = "/login";
+
+    let availableTools = [];
+    let activeCheckouts = [];
+
+    async function initMobile() {
+        if (me) {
+            document.getElementById("user-avatar-mobile").textContent = getInitials(me.name);
+        }
+        document.getElementById("checkout-list-content").innerHTML = '<div class="mobile-card"><span class="spinner"></span></div>';
+        await loadCategories();
+        await loadMobileInventory();
+        await loadMyCheckouts();
+    }
+
+    async function loadCategories() {
+        try {
+            const cats = await api.get("/tools/categories");
+            const sel = document.getElementById("filter-category");
+            sel.innerHTML = '<option value="">Todas as categorias</option>' + 
+                cats.map(c => `<option value="${c}">${c}</option>`).join("");
+        } catch(e) { showToast(e.message || "Falha ao carregar categorias", "error"); }
+    }
+
+    async function loadMobileInventory() {
+        const cat = document.getElementById("filter-category").value;
+        const q = (document.getElementById("tool-search").value || "").toLowerCase();
+        try {
+            availableTools = await api.get(`/tools/?active=1${cat ? '&category='+encodeURIComponent(cat) : ''}`);
+            if (q) {
+                availableTools = availableTools.filter(t => (t.name || "").toLowerCase().includes(q));
+            }
+            const sel = document.getElementById("tool-selector");
+            sel.innerHTML = '<option value="">Selecione uma ferramenta</option>' + 
+                availableTools.map(t => `<option value="${t.id}" ${t.available_units < 1 ? 'disabled' : ''}>${t.name} (${t.available_units} disp.)</option>`).join("");
+            const availableUnits = availableTools.reduce((acc, t) => acc + Number(t.available_units || 0), 0);
+            document.getElementById("kpi-available").textContent = availableUnits;
+        } catch(e) { showToast(e.message || "Falha ao carregar inventário", "error"); }
+    }
+
+    async function loadMyCheckouts() {
+        try {
+            activeCheckouts = await api.get("/tools/checkouts/?status=active&status=renewed&status=overdue&status=partial");
+            const list = document.getElementById("checkout-list-content");
+            const overdue = activeCheckouts.filter(c => c.status === "overdue").length;
+            document.getElementById("kpi-active").textContent = activeCheckouts.length;
+            document.getElementById("kpi-overdue").textContent = overdue;
+            if (activeCheckouts.length === 0) {
+                list.innerHTML = '<div class="mobile-card text-center text-muted">Nenhuma ferramenta em posse.</div>';
+                return;
+            }
+            list.innerHTML = activeCheckouts.map(c => `
+                    <div class="checkout-card">
+                        <div class="checkout-top">
+                            <strong>${c.tools_summary || 'Ferramentas'}</strong>
+                            <span class="status-badge ${c.status === 'overdue' ? 'badge-danger' : 'badge-info'}">${c.status}</span>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text3); margin-top: 8px;">
+                            Devolução prevista: ${fmtDateShort(c.expected_return_date)}
+                        </div>
+                        <div class="checkout-actions">
+                            <button class="btn btn-sm btn-secondary" onclick="openReturnFlow('${c.id}')">Devolver</button>
+                            <button class="btn btn-sm btn-secondary" onclick="openRenewFlow('${c.id}')">Renovar</button>
+                        </div>
+                    </div>
+                `).join("");
+        } catch(e) { showToast(e.message || "Falha ao carregar retiradas", "error"); }
+    }
+
+    function openCheckoutFlow() {
+        const toolId = document.getElementById("tool-selector").value;
+        if (!toolId) { showToast("Selecione uma ferramenta primeiro", "error"); return; }
+        
+        const tool = availableTools.find(t => t.id === toolId);
+        document.getElementById("flow-title").textContent = "Registrar Retirada";
+        document.getElementById("flow-content").innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Ferramenta</label>
+                <input class="form-control" value="${tool.name}" disabled />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantidade</label>
+                <input type="number" id="flow-qty" class="form-control" value="1" min="1" max="${tool.available_units}" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data Prevista Devolução</label>
+                <input type="date" id="flow-date" class="form-control" value="${new Date(Date.now() + 7*86400000).toISOString().split('T')[0]}" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Observação</label>
+                <textarea id="flow-obs" class="form-control"></textarea>
+            </div>
+        `;
+        document.getElementById("btn-flow-confirm").onclick = async () => {
+            const qty = parseInt(document.getElementById("flow-qty").value);
+            const date = document.getElementById("flow-date").value;
+            const obs = document.getElementById("flow-obs").value;
+            try {
+                await api.post("/tools/checkouts/", {
+                    operator_id: me.id,
+                    items: [{ tool_id: toolId, quantity: qty }],
+                    expected_return_date: date,
+                    observation: obs
+                });
+                showToast("Retirada realizada com sucesso!");
+                closeModal("modal-mobile-flow");
+                initMobile();
+            } catch(e) { showToast(e.message, "error"); }
+        };
+        openModal("modal-mobile-flow");
+    }
+
+    function openReturnFlow(checkoutId = null) {
+        if (!checkoutId) {
+            if (activeCheckouts.length === 0) { showToast("Nenhuma retirada ativa", "error"); return; }
+            // If only one, select it, else ask (simplified for POC)
+            checkoutId = activeCheckouts[0].id;
+        }
+        
+        const co = activeCheckouts.find(c => c.id === checkoutId);
+        document.getElementById("flow-title").textContent = "Registrar Devolução";
+        document.getElementById("flow-content").innerHTML = `
+            <p>Devolvendo: <strong>${co.tools_summary}</strong></p>
+            <div class="form-group">
+                <label class="form-label">Condição</label>
+                <select id="flow-condition" class="form-control">
+                    <option value="good">Bom estado</option>
+                    <option value="regular">Regular</option>
+                    <option value="poor">Necessita manutenção</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Observação</label>
+                <textarea id="flow-obs" class="form-control"></textarea>
+            </div>
+        `;
+        document.getElementById("btn-flow-confirm").onclick = async () => {
+            const cond = document.getElementById("flow-condition").value;
+            const obs = document.getElementById("flow-obs").value;
+            try {
+                const items = co.items || [];
+                await api.post(`/tools/checkouts/${checkoutId}/return`, {
+                    items: [{ tool_id: co.tool_id, returned_quantity: 999, condition_on_return: cond }],
+                    observation: obs
+                });
+                showToast("Devolução registrada!");
+                closeModal("modal-mobile-flow");
+                initMobile();
+            } catch(e) { 
+                try {
+                    const detail = await api.get(`/tools/checkouts/${checkoutId}`);
+                    const returnItems = detail.items.map(i => ({ 
+                        item_id: i.id, 
+                        returned_quantity: i.quantity - (i.returned_quantity || 0),
+                        condition_on_return: cond 
+                    }));
+                    await api.post(`/tools/checkouts/${checkoutId}/return`, { items: returnItems, observation: obs });
+                    showToast("Devolução registrada!");
+                    closeModal("modal-mobile-flow");
+                    initMobile();
+                } catch(e2) { showToast(e2.message, "error"); }
+            }
+        };
+        openModal("modal-mobile-flow");
+    }
+
+    function openRenewFlow(checkoutId = null) {
+        if (!checkoutId) {
+            if (activeCheckouts.length === 0) { showToast("Nenhuma retirada ativa", "error"); return; }
+            checkoutId = activeCheckouts[0].id;
+        }
+        const co = activeCheckouts.find(c => c.id === checkoutId);
+        document.getElementById("flow-title").textContent = "Renovar Prazo";
+        document.getElementById("flow-content").innerHTML = `
+            <p>Ferramenta: <strong>${co.tools_summary}</strong></p>
+            <div class="form-group">
+                <label class="form-label">Nova Data de Devolução</label>
+                <input type="date" id="flow-date" class="form-control" value="${new Date(Date.now() + 7*86400000).toISOString().split('T')[0]}" />
+            </div>
+        `;
+        document.getElementById("btn-flow-confirm").onclick = async () => {
+            const date = document.getElementById("flow-date").value;
+            try {
+                await api.post(`/tools/checkouts/${checkoutId}/renew`, { new_return_date: date });
+                showToast("Renovação concluída!");
+                closeModal("modal-mobile-flow");
+                initMobile();
+            } catch(e) { showToast(e.message, "error"); }
+        };
+        openModal("modal-mobile-flow");
+    }
+
+    function openReservationFlow() {
+        showToast("Módulo de agendamento avançado em desenvolvimento.", "info");
+    }
+
+    initMobile();
+</script>
+{% endblock %}

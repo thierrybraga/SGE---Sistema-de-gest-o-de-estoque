@@ -13,6 +13,9 @@
         <button class="btn btn-secondary" onclick="openModal('modal-my-profile')" title="Meu Perfil">
           <i class="fas fa-user-circle"></i> Meu Perfil
         </button>
+        <button class="btn btn-secondary" id="btn-audit-logs" onclick="switchTab('audit')" style="display:none">
+          <i class="fas fa-history"></i> Logs de Auditoria
+        </button>
         <button class="btn btn-primary" id="btn-new-user" onclick="openNewUser()" style="display:none">
           <i class="fas fa-user-plus"></i> Novo Usuário
         </button>
@@ -20,6 +23,25 @@
     </div>
 
     <div class="page-body">
+
+      <!-- Tab bar (admin/manager only) -->
+      <div id="tab-bar" style="display:none;margin-bottom:20px;border-bottom:2px solid var(--border)">
+        <div style="display:flex;gap:0">
+          <button id="tab-users" onclick="switchTab('users')"
+            style="padding:10px 20px;background:none;border:none;border-bottom:3px solid var(--accent);
+                   color:var(--accent);font-weight:600;cursor:pointer;font-size:14px;margin-bottom:-2px">
+            <i class="fas fa-users"></i> Usuários
+          </button>
+          <button id="tab-audit" onclick="switchTab('audit')"
+            style="padding:10px 20px;background:none;border:none;border-bottom:3px solid transparent;
+                   color:var(--text2);cursor:pointer;font-size:14px;margin-bottom:-2px;display:none">
+            <i class="fas fa-history"></i> Auditoria
+          </button>
+        </div>
+      </div>
+
+      <!-- Users tab content -->
+      <div id="tab-content-users">
 
       <!-- Role cards — visible to admin/manager -->
       <div id="role-cards-section" style="display:none;margin-bottom:24px">
@@ -57,6 +79,7 @@
                 <th>Email</th>
                 <th>Perfil</th>
                 <th>Status</th>
+                <th>Último login</th>
                 <th>Criado em</th>
                 <th>Ações</th>
               </tr>
@@ -75,6 +98,99 @@
           Use o botão <strong>Meu Perfil</strong> para atualizar suas informações.</p>
         </div>
       </div>
+
+      </div><!-- end tab-content-users -->
+
+      <!-- ─── Audit Log Tab ─── -->
+      <div id="tab-content-audit" style="display:none">
+
+        <!-- Audit filters -->
+        <div class="card" style="margin-bottom:16px;padding:16px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <label class="form-label" style="font-size:12px">Tipo de Entidade</label>
+              <select id="audit-entity-type" class="form-control" style="width:160px" onchange="reloadAuditLogs()">
+                <option value="">Todos</option>
+                <option value="user">Usuário</option>
+                <option value="product">Produto</option>
+                <option value="category">Categoria</option>
+                <option value="movement">Movimentação</option>
+                <option value="project">Projeto</option>
+                <option value="project_need">Necessidade</option>
+                <option value="invoice">Nota Fiscal</option>
+                <option value="supplier">Fornecedor</option>
+                <option value="quotation">Cotação</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:12px">Ação</label>
+              <select id="audit-action" class="form-control" style="width:180px" onchange="reloadAuditLogs()">
+                <option value="">Todas</option>
+                <option value="create">Criação</option>
+                <option value="update">Edição</option>
+                <option value="delete">Exclusão</option>
+                <option value="login">Login</option>
+                <option value="login_failed">Falha de login</option>
+                <option value="entry">Entrada de estoque</option>
+                <option value="exit">Saída de estoque</option>
+                <option value="adjustment">Ajuste de estoque</option>
+                <option value="import_invoice">Importação de NF</option>
+                <option value="process_invoice">Processamento de NF</option>
+                <option value="reverse_invoice">Estorno de NF</option>
+                <option value="run_match">Match de estoque</option>
+                <option value="approve_quotation">Cotação aprovada</option>
+                <option value="deactivate_user">Usuário desativado</option>
+                <option value="activate_user">Usuário reativado</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:12px">Usuário</label>
+              <select id="audit-user-filter" class="form-control" style="width:180px" onchange="reloadAuditLogs()">
+                <option value="">Todos os usuários</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:12px">De</label>
+              <input id="audit-date-from" type="date" class="form-control" style="width:150px" onchange="reloadAuditLogs()" />
+            </div>
+            <div>
+              <label class="form-label" style="font-size:12px">Até</label>
+              <input id="audit-date-to" type="date" class="form-control" style="width:150px" onchange="reloadAuditLogs()" />
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="clearAuditFilters()">
+              <i class="fas fa-times"></i> Limpar
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="reloadAuditLogs()" style="margin-left:auto">
+              <i class="fas fa-sync"></i> Atualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Audit table -->
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:160px">Data/Hora</th>
+                  <th>Usuário</th>
+                  <th>Ação</th>
+                  <th>Entidade</th>
+                  <th>Detalhes</th>
+                  <th style="width:120px">IP</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table"></tbody>
+            </table>
+          </div>
+          <div id="audit-load-more" style="display:none;text-align:center;padding:12px">
+            <button class="btn btn-secondary btn-sm" onclick="loadMoreAuditLogs()">
+              <i class="fas fa-chevron-down"></i> Carregar mais
+            </button>
+          </div>
+        </div>
+
+      </div><!-- end tab-content-audit -->
 
     </div>
   </div>
@@ -100,9 +216,15 @@
       </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Nome</label>
-      <input id="profile-name" type="text" class="form-control" placeholder="Seu nome" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input id="profile-name" type="text" class="form-control" placeholder="Seu nome" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input id="profile-email" type="email" class="form-control" placeholder="Seu email" />
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
@@ -114,9 +236,6 @@
         <input id="profile-password-confirm" type="password" class="form-control" placeholder="Repita a senha" />
       </div>
     </div>
-    <p class="text-muted text-sm" style="margin-top:-8px;margin-bottom:12px">
-      <i class="fas fa-info-circle"></i> Email e perfil só podem ser alterados por um administrador.
-    </p>
 
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-my-profile')">Fechar</button>
@@ -139,19 +258,19 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label class="form-label">Nome *</label>
-        <input id="user-name" type="text" class="form-control" placeholder="Nome completo" />
+        <input id="modal-user-name" type="text" class="form-control" placeholder="Nome completo" />
       </div>
       <div class="form-group">
         <label class="form-label">Email *</label>
-        <input id="user-email" type="email" class="form-control" placeholder="email@empresa.com" />
+        <input id="modal-user-email" type="email" class="form-control" placeholder="email@empresa.com" />
       </div>
     </div>
 
     <div class="form-group">
       <label class="form-label">Perfil de Acesso *</label>
-      <select id="user-role" class="form-control" onchange="onRoleChange()">
-        <!-- populated by JS based on actor role -->
-      </select>
+      <div id="user-role-options" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border)">
+        <!-- Radio buttons injected by JS -->
+      </div>
       <!-- Role description injected below -->
       <div id="role-description-hint" style="margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:8px;font-size:12px;color:var(--text2);display:none">
         <strong id="role-hint-label"></strong><br>
@@ -204,6 +323,90 @@
   </div>
 </div>
 
+<!-- ─── Modal: User Activity ─── -->
+<div class="modal-overlay" id="modal-user-activity">
+  <div class="modal" style="max-width:820px;width:95vw">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title" id="activity-modal-title"><i class="fas fa-history"></i> Atividade do Usuário</h2>
+        <div id="activity-modal-subtitle" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-user-activity')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Stats row -->
+    <div id="activity-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px">
+    </div>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px">
+      <button id="act-tab-btn-all" onclick="switchActivityTab('all')"
+        style="padding:7px 16px;background:none;border:none;border-bottom:3px solid var(--accent);
+               color:var(--accent);font-weight:600;cursor:pointer;font-size:13px;margin-bottom:-2px">
+        <i class="fas fa-list"></i> Tudo
+      </button>
+      <button id="act-tab-btn-movements" onclick="switchActivityTab('movements')"
+        style="padding:7px 16px;background:none;border:none;border-bottom:3px solid transparent;
+               color:var(--text2);cursor:pointer;font-size:13px;margin-bottom:-2px">
+        <i class="fas fa-exchange-alt"></i> Movimentações
+      </button>
+      <button id="act-tab-btn-audit" onclick="switchActivityTab('audit')"
+        style="padding:7px 16px;background:none;border:none;border-bottom:3px solid transparent;
+               color:var(--text2);cursor:pointer;font-size:13px;margin-bottom:-2px">
+        <i class="fas fa-shield-alt"></i> Auditoria
+      </button>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;padding-bottom:4px">
+        <input id="activity-date-from" type="date" class="form-control" style="width:140px;font-size:12px"
+               onchange="reloadActivity()" title="Data inicial" />
+        <input id="activity-date-to" type="date" class="form-control" style="width:140px;font-size:12px"
+               onchange="reloadActivity()" title="Data final" />
+      </div>
+    </div>
+
+    <!-- All timeline -->
+    <div id="act-tab-all" style="max-height:420px;overflow-y:auto">
+      <div id="activity-timeline"></div>
+    </div>
+
+    <!-- Movements table -->
+    <div id="act-tab-movements" style="display:none;max-height:420px;overflow-y:auto">
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th style="width:150px">Data/Hora</th>
+            <th>Produto</th>
+            <th>Tipo</th>
+            <th>Quantidade</th>
+            <th>Projeto</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody id="activity-movements-table"></tbody>
+      </table>
+    </div>
+
+    <!-- Audit table -->
+    <div id="act-tab-audit" style="display:none;max-height:420px;overflow-y:auto">
+      <table style="width:100%">
+        <thead>
+          <tr>
+            <th style="width:150px">Data/Hora</th>
+            <th>Ação</th>
+            <th>Entidade</th>
+            <th>Detalhes</th>
+            <th style="width:100px">IP</th>
+          </tr>
+        </thead>
+        <tbody id="activity-audit-table"></tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-user-activity')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 requireAuth();
 initUserInfo();
@@ -216,9 +419,30 @@ const me = getUser();
 const myRole = me?.role || "";
 let allUsers = [];
 let allRoles = [];
+let auditOffset = 0;
+const AUDIT_LIMIT = 100;
+let currentTab = "users";
 
 const ROLE_LABELS = { admin: 'Administrador', manager: 'Gerente', operator: 'Operador', buyer: 'Compras' };
 const ROLE_BADGE  = { admin: 'badge-danger', manager: 'badge-purple', operator: 'badge-info', buyer: 'badge-warning' };
+
+// ── Audit label maps (used in both audit tab and user activity modal) ──
+const ACTION_LABELS = {
+  create: 'Criação', update: 'Edição', delete: 'Exclusão',
+  login: 'Login', login_failed: 'Falha de login',
+  change_password: 'Senha alterada',
+  deactivate_user: 'Usuário desativado', activate_user: 'Usuário reativado',
+  entry: 'Entrada de estoque', exit: 'Saída de estoque', adjustment: 'Ajuste de estoque',
+  import_invoice: 'Importação de NF', process_invoice: 'Processamento de NF',
+  reverse_invoice: 'Estorno de NF', run_match: 'Match de estoque',
+  create_quotation: 'Cotação criada', approve_quotation: 'Cotação aprovada',
+};
+const ENTITY_LABELS = {
+  user: 'Usuário', product: 'Produto', category: 'Categoria',
+  movement: 'Movimentação', project: 'Projeto', project_need: 'Necessidade',
+  invoice: 'Nota Fiscal', supplier: 'Fornecedor',
+  quotation: 'Cotação', quotation_item: 'Item de Cotação',
+};
 
 // ─────────────────────────────────────────────
 // Page init
@@ -233,13 +457,17 @@ async function initPage() {
 
   if (myRole === 'admin' || myRole === 'manager') {
     document.getElementById("btn-new-user").style.display = "";
+    document.getElementById("tab-bar").style.display = "";
     document.getElementById("role-cards-section").style.display = "";
     document.getElementById("filters-section").style.display = "";
     document.getElementById("users-card").style.display = "";
 
-    // Only admin sees inactive toggle and full role filter
+    // Audit tab is admin-only
     if (myRole === 'admin') {
       document.getElementById("filter-inactive-wrap").style.display = "flex";
+      document.getElementById("tab-audit").style.display = "";
+      document.getElementById("btn-audit-logs").style.display = "";
+      populateAuditUserFilter();
     } else {
       // Manager: hide admin/manager from filter
       const sel = document.getElementById("filter-role");
@@ -252,6 +480,35 @@ async function initPage() {
     reloadUsers();
   } else {
     document.getElementById("no-permission-section").style.display = "";
+  }
+}
+
+// ─────────────────────────────────────────────
+// Tab switching
+// ─────────────────────────────────────────────
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById("tab-content-users").style.display = tab === "users" ? "" : "none";
+  document.getElementById("tab-content-audit").style.display = tab === "audit" ? "" : "none";
+
+  // Update tab button styles
+  const userBtn = document.getElementById("tab-users");
+  const auditBtn = document.getElementById("tab-audit");
+  if (userBtn) {
+    userBtn.style.borderBottomColor = tab === "users" ? "var(--accent)" : "transparent";
+    userBtn.style.color = tab === "users" ? "var(--accent)" : "var(--text2)";
+    userBtn.style.fontWeight = tab === "users" ? "600" : "400";
+  }
+  if (auditBtn) {
+    auditBtn.style.borderBottomColor = tab === "audit" ? "var(--accent)" : "transparent";
+    auditBtn.style.color = tab === "audit" ? "var(--accent)" : "var(--text2)";
+    auditBtn.style.fontWeight = tab === "audit" ? "600" : "400";
+  }
+
+  if (tab === "audit") {
+    auditOffset = 0;
+    reloadAuditLogs();
   }
 }
 
@@ -306,7 +563,7 @@ async function reloadUsers() {
 function renderUsers(users) {
   const tbody = document.getElementById("users-table");
   if (!users.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
       <i class="fas fa-users"></i><h3>Nenhum usuário encontrado</h3></div></td></tr>`;
     return;
   }
@@ -331,14 +588,15 @@ function renderUsers(users) {
       <td class="text-mono text-sm">${u.email}</td>
       <td><span class="badge ${ROLE_BADGE[u.role] || 'badge-gray'}">${ROLE_LABELS[u.role] || u.role}</span></td>
       <td><span class="badge ${u.active ? 'badge-success' : 'badge-gray'}">${u.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td class="text-muted text-sm">${u.last_login ? fmtDateShort(u.last_login) : '<span style="color:var(--text3)">Nunca</span>'}</td>
       <td class="text-muted text-sm">${fmtDateShort(u.created_at)}</td>
       <td>
         <div style="display:flex;gap:6px">
-          ${canEdit ? `
+          ${myRole === 'admin' ? `
             <button class="btn btn-secondary btn-sm btn-icon"
-                    onclick='editUser(${JSON.stringify(u).replace(/'/g,"\\'")})'
-                    title="Editar" data-tooltip="Editar">
-              <i class="fas fa-edit"></i>
+                    onclick='openUserActivity("${u.id}", "${u.name.replace(/"/g, '\\"')}")'
+                    title="Ver atividade" data-tooltip="Atividade">
+              <i class="fas fa-history"></i>
             </button>` : ""}
           ${canDeactivate ? `
             <button class="btn btn-danger btn-sm btn-icon"
@@ -352,7 +610,13 @@ function renderUsers(users) {
                     title="Reativar" data-tooltip="Reativar">
               <i class="fas fa-user-check"></i>
             </button>` : ""}
-          ${!canEdit && !canDeactivate && !canActivate ? `<span class="text-muted text-sm">—</span>` : ""}
+          ${canEdit ? `
+            <button class="btn btn-secondary btn-sm btn-icon"
+                    onclick='editUser(${JSON.stringify(u).replace(/'/g,"\\'")})'
+                    title="Editar" data-tooltip="Editar">
+              <i class="fas fa-edit"></i>
+            </button>` : ""}
+          ${!canEdit && !canDeactivate && !canActivate && myRole !== 'admin' ? `<span class="text-muted text-sm">—</span>` : ""}
         </div>
       </td>
     </tr>`;
@@ -379,13 +643,17 @@ function filterUsers() {
 
 function buildRoleOptions(selectedRole) {
   const assignable = allRoles.filter(r => r.can_assign);
-  return assignable.map(r =>
-    `<option value="${r.value}" ${r.value === selectedRole ? 'selected' : ''}>${r.label}</option>`
-  ).join("");
+  return assignable.map(r => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;padding:8px;border-radius:6px;transition:background 0.2s" class="role-option">
+      <input type="radio" name="user-role-radio" value="${r.value}" ${r.value === selectedRole ? 'checked' : ''} onchange="onRoleChange()">
+      ${r.label}
+    </label>
+  `).join("");
 }
 
 function onRoleChange() {
-  const val = document.getElementById("user-role").value;
+  const selected = document.querySelector('input[name="user-role-radio"]:checked');
+  const val = selected ? selected.value : null;
   const role = allRoles.find(r => r.value === val);
   const hint = document.getElementById("role-description-hint");
   if (role) {
@@ -399,15 +667,15 @@ function onRoleChange() {
 
 function openNewUser() {
   document.getElementById("user-id").value = "";
-  document.getElementById("user-name").value = "";
-  document.getElementById("user-email").value = "";
-  document.getElementById("user-email").disabled = false;
+  document.getElementById("modal-user-name").value = "";
+  document.getElementById("modal-user-email").value = "";
+  document.getElementById("modal-user-email").disabled = false;
   document.getElementById("user-password").value = "";
   document.getElementById("user-password-confirm").value = "";
   document.getElementById("pwd-hint").textContent = "(obrigatória)";
   document.getElementById("pwd-confirm-group").style.display = "";
   document.getElementById("modal-user-title").textContent = "Novo Usuário";
-  document.getElementById("user-role").innerHTML = buildRoleOptions("operator");
+  document.getElementById("user-role-options").innerHTML = buildRoleOptions("operator");
   document.getElementById("user-active-group").style.display = "none";
   document.getElementById("user-active-hint").textContent = "";
   onRoleChange();
@@ -417,15 +685,21 @@ function openNewUser() {
 function editUser(user) {
   const isMe = user.id === me?.id;
   document.getElementById("user-id").value = user.id;
-  document.getElementById("user-name").value = user.name;
-  document.getElementById("user-email").value = user.email;
-  document.getElementById("user-email").disabled = true;
+  document.getElementById("modal-user-name").value = user.name;
+  document.getElementById("modal-user-email").value = user.email;
+  document.getElementById("modal-user-email").disabled = false;
   document.getElementById("user-password").value = "";
   document.getElementById("user-password-confirm").value = "";
   document.getElementById("pwd-hint").textContent = "(deixe em branco para manter)";
   document.getElementById("pwd-confirm-group").style.display = "";
   document.getElementById("modal-user-title").textContent = "Editar Usuário";
-  document.getElementById("user-role").innerHTML = buildRoleOptions(user.role);
+  document.getElementById("user-role-options").innerHTML = buildRoleOptions(user.role);
+  
+  // Disable radios if it's me
+  if (isMe) {
+    document.querySelectorAll('input[name="user-role-radio"]').forEach(i => i.disabled = true);
+  }
+
   if (myRole === "admin") {
     const activeGroup = document.getElementById("user-active-group");
     const activeToggle = document.getElementById("user-active");
@@ -443,20 +717,21 @@ function editUser(user) {
 
 async function saveUser() {
   const id = document.getElementById("user-id").value;
-  const name = document.getElementById("user-name").value.trim();
-  const email = document.getElementById("user-email").value.trim();
-  const role = document.getElementById("user-role").value;
+  const name = document.getElementById("modal-user-name").value.trim();
+  const email = document.getElementById("modal-user-email").value.trim();
+  const selectedRole = document.querySelector('input[name="user-role-radio"]:checked');
+  const role = selectedRole ? selectedRole.value : null;
   const password = document.getElementById("user-password").value;
   const passwordConfirm = document.getElementById("user-password-confirm").value;
 
   if (!name) { showToast("Nome é obrigatório", "error"); return; }
   if (!id && !email) { showToast("Email é obrigatório", "error"); return; }
+  if (!role) { showToast("Perfil de acesso é obrigatório", "error"); return; }
   if (!id && !password) { showToast("Senha é obrigatória para novo usuário", "error"); return; }
   if (password && password.length < 6) { showToast("Senha deve ter ao menos 6 caracteres", "error"); return; }
   if (password && password !== passwordConfirm) { showToast("Senhas não conferem", "error"); return; }
 
-  const payload = { name, role };
-  if (!id) payload.email = email;
+  const payload = { name, email, role };
   if (password) payload.password = password;
   if (id && myRole === "admin") {
     const activeToggle = document.getElementById("user-active");
@@ -541,20 +816,23 @@ function loadMyProfile() {
   badge.className = `badge ${ROLE_BADGE[me.role] || 'badge-gray'}`;
   badge.textContent = ROLE_LABELS[me.role] || me.role;
   document.getElementById("profile-name").value = me.name;
+  document.getElementById("profile-email").value = me.email;
   document.getElementById("profile-password").value = "";
   document.getElementById("profile-password-confirm").value = "";
 }
 
 async function saveProfile() {
   const name = document.getElementById("profile-name").value.trim();
+  const email = document.getElementById("profile-email").value.trim();
   const password = document.getElementById("profile-password").value;
   const confirm = document.getElementById("profile-password-confirm").value;
 
   if (!name) { showToast("Nome é obrigatório", "error"); return; }
+  if (!email) { showToast("Email é obrigatório", "error"); return; }
   if (password && password.length < 6) { showToast("Senha deve ter ao menos 6 caracteres", "error"); return; }
   if (password && password !== confirm) { showToast("Senhas não conferem", "error"); return; }
 
-  const payload = { name };
+  const payload = { name, email };
   if (password) payload.password = password;
 
   const btn = document.getElementById("btn-save-profile");
@@ -566,7 +844,10 @@ async function saveProfile() {
     // Update localStorage user info
     const stored = JSON.parse(localStorage.getItem("user") || "{}");
     stored.name = updated.name;
+    stored.email = updated.email;
     localStorage.setItem("user", JSON.stringify(stored));
+    me.name = updated.name;
+    me.email = updated.email;
 
     // Refresh avatar and name in sidebar
     document.getElementById("user-name")?.textContent && (document.getElementById("user-name").textContent = updated.name);
@@ -576,7 +857,8 @@ async function saveProfile() {
     document.getElementById("profile-password").value = "";
     document.getElementById("profile-password-confirm").value = "";
     document.getElementById("profile-name-display").textContent = updated.name;
-  document.getElementById("profile-avatar").textContent = getInitials(updated.name);
+    document.getElementById("profile-email-display").textContent = updated.email;
+    document.getElementById("profile-avatar").textContent = getInitials(updated.name);
   } catch(e) {
     showToast(e.message, "error");
   } finally {
@@ -608,6 +890,323 @@ function openRolesRef(highlightRole) {
     </div>
   `).join("");
   openModal("modal-roles-ref");
+}
+
+// ─────────────────────────────────────────────
+// User Activity Modal
+// ─────────────────────────────────────────────
+
+let activityUserId = null;
+let activityTab = "all";
+
+async function openUserActivity(userId, userName) {
+  activityUserId = userId;
+  document.getElementById("activity-modal-title").innerHTML =
+    `<i class="fas fa-history"></i> Atividade — ${userName}`;
+  document.getElementById("activity-modal-subtitle").textContent = "";
+  document.getElementById("activity-stats").innerHTML = "";
+  document.getElementById("activity-timeline").innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
+  document.getElementById("activity-movements-table").innerHTML = "";
+  document.getElementById("activity-audit-table").innerHTML = "";
+  switchActivityTab("all");
+  openModal("modal-user-activity");
+  await reloadActivity();
+}
+
+async function reloadActivity() {
+  if (!activityUserId) return;
+  const dateFrom = document.getElementById("activity-date-from")?.value || "";
+  const dateTo   = document.getElementById("activity-date-to")?.value || "";
+  const params = new URLSearchParams({ limit: 300 });
+  if (dateFrom) params.append("date_from", dateFrom);
+  if (dateTo) params.append("date_to", dateTo);
+
+  try {
+    const data = await api.get(`/auth/users/${activityUserId}/activity?${params}`);
+    renderActivityStats(data.stats, data.user);
+    renderActivityTimeline(data.audit, data.movements);
+    renderActivityMovements(data.movements);
+    renderActivityAudit(data.audit);
+    document.getElementById("activity-modal-subtitle").textContent =
+      `${data.user.email} · ${ROLE_LABELS[data.user.role] || data.user.role} · último login: ${data.user.last_login ? fmtDatetime(data.user.last_login) : 'nunca'}`;
+  } catch(e) {
+    document.getElementById("activity-timeline").innerHTML =
+      `<p style="color:var(--danger);padding:16px">${e.message}</p>`;
+  }
+}
+
+function renderActivityStats(stats, user) {
+  const mv = stats.movements || {};
+  const cards = [
+    { label: "Entradas",    value: mv.entry?.count || 0,      icon: "fas fa-arrow-down",    color: "var(--accent3)" },
+    { label: "Saídas",      value: mv.exit?.count || 0,       icon: "fas fa-arrow-up",      color: "var(--danger)"  },
+    { label: "Ajustes",     value: mv.adjustment?.count || 0, icon: "fas fa-sliders-h",     color: "var(--warning)" },
+    { label: "Ações audit", value: Object.values(stats.audit_actions || {}).reduce((a,b) => a+b, 0),
+      icon: "fas fa-shield-alt", color: "var(--accent2)" },
+  ];
+  document.getElementById("activity-stats").innerHTML = cards.map(c => `
+    <div style="background:var(--bg2);border-radius:8px;padding:10px 14px;text-align:center">
+      <div style="font-size:20px;color:${c.color};margin-bottom:4px"><i class="${c.icon}"></i></div>
+      <div style="font-size:22px;font-weight:700;color:var(--text)">${c.value}</div>
+      <div style="font-size:11px;color:var(--text3)">${c.label}</div>
+    </div>
+  `).join("");
+}
+
+function renderActivityTimeline(audits, movements) {
+  // Merge and sort by date descending
+  const items = [
+    ...audits.map(a => ({ ...a, _type: "audit", _time: a.created_at })),
+    ...movements.map(m => ({ ...m, _type: "movement", _time: m.created_at })),
+  ].sort((a, b) => b._time.localeCompare(a._time)).slice(0, 150);
+
+  const container = document.getElementById("activity-timeline");
+  if (!items.length) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-history"></i><h3>Nenhuma atividade registrada</h3></div>';
+    return;
+  }
+  container.innerHTML = items.map(item => {
+    if (item._type === "movement") {
+      const typeInfo = {
+        entry:      { icon: "fas fa-arrow-down", color: "var(--accent3)", label: "Entrada" },
+        exit:       { icon: "fas fa-arrow-up",   color: "var(--danger)",  label: "Saída" },
+        adjustment: { icon: "fas fa-sliders-h",  color: "var(--warning)", label: "Ajuste" },
+        reservation:{ icon: "fas fa-lock",        color: "var(--accent2)","label": "Reserva" },
+      }[item.action] || { icon: "fas fa-exchange-alt", color: "var(--text3)", label: item.action };
+      return `
+        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:36px;height:36px;border-radius:50%;background:${typeInfo.color}22;
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="${typeInfo.icon}" style="color:${typeInfo.color};font-size:14px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500">
+              ${typeInfo.label} de estoque
+              ${item.product_name ? `— <strong>${item.product_name}</strong>` : ""}
+            </div>
+            <div style="font-size:12px;color:var(--text3)">
+              ${item.quantity !== undefined ? `Qtd: ${item.quantity > 0 ? '+' : ''}${item.quantity} ${item.product_unit || ''}` : ""}
+              ${item.project_name ? `· Projeto: ${item.project_name}` : ""}
+              ${item.observation ? `· ${item.observation}` : ""}
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">${fmtDatetime(item._time)}</div>
+        </div>`;
+    } else {
+      const badge = ACTION_BADGE[item.action] || "badge-gray";
+      const label = (typeof ACTION_LABELS !== "undefined" ? ACTION_LABELS : {})[item.action] || item.action;
+      const entityLabel = (typeof ENTITY_LABELS !== "undefined" ? ENTITY_LABELS : {})[item.entity_type] || item.entity_type;
+      return `
+        <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);
+                      display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="fas fa-shield-alt" style="color:var(--text3);font-size:13px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px">
+              <span class="badge ${badge}" style="font-size:10px">${label}</span>
+              <span style="color:var(--text3);font-size:12px">${entityLabel}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3)">${formatAuditDetails(item.details)}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);white-space:nowrap;flex-shrink:0">${fmtDatetime(item._time)}</div>
+        </div>`;
+    }
+  }).join("");
+}
+
+function renderActivityMovements(movements) {
+  const tbody = document.getElementById("activity-movements-table");
+  if (!movements.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fas fa-exchange-alt"></i><h3>Nenhuma movimentação</h3></div></td></tr>`;
+    return;
+  }
+  const TYPE_LABEL = { entry: "Entrada", exit: "Saída", adjustment: "Ajuste", reservation: "Reserva" };
+  const TYPE_BADGE = { entry: "badge-success", exit: "badge-warning", adjustment: "badge-purple", reservation: "badge-info" };
+  tbody.innerHTML = movements.map(m => `
+    <tr>
+      <td class="text-mono text-sm">${fmtDatetime(m.created_at)}</td>
+      <td><strong>${m.product_name || "—"}</strong> <span class="text-muted text-sm">${m.product_unit || ""}</span></td>
+      <td><span class="badge ${TYPE_BADGE[m.action] || 'badge-gray'}" style="font-size:11px">${TYPE_LABEL[m.action] || m.action}</span></td>
+      <td style="font-weight:600;color:${m.quantity >= 0 ? 'var(--accent3)' : 'var(--danger)'}">${m.quantity >= 0 ? '+' : ''}${m.quantity}</td>
+      <td class="text-muted text-sm">${m.project_name || "—"}</td>
+      <td class="text-muted text-sm" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.observation || "—"}</td>
+    </tr>`).join("");
+}
+
+function renderActivityAudit(audits) {
+  const tbody = document.getElementById("activity-audit-table");
+  if (!audits.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fas fa-shield-alt"></i><h3>Nenhum registro de auditoria</h3></div></td></tr>`;
+    return;
+  }
+  const ALabels = typeof ACTION_LABELS !== "undefined" ? ACTION_LABELS : {};
+  const ELabels = typeof ENTITY_LABELS !== "undefined" ? ENTITY_LABELS : {};
+  tbody.innerHTML = audits.map(a => `
+    <tr>
+      <td class="text-mono text-sm">${fmtDatetime(a.created_at)}</td>
+      <td><span class="badge ${ACTION_BADGE[a.action] || 'badge-gray'}" style="font-size:11px">${ALabels[a.action] || a.action}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${ELabels[a.entity_type] || a.entity_type}</td>
+      <td style="font-size:12px;max-width:240px;overflow:hidden;text-overflow:ellipsis">${formatAuditDetails(a.details)}</td>
+      <td class="text-mono text-sm" style="font-size:11px;color:var(--text3)">${a.ip_address || "—"}</td>
+    </tr>`).join("");
+}
+
+function switchActivityTab(tab) {
+  activityTab = tab;
+  const tabs = ["all", "movements", "audit"];
+  tabs.forEach(t => {
+    const contentEl = document.getElementById(`act-tab-${t}`);
+    const btnEl = document.getElementById(`act-tab-btn-${t}`);
+    if (contentEl) contentEl.style.display = t === tab ? "" : "none";
+    if (btnEl) {
+      const isActive = t === tab;
+      btnEl.style.borderBottomColor = isActive ? "var(--accent)" : "transparent";
+      btnEl.style.color = isActive ? "var(--accent)" : "var(--text2)";
+      btnEl.style.fontWeight = isActive ? "600" : "400";
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// Audit Logs
+// ─────────────────────────────────────────────
+
+const ACTION_BADGE = {
+  login: 'badge-success', login_failed: 'badge-danger',
+  create: 'badge-info', update: 'badge-warning', delete: 'badge-danger',
+  entry: 'badge-success', exit: 'badge-warning', adjustment: 'badge-purple',
+  import_invoice: 'badge-info', process_invoice: 'badge-success',
+  reverse_invoice: 'badge-danger', run_match: 'badge-info',
+  approve_quotation: 'badge-success', deactivate_user: 'badge-danger',
+  activate_user: 'badge-success', change_password: 'badge-warning',
+  create_quotation: 'badge-info',
+};
+
+async function populateAuditUserFilter() {
+  try {
+    const users = await api.get("/auth/users");
+    const sel = document.getElementById("audit-user-filter");
+    if (!sel) return;
+    users.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = `${u.name} (${u.role})`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+async function reloadAuditLogs() {
+  auditOffset = 0;
+  const tbody = document.getElementById("audit-table");
+  tbody.innerHTML = skeletonRows(8, 6);
+  await _fetchAuditLogs(true);
+}
+
+async function loadMoreAuditLogs() {
+  auditOffset += AUDIT_LIMIT;
+  await _fetchAuditLogs(false);
+}
+
+async function _fetchAuditLogs(replace) {
+  const params = new URLSearchParams();
+  const entityType = document.getElementById("audit-entity-type")?.value;
+  const action = document.getElementById("audit-action")?.value;
+  const userId = document.getElementById("audit-user-filter")?.value;
+  const dateFrom = document.getElementById("audit-date-from")?.value;
+  const dateTo = document.getElementById("audit-date-to")?.value;
+
+  if (entityType) params.append("entity_type", entityType);
+  if (action) params.append("action", action);
+  if (userId) params.append("user_id", userId);
+  if (dateFrom) params.append("date_from", dateFrom);
+  if (dateTo) params.append("date_to", dateTo);
+  params.append("limit", AUDIT_LIMIT);
+  params.append("offset", auditOffset);
+
+  const tbody = document.getElementById("audit-table");
+  const loadMoreBtn = document.getElementById("audit-load-more");
+
+  try {
+    const logs = await api.get(`/audit/?${params.toString()}`);
+    if (replace) {
+      tbody.innerHTML = "";
+    }
+
+    if (!logs.length && replace) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+        <i class="fas fa-history"></i><h3>Nenhum log encontrado</h3></div></td></tr>`;
+      loadMoreBtn.style.display = "none";
+      return;
+    }
+
+    logs.forEach(log => {
+      const tr = document.createElement("tr");
+      const detailsStr = formatAuditDetails(log.details);
+      const roleBadge = log.user_role ? `<span class="badge ${ROLE_BADGE[log.user_role] || 'badge-gray'}" style="font-size:10px;margin-left:4px">${ROLE_LABELS[log.user_role] || log.user_role}</span>` : '';
+      tr.innerHTML = `
+        <td class="text-mono text-sm">${fmtDatetime(log.created_at)}</td>
+        <td>
+          <div style="font-size:13px;font-weight:500">${log.user_name || '<span class="text-muted">Sistema</span>'}</div>
+          ${roleBadge}
+        </td>
+        <td><span class="badge ${ACTION_BADGE[log.action] || 'badge-gray'}" style="font-size:11px">${log.action_label || log.action}</span></td>
+        <td>
+          <span style="font-size:12px;color:var(--text2)">${log.entity_label || log.entity_type}</span>
+          ${log.entity_id ? `<div class="text-mono text-sm" style="color:var(--text3);font-size:10px">${log.entity_id.substring(0,8)}…</div>` : ''}
+        </td>
+        <td style="max-width:300px">
+          <div style="font-size:12px;color:var(--text2);word-break:break-word">${detailsStr}</div>
+        </td>
+        <td class="text-mono text-sm" style="font-size:11px;color:var(--text3)">${log.ip_address || '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    loadMoreBtn.style.display = logs.length >= AUDIT_LIMIT ? "" : "none";
+  } catch(e) {
+    if (replace) tbody.innerHTML = sectionError(e.message, reloadAuditLogs);
+    showToast(e.message, "error");
+  }
+}
+
+function formatAuditDetails(detailsJson) {
+  if (!detailsJson) return '—';
+  try {
+    const d = typeof detailsJson === 'string' ? JSON.parse(detailsJson) : detailsJson;
+    const skip = ['product_id','project_id','supplier_id','invoice_id','category_id'];
+    return Object.entries(d)
+      .filter(([k]) => !skip.includes(k))
+      .map(([k, v]) => {
+        const label = k.replace(/_/g, ' ');
+        const val = v === true ? 'sim' : v === false ? 'não' : String(v);
+        return `<span style="color:var(--text3)">${label}:</span> <strong>${val}</strong>`;
+      })
+      .join(' &nbsp;·&nbsp; ');
+  } catch(e) {
+    return String(detailsJson).substring(0, 120);
+  }
+}
+
+function fmtDatetime(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso.replace(' ', 'T') + (iso.includes('+') || iso.includes('Z') ? '' : 'Z'));
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  } catch(e) { return iso; }
+}
+
+function clearAuditFilters() {
+  document.getElementById("audit-entity-type").value = "";
+  document.getElementById("audit-action").value = "";
+  document.getElementById("audit-user-filter").value = "";
+  document.getElementById("audit-date-from").value = "";
+  document.getElementById("audit-date-to").value = "";
+  reloadAuditLogs();
 }
 
 // ─────────────────────────────────────────────

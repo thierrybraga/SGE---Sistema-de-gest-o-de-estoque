@@ -166,23 +166,67 @@
         <input id="new-prod-sku" type="text" class="form-control" placeholder="SKU-001" />
       </div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea id="new-prod-description" class="form-control" placeholder="Descrição técnica do produto"></textarea>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group">
         <label class="form-label">Categoria</label>
-        <select id="new-prod-category" class="form-control">
-          <option value="">Sem categoria</option>
-        </select>
+        <div class="flex gap-2">
+          <select id="new-prod-category" class="form-control">
+            <option value="">Sem categoria</option>
+          </select>
+          <button type="button" class="btn btn-secondary btn-icon" onclick="openInlineCategoryModal()" title="Nova categoria" data-tooltip="Nova categoria">
+            <i class="fas fa-folder-plus"></i>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Unidade</label>
         <select id="new-prod-unit" class="form-control">
-          <option value="un">un</option>
-          <option value="kg">kg</option>
-          <option value="m">m</option>
-          <option value="l">l</option>
-          <option value="cx">cx</option>
-          <option value="pc">pc</option>
+          <option value="un">un — Unidade</option>
+          <option value="pç">pç — Peça</option>
+          <option value="pc">pc — Pacote</option>
+          <option value="cx">cx — Caixa</option>
+          <option value="par">par — Par</option>
+          <option value="gl">gl — Global</option>
+          <option value="kg">kg — Quilograma</option>
+          <option value="g">g — Grama</option>
+          <option value="t">t — Tonelada</option>
+          <option value="m">m — Metro linear</option>
+          <option value="m2">m² — Metro quadrado</option>
+          <option value="m3">m³ — Metro cúbico</option>
+          <option value="cm">cm — Centímetro</option>
+          <option value="l">l — Litro</option>
+          <option value="ml">ml — Mililitro</option>
+          <option value="rolo">rolo — Rolo</option>
+          <option value="saco">saco — Saco</option>
+          <option value="bd">bd — Balde</option>
+          <option value="lata">lata — Lata</option>
+          <option value="hr">hr — Hora</option>
+          <option value="serv">serv — Serviço</option>
         </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Código de Barras</label>
+        <input id="new-prod-barcode" type="text" class="form-control" placeholder="789..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preço de Custo (R$)</label>
+        <input id="new-prod-cost" type="number" step="0.01" class="form-control" placeholder="0,00" value="0" />
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Preço de Venda (R$)</label>
+        <input id="new-prod-sale" type="number" step="0.01" class="form-control" placeholder="0,00" value="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">NCM (referência)</label>
+        <input id="new-prod-ncm-ref" type="text" class="form-control" placeholder="00000000" />
       </div>
     </div>
     <div class="form-group">
@@ -199,6 +243,29 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-inline-category">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Nova Categoria</h2>
+      <button class="modal-close" onclick="closeModal('modal-inline-category')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome *</label>
+      <input id="inline-cat-name" type="text" class="form-control" placeholder="Ex: Elétrica" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea id="inline-cat-desc" class="form-control" placeholder="Descrição opcional..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-inline-category')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-inline-category" onclick="saveInlineCategory()">
+        <i class="fas fa-save"></i> Salvar Categoria
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 requireAuth();
 initUserInfo();
@@ -207,6 +274,9 @@ let selectedXmlFile = null;
 let selectedPdfFile = null;
 let currentInvoiceId = null;
 let allProductsForMatch = [];
+let inlineCategories = [];
+let allProjectsForMatch = [];
+let currentInvoiceData = null;
 let currentUserRole = getUser()?.role || "";
 
 // ─────────────────────────────────────────────
@@ -232,7 +302,7 @@ async function loadInvoices() {
         reversed: 'badge-gray'
       };
 
-      const isPdf = inv.xml_content && inv.xml_content.startsWith("[PDF");
+      const isPdf = inv.is_pdf || (inv.source_file_name && inv.source_file_name.toLowerCase().endsWith(".pdf"));
       const sourceIcon = isPdf
         ? `<i class="fas fa-file-pdf" title="Importado via PDF" style="color:#e74c3c;margin-right:4px"></i>`
         : `<i class="fas fa-file-code" title="Importado via XML" style="color:var(--accent);margin-right:4px"></i>`;
@@ -245,6 +315,11 @@ async function loadInvoices() {
       if (inv.status === 'pending') {
         actions.push(`<button class="btn btn-primary btn-sm" onclick="openProcess('${inv.id}')">
           <i class="fas fa-cogs"></i> Processar
+        </button>`);
+      }
+      if (inv.pdf_available) {
+        actions.push(`<button class="btn btn-secondary btn-sm" onclick="downloadInvoicePdf('${inv.id}')">
+          <i class="fas fa-file-pdf"></i> PDF
         </button>`);
       }
       if (inv.status === 'processed' && currentUserRole === 'admin') {
@@ -263,7 +338,7 @@ async function loadInvoices() {
         <td class="text-mono text-sm">${inv.supplier_cnpj || '—'}${cnpjWarning}</td>
         <td>${fmtDateShort(inv.issue_date)}</td>
         <td class="text-mono">${fmtCurrency(inv.total_value)}</td>
-        <td>${inv.items?.length || 0} itens</td>
+        <td>${inv.items_count || 0} itens${inv.matched_count > 0 ? ` <span class="badge badge-success" style="font-size:10px">${inv.matched_count} ok</span>` : ''}${inv.skipped_count > 0 ? ` <span class="badge badge-gray" style="font-size:10px">${inv.skipped_count} ignorados</span>` : ''}</td>
         <td><span class="badge ${statusBadge[inv.status] || 'badge-gray'}">${inv.status}</span></td>
         <td><div style="display:flex;gap:6px;flex-wrap:wrap">${actions.join('')}</div></td>
       </tr>`;
@@ -276,6 +351,17 @@ async function loadInvoices() {
 
 async function loadProductsForMatch() {
   try { allProductsForMatch = await api.get("/products/"); } catch(e) {}
+}
+
+async function loadProjectsForMatch() {
+  try {
+    const projects = await api.get("/projects/");
+    allProjectsForMatch = projects.filter(p => p.status !== "completed");
+  } catch(e) {}
+}
+
+function downloadInvoicePdf(invoiceId) {
+  window.open(`${API_BASE}/invoices/${invoiceId}/pdf`, "_blank");
 }
 
 // ─────────────────────────────────────────────
@@ -426,13 +512,22 @@ async function importPdf() {
 // Process Invoice Modal
 // ─────────────────────────────────────────────
 
+function escapeAttr(value) {
+  return String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function projectOptions(selectedId = "") {
+  return '<option value="">Sem projeto</option>' + allProjectsForMatch.map(p =>
+    `<option value="${p.id}" ${selectedId === p.id ? "selected" : ""}>${p.name}</option>`
+  ).join("");
+}
+
 async function openProcess(invoiceId) {
   currentInvoiceId = invoiceId;
   try {
     const invoice = await api.get(`/invoices/${invoiceId}`);
+    currentInvoiceData = invoice;
     const container = document.getElementById("process-items");
-
-    // Validation warnings
     const warnDiv = document.getElementById("process-validation-warnings");
     if (invoice.validation_warnings && invoice.validation_warnings.length > 0) {
       warnDiv.style.display = "block";
@@ -447,59 +542,94 @@ async function openProcess(invoiceId) {
     }
 
     container.innerHTML = invoice.items.map((item, idx) => {
-      // Match confidence badge
       const conf = item.match_confidence || 0;
       let confBadge = "";
       if (item.matched && conf > 0) {
         const cls = conf >= 0.8 ? "badge-success" : conf >= 0.6 ? "badge-warning" : "badge-danger";
         confBadge = `<span class="badge ${cls}" title="Confiança do match automático" style="margin-left:6px">${Math.round(conf * 100)}%</span>`;
       }
-
-      const escapedDesc = item.description.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      const escapedUnit = (item.unit || "un").replace(/'/g, "\\'");
-
       return `
-        <div class="card card-sm mb-4" id="item-card-${idx}">
+        <div class="card card-sm mb-4" id="item-card-${idx}" data-item-id="${item.id}">
           <div class="flex justify-between items-center mb-2">
             <div>
-              <strong>${item.description}</strong>
-              ${item.ncm ? `<span class="text-muted text-sm" style="margin-left:8px">NCM: ${item.ncm}</span>` : ""}
+              <strong>${escapeAttr(item.description)}</strong>
+              ${item.ncm ? `<span class="text-muted text-sm" style="margin-left:8px">NCM: ${escapeAttr(item.ncm)}</span>` : ""}
               ${confBadge}
             </div>
-            <span class="text-mono text-sm">${fmtCurrency(item.unit_price)} × ${item.quantity}</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="text-mono text-sm text-muted">Item ${idx + 1}</span>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;margin:0" title="Marcar item para ignorar (não gera entrada no estoque)">
+                <input type="checkbox" class="item-skip-cb" onchange="toggleItemSkip(${idx})" style="cursor:pointer" />
+                <span>Ignorar</span>
+              </label>
+            </div>
           </div>
+          <div class="item-fields-${idx}">
           <div class="form-group" style="margin:0">
-            <label class="form-label">Mapear para produto do estoque</label>
+            <label class="form-label">Produto do estoque *</label>
             <div style="display:flex;gap:8px;align-items:flex-start">
               <select class="form-control item-product-map"
                       data-item-id="${item.id}"
-                      data-qty="${item.quantity}"
-                      data-total="${item.total_price}"
                       onchange="onProductSelect(this)">
-                <option value="">Ignorar este item</option>
+                <option value="">— Selecione um produto</option>
                 ${allProductsForMatch.map(p =>
-                  `<option value="${p.id}" ${item.matched && item.product_id === p.id ? 'selected' : ''}>${p.name}</option>`
+                  `<option value="${p.id}" ${item.product_id === p.id ? "selected" : ""}>${escapeAttr(p.name)} (${p.stock} ${p.unit || 'un'})</option>`
                 ).join("")}
               </select>
               <button class="btn btn-secondary btn-sm"
                       style="white-space:nowrap;flex-shrink:0"
-                      onclick="openCreateProductModal(${idx}, '${escapedDesc}', '${escapedUnit}')"
+                      onclick="openCreateProductModal(${idx})"
                       title="Criar novo produto">
                 <i class="fas fa-plus"></i> Criar
               </button>
             </div>
           </div>
-          <!-- Stock impact preview -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Quantidade *</label>
+              <input class="form-control item-qty" type="number" min="0.0001" step="0.0001" value="${item.quantity || 0}" oninput="updateItemTotal(${idx});updateProcessSummary()" />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Valor unitário *</label>
+              <input class="form-control item-unit-price" type="number" min="0" step="0.0001" value="${item.unit_price || 0}" oninput="updateItemTotal(${idx});updateProcessSummary()" />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Unidade</label>
+              <input class="form-control item-unit" type="text" value="${escapeAttr(item.unit || 'un')}" />
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Descrição</label>
+              <input class="form-control item-description" type="text" value="${escapeAttr(item.description || '')}" />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">NCM</label>
+              <input class="form-control item-ncm" type="text" value="${escapeAttr(item.ncm || '')}" />
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Projeto relacionado</label>
+              <select class="form-control item-project">
+                ${projectOptions("")}
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Total do item</label>
+              <input class="form-control item-total" type="text" value="${fmtCurrency(item.total_price || 0)}" readonly />
+            </div>
+          </div>
           <div id="stock-preview-${idx}" style="margin-top:8px;display:none"></div>
+          </div><!-- end item-fields -->
         </div>
       `;
     }).join("");
 
-    // Trigger preview for pre-matched items
     document.querySelectorAll(".item-product-map").forEach(sel => {
       if (sel.value) onProductSelect(sel);
     });
-
+    invoice.items.forEach((_, idx) => updateItemTotal(idx));
     updateProcessSummary();
     openModal("modal-process");
   } catch(e) { showToast(e.message, "error"); }
@@ -514,7 +644,7 @@ async function onProductSelect(selectEl) {
   const idx = card.id.replace("item-card-", "");
   const previewDiv = document.getElementById(`stock-preview-${idx}`);
   const productId = selectEl.value;
-  const qty = parseFloat(selectEl.dataset.qty) || 0;
+  const qty = parseFloat(card.querySelector(".item-qty")?.value) || 0;
 
   if (!productId) {
     previewDiv.style.display = "none";
@@ -561,42 +691,90 @@ async function onProductSelect(selectEl) {
   updateProcessSummary();
 }
 
+function updateItemTotal(idx) {
+  const card = document.getElementById(`item-card-${idx}`);
+  if (!card) return;
+  const qty = parseFloat(card.querySelector(".item-qty")?.value) || 0;
+  const unitPrice = parseFloat(card.querySelector(".item-unit-price")?.value) || 0;
+  const total = qty * unitPrice;
+  const totalInput = card.querySelector(".item-total");
+  if (totalInput) {
+    totalInput.value = fmtCurrency(total);
+  }
+  const productSelect = card.querySelector(".item-product-map");
+  if (productSelect && productSelect.value) {
+    onProductSelect(productSelect);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Skip item toggle
+// ─────────────────────────────────────────────
+
+function toggleItemSkip(idx) {
+  const card = document.getElementById(`item-card-${idx}`);
+  if (!card) return;
+  const cb = card.querySelector(".item-skip-cb");
+  const fields = card.querySelector(`.item-fields-${idx}`);
+  if (cb && cb.checked) {
+    if (fields) { fields.style.opacity = "0.35"; fields.style.pointerEvents = "none"; }
+    card.style.background = "var(--bg2)";
+  } else {
+    if (fields) { fields.style.opacity = ""; fields.style.pointerEvents = ""; }
+    card.style.background = "";
+  }
+  updateProcessSummary();
+}
+
 // ─────────────────────────────────────────────
 // Process summary footer
 // ─────────────────────────────────────────────
 
 function updateProcessSummary() {
-  const allSelects = document.querySelectorAll(".item-product-map");
+  const cards = document.querySelectorAll("[id^='item-card-']");
   let mappedCount = 0;
-  let ignoredCount = 0;
+  let skippedCount = 0;
+  let noProductCount = 0;
+  let invalidQtyCount = 0;
   let totalValue = 0;
 
-  allSelects.forEach(sel => {
-    const total = parseFloat(sel.dataset.total) || 0;
-    if (sel.value) {
+  cards.forEach(card => {
+    const cb = card.querySelector(".item-skip-cb");
+    if (cb && cb.checked) { skippedCount++; return; }
+    const sel = card.querySelector(".item-product-map");
+    const qty = parseFloat(card.querySelector(".item-qty")?.value) || 0;
+    const unitPrice = parseFloat(card.querySelector(".item-unit-price")?.value) || 0;
+    if (sel && sel.value) {
       mappedCount++;
-      totalValue += total;
+      totalValue += qty * unitPrice;
+      if (qty <= 0 || unitPrice < 0) invalidQtyCount++;
     } else {
-      ignoredCount++;
+      noProductCount++;
     }
   });
 
   document.getElementById("summary-mapped").textContent =
-    `Total de entradas: ${mappedCount} ite${mappedCount !== 1 ? "ns" : "m"}`;
+    `Entradas a registrar: ${mappedCount} ite${mappedCount !== 1 ? "ns" : "m"}` +
+    (skippedCount > 0 ? ` · ${skippedCount} ignorado(s)` : "") +
+    (noProductCount > 0 ? ` · ${noProductCount} sem produto` : "");
   document.getElementById("summary-total").textContent =
     mappedCount > 0 ? `Valor total: ${fmtCurrency(totalValue)}` : "";
 
   const ignoredWarn = document.getElementById("summary-ignored-warning");
   const ignoredText = document.getElementById("summary-ignored-text");
-  if (ignoredCount > 0) {
+  const warnings = [];
+  if (noProductCount > 0)
+    warnings.push(`${noProductCount} ite${noProductCount !== 1 ? "ns sem produto — serão ignorados" : "m sem produto — será ignorado"}`);
+  if (invalidQtyCount > 0)
+    warnings.push(`${invalidQtyCount} ite${invalidQtyCount !== 1 ? "ns com quantidade/valor inválidos" : "m com quantidade/valor inválido"}`);
+  if (warnings.length) {
     ignoredWarn.style.display = "block";
-    ignoredText.textContent =
-      `Nenhum produto selecionado: ${ignoredCount} ite${ignoredCount !== 1 ? "ns" : "m"} serão ignorados`;
+    ignoredText.textContent = warnings.join(" • ");
   } else {
     ignoredWarn.style.display = "none";
   }
-
-  document.getElementById("btn-process-invoice").disabled = mappedCount === 0;
+  // Allow processing if at least 1 mapped item with valid qty (items without product will be auto-skipped)
+  document.getElementById("btn-process-invoice").disabled = (mappedCount === 0) || (invalidQtyCount > 0);
 }
 
 // ─────────────────────────────────────────────
@@ -605,17 +783,40 @@ function updateProcessSummary() {
 
 async function processInvoice() {
   const mappings = [];
-  document.querySelectorAll(".item-product-map").forEach(sel => {
-    if (sel.value) {
-      mappings.push({ item_id: sel.dataset.itemId, product_id: sel.value });
+  document.querySelectorAll("[id^='item-card-']").forEach(card => {
+    const cb = card.querySelector(".item-skip-cb");
+    const sel = card.querySelector(".item-product-map");
+    const itemId = sel?.dataset.itemId || card.dataset.itemId;
+    const isSkipped = (cb && cb.checked) || !sel?.value;
+    if (isSkipped) {
+      mappings.push({ item_id: itemId, skip: true });
+    } else {
+      const qty = parseFloat(card.querySelector(".item-qty")?.value) || 0;
+      const unitPrice = parseFloat(card.querySelector(".item-unit-price")?.value) || 0;
+      mappings.push({
+        item_id: itemId,
+        product_id: sel.value,
+        project_id: card.querySelector(".item-project")?.value || null,
+        quantity: qty,
+        unit_price: unitPrice,
+        unit: (card.querySelector(".item-unit")?.value || "").trim() || "un",
+        description: (card.querySelector(".item-description")?.value || "").trim(),
+        ncm: (card.querySelector(".item-ncm")?.value || "").trim(),
+        total_price: qty * unitPrice,
+      });
     }
   });
   const btn = document.getElementById("btn-process-invoice");
   btn.innerHTML = '<span class="spinner"></span> Registrando...';
   btn.disabled = true;
   try {
-    await api.post(`/invoices/${currentInvoiceId}/process`, { item_mappings: mappings });
-    showToast("Nota processada! Entradas registradas no estoque.", "success");
+    const result = await api.post(`/invoices/${currentInvoiceId}/process`, { item_mappings: mappings });
+    const processed = result.processed_items || 0;
+    const skipped = result.skipped_items || 0;
+    showToast(
+      `Nota processada! ${processed} entrada(s) registrada(s)${skipped > 0 ? `, ${skipped} ignorada(s)` : ""}.`,
+      "success"
+    );
     closeModal("modal-process");
     loadInvoices();
   } catch(e) {
@@ -653,27 +854,73 @@ function reverseInvoice(invoiceId, invoiceNumber) {
 // Create product inline from process modal
 // ─────────────────────────────────────────────
 
-async function openCreateProductModal(itemIdx, description, unit) {
+async function openCreateProductModal(itemIdx) {
+  const item = (currentInvoiceData?.items || [])[Number(itemIdx)] || {};
   document.getElementById("new-prod-item-idx").value = itemIdx;
-  document.getElementById("new-prod-name").value = description;
+  document.getElementById("new-prod-name").value = item.description || "";
   document.getElementById("new-prod-sku").value = "";
+  document.getElementById("new-prod-description").value = item.description || "";
+  document.getElementById("new-prod-barcode").value = "";
+  document.getElementById("new-prod-cost").value = Number(item.unit_price || 0).toFixed(2);
+  document.getElementById("new-prod-sale").value = Number(item.unit_price || 0).toFixed(2);
+  document.getElementById("new-prod-ncm-ref").value = item.ncm || "";
   document.getElementById("new-prod-min").value = "0";
-
-  // Set unit
   const unitSel = document.getElementById("new-prod-unit");
-  const unitLower = (unit || "un").toLowerCase();
+  const unitLower = (item.unit || "un").toLowerCase();
   const matchingOption = Array.from(unitSel.options).find(o => o.value === unitLower);
   unitSel.value = matchingOption ? unitLower : "un";
 
-  // Load categories
-  try {
-    const cats = await api.get("/products/categories/");
-    const catSel = document.getElementById("new-prod-category");
-    catSel.innerHTML = '<option value="">Sem categoria</option>' +
-      cats.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-  } catch(e) {}
+  await loadInlineCategories();
 
   openModal("modal-create-product-inline");
+}
+
+function renderInlineCategoryOptions(selectedValue = "") {
+  const catSel = document.getElementById("new-prod-category");
+  catSel.innerHTML = '<option value="">Sem categoria</option>' +
+    inlineCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  catSel.value = selectedValue || "";
+}
+
+async function loadInlineCategories(selectedValue = "") {
+  try {
+    inlineCategories = await api.get("/products/categories/");
+    renderInlineCategoryOptions(selectedValue);
+  } catch(e) {}
+}
+
+function openInlineCategoryModal() {
+  document.getElementById("inline-cat-name").value = "";
+  document.getElementById("inline-cat-desc").value = "";
+  openModal("modal-inline-category");
+  setTimeout(() => document.getElementById("inline-cat-name").focus(), 50);
+}
+
+async function saveInlineCategory() {
+  const name = document.getElementById("inline-cat-name").value.trim();
+  if (!name) {
+    showToast("Nome da categoria é obrigatório", "error");
+    document.getElementById("inline-cat-name").focus();
+    return;
+  }
+
+  const btn = document.getElementById("btn-save-inline-category");
+  btn.classList.add("loading");
+  try {
+    const category = await api.post("/products/categories/", {
+      name,
+      description: document.getElementById("inline-cat-desc").value.trim() || null,
+    });
+    inlineCategories.push(category);
+    inlineCategories.sort((a, b) => (a.name || "").localeCompare(b.name || "", "pt-BR", { sensitivity: "base" }));
+    renderInlineCategoryOptions(category.id);
+    closeModal("modal-inline-category");
+    showToast("Categoria criada com sucesso!", "success");
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    btn.classList.remove("loading");
+  }
 }
 
 async function saveInlineProduct() {
@@ -686,13 +933,20 @@ async function saveInlineProduct() {
   const itemIdx = document.getElementById("new-prod-item-idx").value;
   const payload = {
     name,
+    description: (() => {
+      const base = document.getElementById("new-prod-description").value.trim();
+      const ncmRef = document.getElementById("new-prod-ncm-ref").value.trim();
+      if (!ncmRef) return base || null;
+      return `${base}${base ? " | " : ""}NCM: ${ncmRef}`;
+    })(),
     sku: document.getElementById("new-prod-sku").value.trim() || null,
+    barcode: document.getElementById("new-prod-barcode").value.trim() || null,
     category_id: document.getElementById("new-prod-category").value || null,
     min_stock: parseInt(document.getElementById("new-prod-min").value) || 0,
     unit: document.getElementById("new-prod-unit").value,
     stock: 0,
-    cost_price: 0,
-    sale_price: 0,
+    cost_price: parseFloat(document.getElementById("new-prod-cost").value) || 0,
+    sale_price: parseFloat(document.getElementById("new-prod-sale").value) || 0,
   };
 
   const btn = document.getElementById("btn-save-inline-product");
@@ -740,6 +994,7 @@ async function saveInlineProduct() {
 
 loadInvoices();
 loadProductsForMatch();
+loadProjectsForMatch();
 </script>
 </body>
 {% endblock %}

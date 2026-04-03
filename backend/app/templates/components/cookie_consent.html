@@ -1,0 +1,34 @@
+<div id="cookie-consent-banner" style="display: none; position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--bg-card, #1e1e2e); border: 1px solid var(--border, #313244); border-radius: 12px; padding: 20px; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-width: 500px; margin: 0 auto;">
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-cookie-bite" style="color: var(--accent, #cba6f7); font-size: 24px;"></i>
+            <h3 style="margin: 0; font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text1, #cdd6f4);">Privacidade e Cookies</h3>
+        </div>
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: var(--text2, #a6adc8);">
+            Este sistema utiliza cookies essenciais para garantir o funcionamento seguro e a autenticação da sua sessão, em conformidade com a LGPD. Ao continuar, você concorda com o uso de cookies necessários.
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button onclick="acceptCookies()" style="background: var(--accent, #cba6f7); color: #11111b; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                Aceitar e Continuar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkCookieConsent() {
+        const consent = localStorage.getItem('lgpd_consent');
+        if (!consent) {
+            document.getElementById('cookie-consent-banner').style.display = 'block';
+        }
+    }
+
+    function acceptCookies() {
+        localStorage.setItem('lgpd_consent', 'accepted');
+        document.getElementById('cookie-consent-banner').style.display = 'none';
+        showToast("Preferências de cookies salvas!", "success");
+    }
+
+    // Initialize check
+    window.addEventListener('DOMContentLoaded', checkCookieConsent);
+</script>

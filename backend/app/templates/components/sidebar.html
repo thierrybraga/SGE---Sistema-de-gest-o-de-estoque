@@ -21,10 +21,12 @@
          class="nav-item {% if active_page == 'products' %}active{% endif %}"
          data-page="products"
          title="Produtos"
+         id="nav-products"
          data-tooltip="Produtos"
          {% if active_page == 'products' %}aria-current="page"{% endif %}>
         <i class="fas fa-boxes" aria-hidden="true"></i>
         <span>Produtos</span>
+        <span id="badge-low-stock" class="badge badge-danger" style="display:none; margin-left:auto; font-size:10px; padding:2px 6px">!</span>
       </a>
       <a href="/movements"
          class="nav-item {% if active_page == 'movements' %}active{% endif %}"
@@ -65,6 +67,55 @@
          {% if active_page == 'suppliers' %}aria-current="page"{% endif %}>
         <i class="fas fa-truck" aria-hidden="true"></i>
         <span>Fornecedores</span>
+      </a>
+      <a href="/purchase-orders"
+         class="nav-item {% if active_page == 'purchase_orders' %}active{% endif %}"
+         data-page="purchase_orders"
+         title="Ordens de Compra"
+         data-tooltip="Ordens de Compra"
+         {% if active_page == 'purchase_orders' %}aria-current="page"{% endif %}>
+        <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+        <span>Ordens de Compra</span>
+      </a>
+      <a href="/tools"
+         class="nav-item {% if active_page == 'tools' %}active{% endif %}"
+         data-page="tools"
+         title="Ferramentas"
+         data-tooltip="Ferramentas"
+         {% if active_page == 'tools' %}aria-current="page"{% endif %}>
+        <i class="fas fa-tools" aria-hidden="true"></i>
+        <span>Ferramentas</span>
+      </a>
+      <a href="/mobile/tools"
+         class="nav-item {% if active_page == 'mobile_tools' %}active{% endif %}"
+         data-page="mobile_tools"
+         id="nav-mobile-tools"
+         title="Modo Operador (Ferramentas)"
+         data-tooltip="Modo Operador (Ferramentas)">
+        <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+        <span>Ferramentas (Mobile)</span>
+      </a>
+      <a href="/mobile/inventory"
+         class="nav-item {% if active_page == 'mobile_inventory' %}active{% endif %}"
+         data-page="mobile_inventory"
+         id="nav-mobile-inventory"
+         title="Consulta de Estoque (Mobile)"
+         data-tooltip="Consulta de Estoque (Mobile)">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <span>Estoque (Mobile)</span>
+      </a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Inventário</div>
+      <a href="/inventory-check"
+         class="nav-item {% if active_page == 'inventory_check' %}active{% endif %}"
+         data-page="inventory_check"
+         title="Inventário Físico"
+         data-tooltip="Inventário Físico"
+         {% if active_page == 'inventory_check' %}aria-current="page"{% endif %}>
+        <i class="fas fa-clipboard-check" aria-hidden="true"></i>
+        <span>Inventário Físico</span>
       </a>
     </div>
 

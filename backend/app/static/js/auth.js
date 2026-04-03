@@ -36,6 +36,18 @@ function initUserInfo() {
   if (nameEl) nameEl.textContent = user.name;
   if (roleEl) roleEl.textContent = roleLabels[user.role] || user.role;
   if (avatarEl) avatarEl.textContent = getInitials(user.name);
+
+  // Global Alerts Check (e.g. Low Stock Badge in Sidebar)
+  if (user.role === 'admin' || user.role === 'manager') {
+    checkSidebarAlerts();
+  }
+
+  // Check for default admin credentials
+  if (user.email === "admin@stock.com") {
+    setTimeout(() => {
+      showToast("⚠️ Atenção: Você está usando o e-mail padrão. Recomendamos alterar seu e-mail e senha por segurança!", "warning", 10000);
+    }, 1000);
+  }
 }
 
 function getInitials(name) {
@@ -54,7 +66,7 @@ const roleLabels = {
 };
 
 function setActiveNav(page) {
-  document.querySelectorAll(".nav-item").forEach((el) => {
+  document.querySelectorAll(".sidebar .nav-item[data-page]").forEach((el) => {
     el.classList.remove("active");
     el.removeAttribute("aria-current");
     if (el.dataset.page === page) {
@@ -74,6 +86,7 @@ function toggleSidebar() {
 }
 
 function initHamburger() {
+  if (!document.querySelector(".sidebar")) return;
   // Inject hamburger button and overlay if not present
   if (!document.querySelector(".sidebar-toggle")) {
     const btn = document.createElement("button");

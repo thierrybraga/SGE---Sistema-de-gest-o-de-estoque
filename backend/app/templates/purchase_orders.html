@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Ordens de Compra{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('purchase_orders') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Ordens de Compra</div>
+      <div class="topbar-actions">
+        <select id="filter-status" class="form-control" style="width:160px" onchange="loadPOs()">
+          <option value="">Todos os status</option>
+          <option value="draft">Rascunho</option>
+          <option value="sent">Enviada</option>
+          <option value="partial">Parcial</option>
+          <option value="received">Recebida</option>
+          <option value="cancelled">Cancelada</option>
+        </select>
+        <button class="btn btn-primary" onclick="openNewPO()">
+          <i class="fas fa-plus"></i> Nova OC
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="stats-grid" id="po-stats">
+        <div class="stat-card cyan">
+          <div class="stat-label">Total OCs</div>
+          <div class="stat-value cyan" id="stat-total">—</div>
+          <i class="fas fa-shopping-cart stat-icon"></i>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-label">Pendentes</div>
+          <div class="stat-value amber" id="stat-pending">—</div>
+          <i class="fas fa-clock stat-icon"></i>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Recebidas</div>
+          <div class="stat-value green" id="stat-received">—</div>
+          <i class="fas fa-check-circle stat-icon"></i>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Valor Total</div>
+          <div class="stat-value purple" id="stat-value" style="font-size:18px">—</div>
+          <i class="fas fa-dollar-sign stat-icon"></i>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>N. OC</th><th>Fornecedor</th><th>Itens</th><th>Valor Total</th>
+                <th>Status</th><th>Criado por</th><th>Data</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="po-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pending Approvals -->
+      <div class="card mt-4" id="approvals-card" style="display:none">
+        <div class="card-title"><i class="fas fa-gavel" style="color:var(--warn)"></i> Movimentações Pendentes de Aprovação</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Produto</th><th>Tipo</th><th>Qtd</th><th>Solicitante</th><th>Data</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="approvals-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Forecast -->
+      <div class="card mt-4">
+        <div class="flex items-center justify-between mb-4">
+          <div class="card-title" style="margin-bottom:0"><i class="fas fa-chart-line" style="color:var(--accent3)"></i> Sugestão de Compras (Forecast)</div>
+          <select class="form-control" style="width:140px" id="forecast-months" onchange="loadForecast()">
+            <option value="1">Último mês</option>
+            <option value="3" selected>Últimos 3 meses</option>
+            <option value="6">Últimos 6 meses</option>
+          </select>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr><th>Produto</th><th>Estoque</th><th>Mínimo</th><th>Consumo/mês</th>
+                  <th>Dias até zerar</th><th>Sugestão compra</th><th>Custo est.</th><th>Urgência</th></tr>
+            </thead>
+            <tbody id="forecast-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New PO -->
+<div class="modal-overlay" id="modal-po">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-po-title">Nova Ordem de Compra</h2>
+      <button class="modal-close" onclick="closeModal('modal-po')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Fornecedor *</label>
+        <select id="po-supplier" class="form-control"><option value="">Selecione...</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Previsão de Entrega</label>
+        <input type="date" id="po-delivery" class="form-control" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea id="po-notes" class="form-control" placeholder="Observações..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Itens da OC</label>
+      <div id="po-items-list"></div>
+      <button class="btn btn-secondary btn-sm mt-2" onclick="addPOItem()">
+        <i class="fas fa-plus"></i> Adicionar Item
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-po')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePO()"><i class="fas fa-save"></i> Salvar OC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: PO Details -->
+<div class="modal-overlay" id="modal-po-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="detail-title">Detalhes da OC</h2>
+      <button class="modal-close" onclick="closeModal('modal-po-detail')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="detail-body"></div>
+    <div class="modal-footer" id="detail-footer"></div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let allPOs = [];
+let products = [];
+let suppliers = [];
+
+async function loadPOs() {
+  const tbody = document.getElementById("po-table");
+  tbody.innerHTML = skeletonRows(8, 5);
+  const status = document.getElementById("filter-status").value;
+  try {
+    let url = "/purchase-orders/";
+    if (status) url += "?status=" + status;
+    allPOs = await api.get(url);
+    renderPOs();
+    updateStats();
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadPOs);
+  }
+}
+
+function updateStats() {
+  document.getElementById("stat-total").textContent = allPOs.length;
+  document.getElementById("stat-pending").textContent = allPOs.filter(p => p.status === "draft" || p.status === "sent").length;
+  document.getElementById("stat-received").textContent = allPOs.filter(p => p.status === "received").length;
+  const total = allPOs.reduce((s, p) => s + (p.total_value || 0), 0);
+  document.getElementById("stat-value").textContent = fmtCurrency(total);
+}
+
+function poStatusBadge(status) {
+  const map = {
+    draft: '<span class="badge badge-gray">Rascunho</span>',
+    sent: '<span class="badge badge-info">Enviada</span>',
+    partial: '<span class="badge badge-warning">Parcial</span>',
+    received: '<span class="badge badge-success">Recebida</span>',
+    cancelled: '<span class="badge badge-danger">Cancelada</span>'
+  };
+  return map[status] || status;
+}
+
+function renderPOs() {
+  const tbody = document.getElementById("po-table");
+  if (!allPOs.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-shopping-cart"></i><h3>Nenhuma OC</h3><p>Crie a primeira ordem de compra</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = allPOs.map(po => `<tr>
+    <td><strong class="text-mono">${po.po_number}</strong></td>
+    <td>${po.supplier_name || '—'}</td>
+    <td class="text-mono">${po.items_count}</td>
+    <td class="text-mono">${fmtCurrency(po.total_value)}</td>
+    <td>${poStatusBadge(po.status)}</td>
+    <td class="text-muted text-sm">${po.created_by_name || '—'}</td>
+    <td class="text-muted text-sm">${fmtDateShort(po.created_at)}</td>
+    <td>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="viewPO('${po.id}')" title="Detalhes"><i class="fas fa-eye"></i></button>
+        ${po.status === 'draft' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="sendPO(\'' + po.id + '\')" title="Enviar"><i class="fas fa-paper-plane" style="color:var(--accent)"></i></button>' : ''}
+        ${po.status === 'sent' || po.status === 'partial' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="receivePO(\'' + po.id + '\')" title="Receber"><i class="fas fa-check" style="color:var(--accent3)"></i></button>' : ''}
+        ${po.status === 'draft' || po.status === 'sent' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="cancelPO(\'' + po.id + '\')" title="Cancelar"><i class="fas fa-times" style="color:var(--danger)"></i></button>' : ''}
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+async function viewPO(id) {
+  try {
+    const po = await api.get("/purchase-orders/" + id);
+    document.getElementById("detail-title").textContent = "OC " + po.po_number;
+    let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">';
+    html += '<div><span class="text-muted text-sm">Fornecedor:</span><br><strong>' + (po.supplier_name || '—') + '</strong></div>';
+    html += '<div><span class="text-muted text-sm">Status:</span><br>' + poStatusBadge(po.status) + '</div>';
+    html += '<div><span class="text-muted text-sm">Valor Total:</span><br><strong class="text-mono">' + fmtCurrency(po.total_value) + '</strong></div>';
+    html += '<div><span class="text-muted text-sm">Criado em:</span><br>' + fmtDate(po.created_at) + '</div>';
+    if (po.notes) html += '<div style="grid-column:span 2"><span class="text-muted text-sm">Notas:</span><br>' + po.notes + '</div>';
+    html += '</div>';
+    html += '<table><thead><tr><th>Produto</th><th>SKU</th><th>Qtd</th><th>Preço Unit.</th><th>Total</th><th>Recebido</th></tr></thead><tbody>';
+    (po.items || []).forEach(i => {
+      html += '<tr><td>' + (i.product_name || '—') + '</td><td class="text-mono text-sm">' + (i.product_sku || '—') + '</td>';
+      html += '<td class="text-mono">' + i.quantity + '</td><td class="text-mono">' + fmtCurrency(i.unit_price) + '</td>';
+      html += '<td class="text-mono">' + fmtCurrency(i.quantity * i.unit_price) + '</td>';
+      html += '<td class="text-mono">' + (i.received_quantity || 0) + '/' + i.quantity + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById("detail-body").innerHTML = html;
+    document.getElementById("detail-footer").innerHTML = '<button class="btn btn-secondary" onclick="closeModal(\'modal-po-detail\')">Fechar</button>';
+    openModal("modal-po-detail");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function sendPO(id) {
+  showConfirm({ title: "Enviar OC", message: "Confirma o envio desta ordem de compra ao fornecedor?", type: "info", icon: "fa-paper-plane", confirmText: "Enviar",
+    onConfirm: async () => {
+      try { await api.post("/purchase-orders/" + id + "/send"); showToast("OC enviada!"); loadPOs(); } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+async function receivePO(id) {
+  try {
+    const po = await api.get("/purchase-orders/" + id);
+    const items = (po.items || []).map(i => ({ item_id: i.id, received_quantity: i.quantity - (i.received_quantity || 0) }));
+    await api.post("/purchase-orders/" + id + "/receive", { items });
+    showToast("Recebimento registrado!");
+    loadPOs();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function cancelPO(id) {
+  showConfirm({ title: "Cancelar OC", message: "Deseja cancelar esta ordem de compra?", type: "danger", confirmText: "Cancelar OC",
+    onConfirm: async () => {
+      try { await api.post("/purchase-orders/" + id + "/cancel"); showToast("OC cancelada"); loadPOs(); } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+let poItemIdx = 0;
+function addPOItem() {
+  const list = document.getElementById("po-items-list");
+  const idx = poItemIdx++;
+  const div = document.createElement("div");
+  div.className = "form-row";
+  div.id = "po-item-" + idx;
+  div.style.alignItems = "flex-end";
+  div.innerHTML = `
+    <div class="form-group" style="flex:3">
+      <label class="form-label">Produto</label>
+      <select class="form-control po-item-product" data-idx="${idx}"><option value="">Selecione...</option>
+        ${products.map(p => '<option value="' + p.id + '" data-cost="' + (p.cost_price||0) + '">' + p.name + '</option>').join("")}
+      </select>
+    </div>
+    <div class="form-group" style="flex:1">
+      <label class="form-label">Qtd</label>
+      <input type="number" class="form-control po-item-qty" min="1" value="1" />
+    </div>
+    <div class="form-group" style="flex:1">
+      <label class="form-label">Preço Unit.</label>
+      <input type="number" class="form-control po-item-price" step="0.01" value="0" />
+    </div>
+    <button class="btn btn-secondary btn-sm btn-icon" onclick="document.getElementById('po-item-${idx}').remove()" title="Remover" style="margin-bottom:12px">
+      <i class="fas fa-trash" style="color:var(--danger)"></i>
+    </button>
+  `;
+  list.appendChild(div);
+}
+
+function openNewPO() {
+  document.getElementById("po-supplier").value = "";
+  document.getElementById("po-delivery").value = "";
+  document.getElementById("po-notes").value = "";
+  document.getElementById("po-items-list").innerHTML = "";
+  poItemIdx = 0;
+  addPOItem();
+  openModal("modal-po");
+}
+
+async function savePO() {
+  const supplierId = document.getElementById("po-supplier").value;
+  if (!supplierId) { showToast("Selecione um fornecedor", "error"); return; }
+  const items = [];
+  document.querySelectorAll("#po-items-list .form-row").forEach(row => {
+    const productId = row.querySelector(".po-item-product")?.value;
+    const qty = parseFloat(row.querySelector(".po-item-qty")?.value) || 0;
+    const price = parseFloat(row.querySelector(".po-item-price")?.value) || 0;
+    if (productId && qty > 0) items.push({ product_id: productId, quantity: qty, unit_price: price });
+  });
+  if (!items.length) { showToast("Adicione pelo menos um item", "error"); return; }
+  try {
+    await api.post("/purchase-orders/", {
+      supplier_id: supplierId, items,
+      notes: document.getElementById("po-notes").value,
+      expected_delivery: document.getElementById("po-delivery").value || null
+    });
+    showToast("OC criada com sucesso!");
+    closeModal("modal-po");
+    loadPOs();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+// Pending Approvals
+async function loadApprovals() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.role !== "admin" && user.role !== "manager") return;
+    const pending = await api.get("/movements/pending-approval");
+    const card = document.getElementById("approvals-card");
+    const tbody = document.getElementById("approvals-table");
+    if (!pending.length) { card.style.display = "none"; return; }
+    card.style.display = "";
+    tbody.innerHTML = pending.map(m => `<tr>
+      <td><strong>${m.product_name || '—'}</strong></td>
+      <td>${movBadge(m.type)}</td>
+      <td class="text-mono">${Math.abs(m.quantity)}</td>
+      <td class="text-muted text-sm">${m.user_name || '—'}</td>
+      <td class="text-muted text-sm">${fmtDate(m.created_at)}</td>
+      <td>
+        <div class="flex gap-2">
+          <button class="btn btn-sm" style="background:var(--accent3);color:white;border:none" onclick="approveMovement('${m.id}')"><i class="fas fa-check"></i> Aprovar</button>
+          <button class="btn btn-sm" style="background:var(--danger);color:white;border:none" onclick="rejectMovement('${m.id}')"><i class="fas fa-times"></i> Rejeitar</button>
+        </div>
+      </td>
+    </tr>`).join("");
+  } catch(e) { console.warn(e); }
+}
+
+async function approveMovement(id) {
+  try { await api.post("/movements/" + id + "/approve"); showToast("Aprovado!"); loadApprovals(); } catch(e) { showToast(e.message, "error"); }
+}
+
+async function rejectMovement(id) {
+  showConfirm({ title: "Rejeitar movimentação", message: "Deseja rejeitar esta saída?", type: "danger", confirmText: "Rejeitar",
+    onConfirm: async () => {
+      try { await api.post("/movements/" + id + "/reject", { notes: "Rejeitado pelo gestor" }); showToast("Rejeitado"); loadApprovals(); } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+// Forecast
+async function loadForecast() {
+  const tbody = document.getElementById("forecast-table");
+  tbody.innerHTML = skeletonRows(8, 4);
+  const months = document.getElementById("forecast-months").value;
+  try {
+    const data = await api.get("/inventory/forecast?months=" + months);
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-chart-line"></i><p>Sem dados de consumo no período</p></div></td></tr>';
+      return;
+    }
+    const urgencyBadge = { critical: 'badge-danger', high: 'badge-warning', medium: 'badge-info' };
+    const urgencyLabel = { critical: 'Crítico', high: 'Alto', medium: 'Médio' };
+    tbody.innerHTML = data.map(f => `<tr>
+      <td><strong>${f.name}</strong><br><span class="text-muted text-sm">${f.sku || ''}</span></td>
+      <td class="text-mono">${f.current_stock} ${f.unit}</td>
+      <td class="text-muted">${f.min_stock}</td>
+      <td class="text-mono">${f.monthly_avg_consumption}</td>
+      <td class="text-mono"><strong>${f.days_until_empty}</strong> dias</td>
+      <td class="text-mono" style="color:var(--accent3)"><strong>${f.suggested_quantity}</strong> ${f.unit}</td>
+      <td class="text-mono">${fmtCurrency(f.estimated_cost)}</td>
+      <td><span class="badge ${urgencyBadge[f.urgency]}">${urgencyLabel[f.urgency]}</span></td>
+    </tr>`).join("");
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadForecast);
+  }
+}
+
+// Load data
+async function init() {
+  try { products = await api.get("/products/"); } catch(e) {}
+  try { suppliers = await api.get("/suppliers/"); } catch(e) {}
+  const selSup = document.getElementById("po-supplier");
+  selSup.innerHTML = '<option value="">Selecione...</option>' +
+    suppliers.map(s => '<option value="' + s.id + '">' + s.name + '</option>').join("");
+  loadPOs();
+  loadApprovals();
+  loadForecast();
+}
+init();
+</script>
+</body>
+{% endblock %}

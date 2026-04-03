@@ -1,0 +1,63 @@
+{% macro mobile_nav(active_page) %}
+<nav class="bottom-nav">
+    <a href="/mobile/tools" class="nav-item {{ 'active' if active_page == 'tools' else '' }}">
+        <i class="fas fa-tools"></i>
+        <span>Ferramentas</span>
+    </a>
+    <a href="/mobile/inventory" class="nav-item {{ 'active' if active_page == 'inventory' else '' }}">
+        <i class="fas fa-search"></i>
+        <span>Consulta</span>
+    </a>
+    <a href="/dashboard" class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Início</span>
+    </a>
+</nav>
+
+<style>
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg-card, #1e1e2e);
+        border-top: 1px solid var(--border, #313244);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0;
+        z-index: 1000;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: var(--text3, #a6adc8);
+        font-size: 11px;
+        text-decoration: none;
+        gap: 4px;
+        flex: 1;
+        transition: color 0.2s, transform 0.2s;
+        min-height: 48px;
+        justify-content: center;
+    }
+    .nav-item.active { color: var(--accent, #cba6f7); }
+    .nav-item i { font-size: 19px; }
+    .nav-item:active {
+        transform: scale(0.96);
+    }
+    body { padding-bottom: 70px; }
+    @media (min-width: 900px) {
+        .bottom-nav {
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            width: min(560px, calc(100% - 32px));
+            border: 1px solid var(--border, #313244);
+            border-radius: 14px;
+            bottom: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+        }
+    }
+</style>
+{% endmacro %}

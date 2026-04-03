@@ -1,0 +1,61 @@
+numero_pedido;data_pedido;fornecedor;email_fornecedor;status;valor_produtos;desconto_percentual;valor_frete;valor_total;prazo_entrega_dias;data_prevista_entrega;data_real_entrega;condicao_pagamento;obra_destino;aprovado_por;observacoes
+PC-2026-0001;2026-01-08;Construforte Ltda;compras@construforte.com.br;aprovado;23597.43;7.1;84.35;22006.36;14;2026-01-22;;28 dias;Reforma Comercial SP;Gerente de Compras;Verificar disponibilidade
+PC-2026-0002;2026-01-04;Casa do EPI;vendas@casadoepi.com.br;aprovado;24639.92;0.6;133.67;24625.75;9;2026-01-13;;30/60 dias;Depósito Central;CEO;
+PC-2026-0003;2026-02-18;Casa do EPI;vendas@casadoepi.com.br;enviado_fornecedor;18390.33;6.9;286.44;17407.84;20;2026-03-10;;21/42 dias;Edifício Central Business;Dir. Financeiro;
+PC-2026-0004;2026-03-05;Metal Supply Brasil;vendas@metalsupply.com.br;parcialmente_recebido;4586.49;5.1;229.79;4582.37;14;2026-03-19;2026-03-17;30/60 dias;Edifício Central Business;Dir. Financeiro;
+PC-2026-0005;2026-01-17;Metal Supply Brasil;vendas@metalsupply.com.br;parcialmente_recebido;11505.13;2.6;25.47;11231.47;15;2026-02-01;2026-02-02;À vista;Obra Industrial Jundiaí;CEO;
+PC-2026-0006;2026-03-22;Hidro Center;hidraulica@hidrocenter.com.br;enviado_fornecedor;15971.14;5.9;231.91;15260.75;19;2026-04-10;;30/60 dias;Depósito Central;Dir. Financeiro;
+PC-2026-0007;2026-02-06;Hidro Center;hidraulica@hidrocenter.com.br;parcialmente_recebido;17355.45;1.2;106.22;17253.4;19;2026-02-25;2026-03-01;À vista;Reforma Comercial SP;CEO;
+PC-2026-0008;2026-02-05;Metal Supply Brasil;vendas@metalsupply.com.br;recebido_total;3240.75;6.9;144.41;3161.55;13;2026-02-18;2026-02-20;30/60 dias;Obra Industrial Jundiaí;CEO;
+PC-2026-0009;2026-02-09;Hidro Center;hidraulica@hidrocenter.com.br;enviado_fornecedor;8097.74;4.4;168.25;7909.69;16;2026-02-25;;À vista;Condomínio Verde Mar;CEO;Negociar prazo maior
+PC-2026-0010;2026-03-22;Metal Supply Brasil;vendas@metalsupply.com.br;parcialmente_recebido;19077.86;3.1;23.55;18510.0;11;2026-04-02;2026-04-05;30/60 dias;Reforma Comercial SP;Dir. Financeiro;Verificar disponibilidade
+PC-2026-0011;2026-02-03;Acabamax Revestimentos;orcamento@acabamax.com.br;enviado_fornecedor;10974.04;5.2;329.28;10732.67;17;2026-02-20;;30 dias;Condomínio Verde Mar;Gerente de Compras;Verificar disponibilidade
+PC-2026-0012;2026-02-20;Pedreira Vale Azul;comercial@pedreiravaleazul.com.br;enviado_fornecedor;1905.58;1.5;237.84;2114.84;11;2026-03-03;;30/60 dias;Obra Residencial Alphaville;Dir. Financeiro;Urgente para obra
+PC-2026-0013;2026-01-13;EletroMais;eletrica@eletromais.com.br;aguardando_aprovacao;3524.8;6.0;333.02;3646.33;17;2026-01-30;;21/42 dias;Obra Residencial Alphaville;;
+PC-2026-0014;2026-02-18;Casa do EPI;vendas@casadoepi.com.br;cancelado;5308.54;3.6;1.94;5119.37;5;2026-02-23;;21/42 dias;Obra Residencial Alphaville;Gerente de Compras;
+PC-2026-0015;2026-01-01;Casa do EPI;vendas@casadoepi.com.br;parcialmente_recebido;6398.27;3.7;243.05;6404.58;14;2026-01-15;2026-01-20;21/42 dias;Obra Residencial Alphaville;Gerente de Compras;Negociar prazo maior
+PC-2026-0016;2026-02-03;Metal Supply Brasil;vendas@metalsupply.com.br;recebido_total;18075.9;0.5;341.11;18326.63;6;2026-02-09;2026-02-11;30 dias;Condomínio Verde Mar;CEO;
+PC-2026-0017;2026-03-28;Pedreira Vale Azul;comercial@pedreiravaleazul.com.br;aprovado;15609.29;3.0;182.51;15323.52;21;2026-04-18;;À vista;Condomínio Verde Mar;Gerente de Compras;
+PC-2026-0018;2026-03-22;Casa do EPI;vendas@casadoepi.com.br;enviado_fornecedor;17923.51;2.9;190.25;17593.98;10;2026-04-01;;21/42 dias;Edifício Central Business;CEO;Verificar disponibilidade
+PC-2026-0019;2026-01-04;Construforte Ltda;compras@construforte.com.br;enviado_fornecedor;4924.52;5.9;4.26;4638.23;8;2026-01-12;;21/42 dias;Depósito Central;CEO;Urgente para obra
+PC-2026-0020;2026-02-13;Tintas Horizonte;comercial@tintashorizonte.com.br;rascunho;24768.83;5.8;133.48;23465.72;7;2026-02-20;;À vista;Obra Residencial Alphaville;;Urgente para obra
+PC-2026-0021;2026-03-20;EletroMais;eletrica@eletromais.com.br;enviado_fornecedor;5996.69;1.0;74.86;6011.58;17;2026-04-06;;30/60 dias;Edifício Central Business;Dir. Financeiro;Verificar disponibilidade
+PC-2026-0022;2026-01-24;Tintas Horizonte;comercial@tintashorizonte.com.br;aguardando_aprovacao;23751.01;7.9;310.47;22185.15;14;2026-02-07;;28 dias;Depósito Central;;
+PC-2026-0023;2026-01-27;Casa do EPI;vendas@casadoepi.com.br;enviado_fornecedor;10710.72;5.3;163.5;10306.55;16;2026-02-12;;30 dias;Reforma Comercial SP;Gerente de Compras;Urgente para obra
+PC-2026-0024;2026-01-12;Pedreira Vale Azul;comercial@pedreiravaleazul.com.br;recebido_total;15774.33;1.5;241.45;15779.17;17;2026-01-29;2026-01-27;À vista;Reforma Comercial SP;CEO;
+PC-2026-0025;2026-02-14;Ferragens Nobre;televendas@ferragensnobre.com.br;recebido_total;4601.08;5.8;251.29;4585.51;5;2026-02-19;2026-02-18;30/60 dias;Edifício Central Business;Gerente de Compras;Negociar prazo maior
+PC-2026-0026;2026-01-01;Tintas Horizonte;comercial@tintashorizonte.com.br;cancelado;6342.22;1.3;177.8;6437.57;7;2026-01-08;;21/42 dias;Obra Residencial Alphaville;Gerente de Compras;Negociar prazo maior
+PC-2026-0027;2026-02-16;Acabamax Revestimentos;orcamento@acabamax.com.br;aguardando_aprovacao;17087.32;1.4;51.59;16899.69;17;2026-03-05;;21/42 dias;Condomínio Verde Mar;;Negociar prazo maior
+PC-2026-0028;2026-01-02;Acabamax Revestimentos;orcamento@acabamax.com.br;parcialmente_recebido;19133.49;4.3;160.13;18470.88;20;2026-01-22;2026-01-26;30 dias;Obra Industrial Jundiaí;Dir. Financeiro;Verificar disponibilidade
+PC-2026-0029;2026-02-04;Hidro Center;hidraulica@hidrocenter.com.br;parcialmente_recebido;13603.38;0.7;62.67;13570.83;5;2026-02-09;2026-02-14;21/42 dias;Edifício Central Business;Dir. Financeiro;Urgente para obra
+PC-2026-0030;2026-02-02;Casa do EPI;vendas@casadoepi.com.br;aprovado;947.66;3.2;78.26;995.59;21;2026-02-23;;30 dias;Reforma Comercial SP;CEO;
+PC-2026-0031;2026-02-08;Pedreira Vale Azul;comercial@pedreiravaleazul.com.br;aguardando_aprovacao;14299.73;3.9;322.02;14064.06;14;2026-02-22;;30/60 dias;Obra Industrial Jundiaí;;
+PC-2026-0032;2026-03-21;Casa do EPI;vendas@casadoepi.com.br;recebido_total;24056.86;5.5;292.47;23026.2;15;2026-04-05;2026-04-07;28 dias;Reforma Comercial SP;Dir. Financeiro;
+PC-2026-0033;2026-03-14;EletroMais;eletrica@eletromais.com.br;recebido_total;8267.78;3.5;132.05;8110.46;11;2026-03-25;2026-03-25;30/60 dias;Reforma Comercial SP;Dir. Financeiro;
+PC-2026-0034;2026-01-06;Metal Supply Brasil;vendas@metalsupply.com.br;cancelado;16542.09;6.1;240.75;15773.77;16;2026-01-22;;30 dias;Obra Industrial Jundiaí;CEO;Negociar prazo maior
+PC-2026-0035;2026-01-19;Hidro Center;hidraulica@hidrocenter.com.br;parcialmente_recebido;15760.69;5.7;97.1;14959.43;8;2026-01-27;2026-01-28;À vista;Condomínio Verde Mar;Gerente de Compras;Urgente para obra
+PC-2026-0036;2026-02-14;Acabamax Revestimentos;orcamento@acabamax.com.br;recebido_total;22171.74;3.3;270.81;21710.88;19;2026-03-05;2026-03-06;À vista;Reforma Comercial SP;Dir. Financeiro;Verificar disponibilidade
+PC-2026-0037;2026-01-25;Metal Supply Brasil;vendas@metalsupply.com.br;recebido_total;16861.29;5.2;224.65;16209.15;16;2026-02-10;2026-02-11;À vista;Depósito Central;CEO;Verificar disponibilidade
+PC-2026-0038;2026-02-05;Cerâmica Santa Luz;atendimento@ceramicasantaluz.com.br;aguardando_aprovacao;9585.84;5.4;336.83;9405.03;15;2026-02-20;;30/60 dias;Condomínio Verde Mar;;Urgente para obra
+PC-2026-0039;2026-01-09;Casa do EPI;vendas@casadoepi.com.br;recebido_total;1567.62;0.4;64.89;1626.24;12;2026-01-21;2026-01-20;21/42 dias;Depósito Central;Dir. Financeiro;
+PC-2026-0040;2026-03-17;Casa do EPI;vendas@casadoepi.com.br;recebido_total;18941.22;0.5;54.53;18901.04;18;2026-04-04;2026-04-04;28 dias;Reforma Comercial SP;Dir. Financeiro;
+PC-2026-0041;2026-02-15;EletroMais;eletrica@eletromais.com.br;enviado_fornecedor;2096.93;7.6;112.35;2049.91;21;2026-03-08;;À vista;Obra Industrial Jundiaí;CEO;
+PC-2026-0042;2026-03-27;Acabamax Revestimentos;orcamento@acabamax.com.br;recebido_total;7186.04;5.8;336.7;7105.95;12;2026-04-08;2026-04-12;21/42 dias;Edifício Central Business;Gerente de Compras;Verificar disponibilidade
+PC-2026-0043;2026-03-09;Acabamax Revestimentos;orcamento@acabamax.com.br;recebido_total;13921.05;3.9;268.52;13646.65;15;2026-03-24;2026-03-27;30 dias;Obra Industrial Jundiaí;Gerente de Compras;Negociar prazo maior
+PC-2026-0044;2026-02-16;Ferragens Nobre;televendas@ferragensnobre.com.br;aprovado;17852.52;3.1;145.32;17444.41;14;2026-03-02;;À vista;Edifício Central Business;Gerente de Compras;
+PC-2026-0045;2026-01-03;Construforte Ltda;compras@construforte.com.br;aguardando_aprovacao;19221.2;6.1;264.26;18312.97;7;2026-01-10;;21/42 dias;Obra Residencial Alphaville;;
+PC-2026-0046;2026-03-27;Cerâmica Santa Luz;atendimento@ceramicasantaluz.com.br;rascunho;13044.69;7.6;243.66;12296.95;11;2026-04-07;;30/60 dias;Depósito Central;;Negociar prazo maior
+PC-2026-0047;2026-03-13;Tintas Horizonte;comercial@tintashorizonte.com.br;aguardando_aprovacao;1077.05;5.1;296.57;1318.69;20;2026-04-02;;30 dias;Obra Residencial Alphaville;;Negociar prazo maior
+PC-2026-0048;2026-01-03;Metal Supply Brasil;vendas@metalsupply.com.br;aguardando_aprovacao;15999.1;6.7;204.77;15131.93;15;2026-01-18;;30/60 dias;Depósito Central;;Urgente para obra
+PC-2026-0049;2026-01-08;Tintas Horizonte;comercial@tintashorizonte.com.br;aprovado;12109.21;6.7;174.13;11472.02;21;2026-01-29;;30/60 dias;Obra Industrial Jundiaí;Dir. Financeiro;Urgente para obra
+PC-2026-0050;2026-03-23;Cerâmica Santa Luz;atendimento@ceramicasantaluz.com.br;aprovado;23462.18;5.6;259.3;22407.6;21;2026-04-13;;30 dias;Obra Residencial Alphaville;Dir. Financeiro;
+PC-2026-0051;2026-02-23;Tintas Horizonte;comercial@tintashorizonte.com.br;recebido_total;18275.94;0.2;338.14;18577.53;21;2026-03-16;2026-03-15;28 dias;Obra Industrial Jundiaí;Gerente de Compras;Urgente para obra
+PC-2026-0052;2026-03-24;Metal Supply Brasil;vendas@metalsupply.com.br;recebido_total;20550.5;2.3;166.41;20244.25;7;2026-03-31;2026-04-04;30 dias;Obra Residencial Alphaville;Dir. Financeiro;Urgente para obra
+PC-2026-0053;2026-02-08;Ferragens Nobre;televendas@ferragensnobre.com.br;rascunho;1999.5;0.8;147.72;2131.22;15;2026-02-23;;21/42 dias;Reforma Comercial SP;;Urgente para obra
+PC-2026-0054;2026-03-06;Metal Supply Brasil;vendas@metalsupply.com.br;recebido_total;14324.44;4.0;29.84;13781.3;18;2026-03-24;2026-03-24;21/42 dias;Depósito Central;Gerente de Compras;
+PC-2026-0055;2026-03-18;Metal Supply Brasil;vendas@metalsupply.com.br;enviado_fornecedor;21870.48;7.6;285.59;20493.91;12;2026-03-30;;28 dias;Obra Residencial Alphaville;Dir. Financeiro;
+PC-2026-0056;2026-03-13;Cerâmica Santa Luz;atendimento@ceramicasantaluz.com.br;parcialmente_recebido;15016.62;5.7;221.62;14382.29;17;2026-03-30;2026-03-28;30 dias;Obra Residencial Alphaville;CEO;
+PC-2026-0057;2026-01-22;EletroMais;eletrica@eletromais.com.br;cancelado;24864.58;4.0;116.88;23986.88;5;2026-01-27;;30 dias;Obra Residencial Alphaville;Dir. Financeiro;Verificar disponibilidade
+PC-2026-0058;2026-02-07;Pedreira Vale Azul;comercial@pedreiravaleazul.com.br;aprovado;11492.29;6.4;14.14;10770.92;10;2026-02-17;;30/60 dias;Condomínio Verde Mar;Gerente de Compras;
+PC-2026-0059;2026-02-08;EletroMais;eletrica@eletromais.com.br;recebido_total;2616.48;5.7;99.22;2566.56;5;2026-02-13;2026-02-11;À vista;Edifício Central Business;CEO;
+PC-2026-0060;2026-02-03;EletroMais;eletrica@eletromais.com.br;recebido_total;19970.84;3.2;202.35;19534.12;8;2026-02-11;2026-02-15;30 dias;Obra Residencial Alphaville;Dir. Financeiro;Urgente para obra

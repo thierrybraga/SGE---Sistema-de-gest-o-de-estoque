@@ -1,0 +1,100 @@
+nome;sku;categoria;estoque;preco_custo;preco_venda;margem_percentual;unidade;codigo_barras;estoque_minimo;descricao;fornecedor_principal;ativo;permite_venda_fracionada;ncm;peso_kg;data_ultima_compra
+Cimento CP II 50kg;MAT-CIM-050;Materiais;174;31.4;45.9;31.6;saco;7891000100011;74;Cimento estrutural para alvenaria e concreto;Construforte Ltda;1;0;4311.35.16;23.25;2026-03-15
+Cimento CP V ARI 50kg;MAT-CIM-051;Materiais;384;33.0;48.5;32.0;saco;7891000100111;51;Cimento de alta resistência inicial;Construforte Ltda;1;0;4033.66.70;33.11;2026-02-16
+Areia Média Lavada;MAT-ARE-001;Materiais;369;95.0;145.0;34.5;m3;7891000100012;58;Areia para reboco e concretagem;Construforte Ltda;1;1;3590.34.26;26.29;2026-01-23
+Areia Grossa (m³);MAT-ARE-002;Materiais;78;88.0;135.0;34.8;m3;7891000100112;40;Areia para concreto e argamassa grossa;Construforte Ltda;1;1;7630.11.73;48.8;2026-02-27
+Brita 1;MAT-BRI-001;Materiais;772;110.0;168.5;34.7;m3;7891000100013;37;Brita graduada para concreto usinado;Pedreira Vale Azul;1;1;9055.36.54;11.71;2026-03-13
+Brita 0 (Pedrisco);MAT-BRI-002;Materiais;354;105.0;160.0;34.4;m3;7891000100113;42;Pedrisco para concreto magro e calçadas;Pedreira Vale Azul;1;1;3701.59.37;10.48;2026-02-15
+Cal Hidratada 20kg;MAT-CAL-020;Materiais;78;18.5;28.0;33.9;saco;7891000100211;77;Cal para reboco e pintura;Construforte Ltda;1;0;3553.41.22;33.91;2026-03-20
+Gesso Acartonado 120x180;MAT-GES-001;Materiais;576;42.0;68.0;38.2;chapa;7891000100311;80;Chapa de drywall standard;Acabamax Revestimentos;1;0;7832.87.49;16.0;2026-01-02
+Painel OSB 15mm;MAT-OSB-015;Materiais;686;89.0;138.0;35.5;chapa;7891000100411;71;Painel OSB para fôrmas e revestimento;Construforte Ltda;1;0;5922.54.95;19.59;2026-03-23
+Tijolo Cerâmico 9x19x29;MAT-TIJ-929;Alvenaria;5408;0.82;1.35;39.3;un;7891000100015;1763;Tijolo cerâmico vedação 9x19x29;Cerâmica Santa Luz;1;0;3222.89.12;33.25;2026-02-15
+Tijolo Furado 6 Furos;MAT-TIJ-006;Alvenaria;4473;0.65;1.1;40.9;un;7891000100511;1854;Tijolo furado 6 furos para vedação;Cerâmica Santa Luz;1;0;4776.15.90;32.81;2026-01-07
+Bloco de Concreto 14x19x39;MAT-BLC-001;Alvenaria;2794;3.2;5.5;41.8;un;7891000100611;1291;Bloco estrutural de concreto;Construforte Ltda;1;0;5811.30.49;42.42;2026-01-15
+Bloco Celular AAC 20x25x60;MAT-BLC-AAC;Alvenaria;2626;12.5;19.9;37.2;un;7891000100612;834;Bloco de concreto celular autoclavado;Construforte Ltda;1;0;7965.49.57;1.67;2026-03-11
+Telha Cerâmica Portuguesa;MAT-TEL-001;Alvenaria;2372;2.8;4.9;42.9;un;7891000100711;222;Telha cerâmica portuguesa padrão;Cerâmica Santa Luz;1;0;8471.14.39;29.81;2026-03-05
+Telha Ondulada Fibrocimento 6mm;MAT-TEL-FIB;Alvenaria;2257;32.0;52.0;38.5;m2;7891000100712;1964;Telha fibrocimento antichama;Construforte Ltda;1;1;7458.92.85;39.28;2026-01-10
+Laje Pré-moldada H12;MAT-LAJ-H12;Alvenaria;5338;65.0;98.0;33.7;m2;7891000100811;870;Laje treliçada para telhado e piso;Construforte Ltda;1;1;4658.85.43;13.46;2026-01-07
+Aço CA-50 10mm;MAT-ACO-010;Estrutural;257;42.2;62.8;32.8;barra;7891000100014;43;Barra de aço nervurado CA-50 10mm;Metal Supply Brasil;1;0;4068.66.87;20.95;2026-03-18
+Aço CA-60 6.3mm;MAT-ACO-063;Estrutural;297;28.5;44.0;35.2;barra;7891000100141;34;Barra de aço CA-60 6.3mm;Metal Supply Brasil;1;0;9578.25.44;30.98;2026-01-23
+Aço CA-50 12.5mm;MAT-ACO-125;Estrutural;89;64.0;95.0;32.6;barra;7891000100142;45;Barra de aço nervurado 12.5mm;Metal Supply Brasil;1;0;3443.10.45;40.81;2026-01-09
+Arame Recozido 1.2mm;MAT-ARM-012;Estrutural;171;8.9;14.5;38.6;kg;7891000100911;42;Arame para amarração de ferragem;Metal Supply Brasil;1;0;7209.99.87;39.06;2026-03-21
+Perfil I HEB 200;MAT-PER-I20;Estrutural;111;380.0;560.0;32.1;barra;7891000101011;40;Perfil I metálico HEB 200 6m;Metal Supply Brasil;1;0;3937.37.85;43.91;2026-02-10
+Perfil U 150x2.65mm;MAT-PER-U15;Estrutural;109;45.0;72.0;37.5;barra;7891000101012;15;Perfil U enformado a frio galvanizado;Metal Supply Brasil;1;0;5771.56.13;41.03;2026-02-09
+Tela Soldada Q-138;MAT-TEL-Q138;Estrutural;333;22.0;34.0;35.3;m2;7891000101111;21;Tela soldada para piso e laje;Metal Supply Brasil;1;1;4326.83.65;22.89;2026-01-22
+Argamassa AC-II 20kg;MAT-ARG-020;Acabamento;403;19.7;29.9;34.1;saco;7891000100016;33;Argamassa colante AC-II para revestimento;Acabamax Revestimentos;1;0;7737.29.65;24.61;2026-03-01
+Argamassa AC-III Flex 20kg;MAT-ARG-030;Acabamento;428;28.0;42.5;34.1;saco;7891000100161;34;Argamassa colante AC-III para grandes formatos;Acabamax Revestimentos;1;0;9829.46.84;28.02;2026-03-20
+Rejunte Flexível Cinza 1kg;MAT-REJ-001;Acabamento;83;4.8;8.9;46.1;un;7891000100017;24;Rejunte flexível para áreas internas e externas;Acabamax Revestimentos;1;0;8588.51.42;30.82;2026-01-07
+Rejunte Branco 1kg;MAT-REJ-BRA;Acabamento;427;4.5;8.5;47.1;un;7891000100171;36;Rejunte flexível branco resistente a manchas;Acabamax Revestimentos;1;0;9628.72.94;36.93;2026-01-06
+Massa Corrida PVA 25kg;MAT-MAS-025;Acabamento;472;68.0;98.0;30.6;balde;7891000101211;41;Massa corrida para internos em alvenaria;Acabamax Revestimentos;1;0;7727.37.22;11.95;2026-02-16
+Gesso em Pó 20kg;MAT-GES-020;Acabamento;177;22.0;35.0;37.1;saco;7891000101311;27;Gesso em pó para revestimento interno;Acabamax Revestimentos;1;0;5142.87.55;1.69;2026-03-06
+Porcelanato 60x60 Polido;MAT-POR-6060;Acabamento;514;55.0;89.0;38.2;m2;7891000101411;31;Porcelanato polido linha premium;Cerâmica Santa Luz;1;1;9067.10.54;15.08;2026-01-13
+Piso Cerâmico 45x45;MAT-PIS-4545;Acabamento;124;28.0;45.0;37.8;m2;7891000101412;24;Piso cerâmico PEI 4 para ambientes comerciais;Cerâmica Santa Luz;1;1;6673.31.89;13.22;2026-02-15
+Revestimento Externo 20x20;MAT-REV-2020;Acabamento;92;24.0;38.0;36.8;m2;7891000101413;44;Revestimento externo resistente à intempérie;Cerâmica Santa Luz;1;1;5266.28.89;6.49;2026-02-23
+Tinta Acrílica Branco Fosco 18L;PNT-TIN-18;Pintura;52;189.0;269.0;29.7;lata;7891000100023;19;Tinta acrílica premium branco fosco;Tintas Horizonte;1;0;4930.99.79;13.52;2026-03-17
+Tinta Acrílica Fosca 3,6L;PNT-TIN-3A;Pintura;166;58.0;89.0;34.8;lata;7891000100231;29;Tinta acrílica fosca diversas cores;Tintas Horizonte;1;0;4688.66.14;44.38;2026-01-19
+Tinta Esmalte Sintetico 3,6L;PNT-ESM-36;Pintura;16;72.0;110.0;34.5;lata;7891000101511;8;Esmalte sintético brilhante madeira e metal;Tintas Horizonte;1;0;9381.28.63;29.66;2026-02-06
+Selador Acrílico 18L;PNT-SEL-18;Pintura;135;122.0;179.9;32.2;lata;7891000100024;27;Selador para preparação de paredes internas;Tintas Horizonte;1;0;8281.36.34;49.82;2026-03-15
+Primer Antiferrugem 900ml;PNT-PRI-900;Pintura;71;35.0;56.0;37.5;lata;7891000101611;16;Primer anticorrosivo para metal;Tintas Horizonte;1;0;4361.50.97;36.17;2026-02-14
+Verniz Marítimo 900ml;PNT-VER-900;Pintura;139;48.0;75.0;36.0;lata;7891000101711;14;Verniz transparente para madeira externa;Tintas Horizonte;1;0;6670.99.48;11.7;2026-01-18
+Textura Grafiato 25kg;PNT-TEX-025;Pintura;37;98.0;148.0;33.8;balde;7891000101811;11;Textura grafiato para fachadas;Tintas Horizonte;1;0;6000.73.96;12.68;2026-03-28
+Impermeabilizante Manta 10kg;PNT-IMP-010;Pintura;74;145.0;219.0;33.8;lata;7891000101911;24;Impermeabilizante elastomérico para lajes;Tintas Horizonte;1;0;9685.75.32;22.15;2026-03-15
+Fita Isolante 20m;ELE-FIT-020;Elétrica;176;2.1;4.9;57.1;un;7891000100025;68;Fita isolante antichama 20 metros;EletroMais;1;0;3207.44.51;15.5;2026-02-03
+Cabo Flexível 2,5mm Azul;ELE-CAB-25A;Elétrica;1044;2.65;4.2;36.9;m;7891000100026;192;Cabo flexível 750V 2,5mm cor azul;EletroMais;1;1;6366.43.70;36.82;2026-02-26
+Cabo Flexível 4mm Verde;ELE-CAB-4VD;Elétrica;920;4.1;6.5;36.9;m;7891000100261;207;Cabo flexível 750V 4mm terra;EletroMais;1;1;5134.36.59;46.23;2026-03-25
+Cabo Flexível 6mm Preto;ELE-CAB-6PR;Elétrica;1797;5.9;9.2;35.9;m;7891000100262;244;Cabo flexível 750V 6mm fase;EletroMais;1;1;3209.36.30;48.48;2026-02-04
+Conduíte Corrugado 3/4;ELE-CON-34;Elétrica;1804;1.45;2.8;48.2;m;7891000100027;192;Conduíte corrugado antichama 3/4;EletroMais;1;1;8845.30.16;24.65;2026-02-15
+Conduíte Rígido 1 Polegada;ELE-CON-1P;Elétrica;622;12.8;19.9;35.7;barra;7891000100271;57;Conduíte rígido eletroduto 1 polegada;EletroMais;1;0;6492.48.32;30.05;2026-02-17
+Disjuntor Bipolar 25A;ELE-DIS-B25;Elétrica;1566;28.0;45.0;37.8;un;7891000102011;55;Disjuntor bipolar padrão DIN;EletroMais;1;0;7773.79.64;30.05;2026-02-11
+Quadro de Distribuição 12 Disjuntores;ELE-QUA-12D;Elétrica;899;72.0;118.0;39.0;un;7891000102111;30;Quadro de disjuntores embutir 12 posições;EletroMais;1;0;6103.61.11;28.71;2026-01-23
+Tomada 2P+T 10A;ELE-TOM-10A;Elétrica;1510;8.5;14.9;43.0;un;7891000102211;149;Tomada padrão NBR 14136;EletroMais;1;0;9460.54.15;29.85;2026-01-17
+Interruptor Simples 10A;ELE-INT-10A;Elétrica;1923;6.8;12.5;45.6;un;7891000102212;142;Interruptor simples padrão NBR;EletroMais;1;0;6036.37.35;15.21;2026-03-26
+Tubo PVC Soldável 25mm;HID-TUB-25;Hidráulica;1254;14.6;24.5;40.4;barra;7891000100028;58;Tubo PVC soldável 25mm barra 6m;Hidro Center;1;0;4182.30.14;48.08;2026-02-06
+Tubo PVC Soldável 32mm;HID-TUB-32;Hidráulica;1225;19.8;32.0;38.1;barra;7891000100281;94;Tubo PVC soldável 32mm barra 6m;Hidro Center;1;0;9183.58.13;29.8;2026-02-11
+Tubo PVC Esgoto 100mm;HID-TUB-100;Hidráulica;1325;42.0;68.0;38.2;barra;7891000102311;10;Tubo PVC série normal esgoto 100mm;Hidro Center;1;0;6319.73.93;11.54;2026-01-04
+Joelho 90 PVC 25mm;HID-JOE-25;Hidráulica;942;0.74;1.6;53.8;un;7891000100029;61;Conexão joelho 90 graus PVC 25mm;Hidro Center;1;0;9242.26.89;4.76;2026-01-13
+Joelho 90 PVC 40mm;HID-JOE-40;Hidráulica;162;1.2;2.4;50.0;un;7891000100291;176;Conexão joelho 90 graus PVC 40mm;Hidro Center;1;0;7667.77.45;44.44;2026-03-10
+Te PVC 25mm;HID-TE-025;Hidráulica;542;1.1;2.2;50.0;un;7891000102411;9;Conexão TE PVC soldável 25mm;Hidro Center;1;0;9867.36.76;26.56;2026-02-19
+Registro de Esfera 25mm;HID-REG-25;Hidráulica;487;17.8;29.9;40.5;un;7891000100030;154;Registro de esfera soldável 25mm;Hidro Center;1;0;4268.63.71;17.99;2026-02-19
+Torneira de Jardim 3/4;HID-TOR-34;Hidráulica;809;22.0;38.0;42.1;un;7891000102511;180;Torneira de jardim rosca interna 3/4;Hidro Center;1;0;6660.73.73;6.06;2026-03-24
+Sifão Cozinha Saída 1.5;HID-SIF-COZ;Hidráulica;1426;18.5;32.0;42.2;un;7891000102611;51;Sifão extensível para pia cozinha;Hidro Center;1;0;7807.80.31;4.15;2026-02-25
+Caixa d'Água 1000L;HID-CAI-1000;Hidráulica;836;390.0;580.0;32.8;un;7891000102711;20;Caixa d'água polietileno com tampa rosca;Hidro Center;1;0;7436.97.13;30.56;2026-02-24
+Luva Nitrílica Tamanho M;EPI-LUV-M;EPI;449;5.1;9.4;45.7;par;7891000100018;71;Luva nitrílica para proteção química leve;Casa do EPI;1;0;9212.49.17;48.02;2026-02-03
+Luva de Raspa Cano Curto;EPI-LUV-RSP;EPI;247;12.5;21.0;40.5;par;7891000100181;60;Luva de raspa para atividades de impacto;Casa do EPI;1;0;6724.36.75;43.06;2026-03-12
+Capacete Classe B Branco;EPI-CAP-BR;EPI;308;21.4;34.9;38.7;un;7891000100019;48;Capacete de segurança com jugular;Casa do EPI;1;0;7112.20.83;11.52;2026-01-15
+Capacete Classe B Amarelo;EPI-CAP-AM;EPI;476;21.4;34.9;38.7;un;7891000100191;52;Capacete amarelo para eletricistas;Casa do EPI;1;0;5601.23.76;20.24;2026-02-17
+Óculos de Proteção Incolor;EPI-OCU-INC;EPI;108;7.6;13.9;45.3;un;7891000100020;37;Óculos anti-impacto com lente incolor;Casa do EPI;1;0;9745.17.24;23.95;2026-01-05
+Óculos de Proteção Escuro;EPI-OCU-ESC;EPI;153;8.2;14.9;45.0;un;7891000100201;29;Óculos de proteção para ambientes externos;Casa do EPI;1;0;8242.14.56;35.47;2026-03-12
+Máscara PFF2 Sem Válvula;EPI-MAS-PF2;EPI;505;3.8;7.9;51.9;un;7891000102811;70;Máscara respiratória PFF2 N95 descartável;Casa do EPI;1;0;9845.16.36;29.98;2026-02-05
+Protetor Auricular Plug;EPI-PRO-AUR;EPI;555;1.2;2.9;58.6;par;7891000102911;41;Protetor auditivo espuma descartável;Casa do EPI;1;0;6368.81.92;40.13;2026-02-04
+Cinto de Segurança Tipo Paraquedista;EPI-CIN-PAR;EPI;166;285.0;420.0;32.1;un;7891000103011;49;Cinto paraquedista com talabarte duplo;Casa do EPI;1;0;3973.74.62;4.99;2026-03-23
+Bota de Segurança CA 40908;EPI-BOT-SEC;EPI;174;98.0;158.0;38.0;par;7891000103111;76;Bota PVC cano longo com biqueira;Casa do EPI;1;0;7198.21.97;24.55;2026-03-28
+Disco de Corte 4.1/2;FER-DSC-045;Ferramentas Consumíveis;329;3.2;6.9;53.6;un;7891000100021;115;Disco abrasivo para metal 4.1/2 polegadas;Ferragens Nobre;1;0;4926.96.71;42.45;2026-01-21
+Disco de Desbaste 4.1/2;FER-DSC-DES;Ferramentas Consumíveis;580;4.8;9.9;51.5;un;7891000100211;113;Disco de desbaste para metal;Ferragens Nobre;1;0;9540.30.33;26.13;2026-02-12
+Disco Diamantado Turbo 110mm;FER-DSC-DIA;Ferramentas Consumíveis;520;38.0;62.0;38.7;un;7891000103211;111;Disco diamantado para corte cerâmica e pedra;Ferragens Nobre;1;0;9722.36.24;26.02;2026-02-26
+Broca Metal HSS 6mm;FER-BRO-6MM;Ferramentas Consumíveis;336;4.2;8.5;50.6;un;7891000103311;49;Broca helicoidal HSS para aço;Ferragens Nobre;1;0;8266.16.79;29.04;2026-03-10
+Broca Concreto 10mm SDS;FER-BRO-SDS;Ferramentas Consumíveis;559;12.0;22.0;45.5;un;7891000103411;95;Broca SDS Plus para concreto;Ferragens Nobre;1;0;4167.18.84;5.79;2026-02-20
+Serra Copo Bimetálica 65mm;FER-SRC-65;Ferramentas Consumíveis;419;28.0;48.0;41.7;un;7891000103511;88;Serra copo bimetálica para metal e madeira;Ferragens Nobre;1;0;6796.70.45;41.22;2026-01-07
+Lixa Cimento 150 grana 80;FER-LIX-080;Ferramentas Consumíveis;454;1.8;3.9;53.8;un;7891000103611;38;Folha de lixa para concreto grana 80;Ferragens Nobre;1;0;9471.44.68;9.71;2026-01-03
+Rebite Pop 4x16mm;FER-REB-416;Ferramentas Consumíveis;359;18.0;32.0;43.8;caixa;7891000103711;120;Caixa 100 unidades rebite pop alumínio;Ferragens Nobre;1;0;8778.52.75;4.4;2026-03-25
+Eletrodo 6013 2.5mm;SOL-ELT-25;Ferramentas Consumíveis;758;18.4;29.5;37.6;kg;7891000100022;89;Eletrodo rutílico 6013 para soldagem geral;Metal Supply Brasil;1;0;8781.92.56;13.79;2026-03-16
+Eletrodo 7018 3.25mm;SOL-ELT-32;Ferramentas Consumíveis;684;24.0;38.0;36.8;kg;7891000100221;90;Eletrodo baixo hidrogênio para aço estrutural;Metal Supply Brasil;1;0;3331.15.52;4.09;2026-03-22
+Trena 5m Emborrachada;FER-TRE-005;Ferramentas Manuais;17;22.0;38.0;42.1;un;7891000103811;5;Trena metálica emborrachada 5 metros;Ferragens Nobre;1;0;5835.14.67;49.7;2026-03-20
+Nível de Bolha 60cm;FER-NIV-060;Ferramentas Manuais;53;35.0;58.0;39.7;un;7891000103911;3;Nível de bolha alumínio 60cm 3 ampoletas;Ferragens Nobre;1;0;3919.17.60;2.77;2026-03-08
+Martelo Carpinteiro 27mm;FER-MAR-027;Ferramentas Manuais;76;38.0;62.0;38.7;un;7891000104011;16;Martelo tipo carpinteiro cabo fibra;Ferragens Nobre;1;0;4128.30.67;26.98;2026-02-27
+Colher de Pedreiro 10 pol;FER-COL-010;Ferramentas Manuais;82;18.5;32.0;42.2;un;7891000104111;15;Colher de pedreiro aço inox cabo madeira;Ferragens Nobre;1;0;9104.98.12;45.04;2026-02-09
+Desempenadeira Dentada PVC;FER-DES-DEN;Ferramentas Manuais;95;12.0;22.0;45.5;un;7891000104211;10;Desempenadeira dentada para argamassa;Ferragens Nobre;1;0;9862.80.48;41.5;2026-01-12
+Alicate Universal 8 pol;FER-ALI-UNI;Ferramentas Manuais;15;28.0;48.0;41.7;un;7891000104311;12;Alicate universal com cabo isolado;Ferragens Nobre;1;0;7931.41.42;8.8;2026-01-27
+Chave Combinada 10mm;FER-CHA-010;Ferramentas Manuais;33;14.0;25.0;44.0;un;7891000104411;20;Chave combinada aço cromo-vanádio;Ferragens Nobre;1;0;5880.50.59;36.09;2026-03-19
+Furadeira de Impacto 750W;FER-FUR-750;Ferramentas Elétricas;32;289.0;389.9;25.9;un;7891000104511;4;Furadeira com impacto mandril 13mm;Ferragens Nobre;1;0;9420.22.18;25.55;2026-03-26
+Parafusadeira 12V;FER-PAR-12V;Ferramentas Elétricas;15;350.0;459.0;23.7;un;7891000104611;6;Parafusadeira com bateria de lítio;Ferragens Nobre;1;0;6554.92.10;38.04;2026-02-17
+Serra Mármore 1400W;FER-SER-1400;Ferramentas Elétricas;46;480.0;629.5;23.7;un;7891000104711;8;Serra mármore para corte de piso e pedra;Ferragens Nobre;1;0;6489.71.15;25.98;2026-03-09
+Esmerilhadeira Angular 4.5 pol;FER-ESM-412;Ferramentas Elétricas;24;260.0;347.8;25.2;un;7891000104811;3;Esmerilhadeira angular uso profissional;Ferragens Nobre;1;0;3248.66.84;15.65;2026-02-26
+Nível a Laser Verde;FER-NIV-LAS;Ferramentas Elétricas;30;220.0;289.9;24.1;un;7891000104911;1;Nível a laser linhas cruzadas verde;Ferragens Nobre;1;0;9500.56.13;1.92;2026-03-02
+Chave de Impacto 1/2 pol;FER-CHI-IMP;Ferramentas Elétricas;39;410.0;540.0;24.1;un;7891000105011;5;Chave de impacto para parafusos estruturais;Ferragens Nobre;1;0;8525.19.21;46.25;2026-02-21
+Betoneira 400L Monofásica;FER-BET-400;Ferramentas Elétricas;11;2950.0;3950.0;25.3;un;7891000105111;3;Betoneira 400 litros 220V monofásica;Ferragens Nobre;1;0;5020.15.85;24.27;2026-03-11
+Martelete Rompedor 1500W;FER-MAR-1500;Ferramentas Elétricas;25;890.0;1190.0;25.2;un;7891000105211;1;Martelete para perfuração e demolição;Ferragens Nobre;1;0;6130.36.16;34.25;2026-03-04
+Lavadora Alta Pressão 1800W;FER-LAV-1800;Ferramentas Elétricas;44;680.0;890.0;23.6;un;7891000105311;5;Lavadora de alta pressão para canteiro;Ferragens Nobre;1;0;8234.15.60;11.69;2026-03-19
+Trena a Laser 50m;FER-TRE-L50;Ferramentas Elétricas;21;320.0;420.0;23.8;un;7891000105411;7;Trena digital laser alcance 50 metros;Ferragens Nobre;1;0;6519.42.39;32.18;2026-01-05
+Escada Extensiva 6m;FER-ESC-600;Ferramentas Elétricas;17;750.0;980.0;23.5;un;7891000105511;1;Escada extensiva em alumínio 6 metros;Ferragens Nobre;1;0;7593.10.70;34.59;2026-02-17
+Compressor de Ar 10 Pés;FER-COM-10P;Ferramentas Elétricas;3;1480.0;1950.0;24.1;un;7891000105611;5;Compressor de ar 10 pés 110/220V;Ferragens Nobre;1;0;4911.29.33;13.27;2026-03-08

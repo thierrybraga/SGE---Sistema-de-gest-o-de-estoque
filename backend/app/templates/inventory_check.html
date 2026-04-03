@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% from "components/sidebar.html" import sidebar %}
+{% block title %}Inventário Físico{% endblock %}
+{% block body %}
+<body>
+<div class="app-shell">
+  {{ sidebar('inventory_check') }}
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-title">Inventário Físico</div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" onclick="openNewSession()">
+          <i class="fas fa-plus"></i> Nova Sessão
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="card-title">Sessões de Inventário</div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th><th>Status</th><th>Itens</th><th>Contados</th>
+                <th>Divergências</th><th>Criado por</th><th>Data</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: New Session -->
+<div class="modal-overlay" id="modal-session">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Nova Sessão de Inventário</h2>
+      <button class="modal-close" onclick="closeModal('modal-session')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nome da Sessão *</label>
+      <input id="session-name" type="text" class="form-control" placeholder="Ex: Inventário Abril 2026" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea id="session-notes" class="form-control" placeholder="Observações opcionais..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-session')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createSession()"><i class="fas fa-play"></i> Iniciar Contagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Counting -->
+<div class="modal-overlay" id="modal-counting">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="counting-title">Contagem</h2>
+      <button class="modal-close" onclick="closeModal('modal-counting')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="counting-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <input type="text" id="counting-search" class="form-control" placeholder="Filtrar produtos..." oninput="filterCounts()" />
+    </div>
+    <div class="table-wrapper" style="max-height:400px;overflow-y:auto">
+      <table>
+        <thead>
+          <tr><th>Produto</th><th>SKU</th><th>Sistema</th><th>Contagem</th><th>Diferença</th><th>Status</th></tr>
+        </thead>
+        <tbody id="counting-table"></tbody>
+      </table>
+    </div>
+    <div class="modal-footer" id="counting-footer"></div>
+  </div>
+</div>
+
+<script>
+requireAuth();
+initUserInfo();
+
+let currentSession = null;
+let currentCounts = [];
+
+async function loadSessions() {
+  const tbody = document.getElementById("sessions-table");
+  tbody.innerHTML = skeletonRows(8, 4);
+  try {
+    const sessions = await api.get("/inventory/sessions");
+    if (!sessions.length) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-clipboard-check"></i><h3>Nenhuma sessão</h3><p>Crie a primeira sessão de inventário</p></div></td></tr>';
+      return;
+    }
+    const statusBadge = { open: 'badge-info', counting: 'badge-warning', review: 'badge-purple', closed: 'badge-success' };
+    const statusLabel = { open: 'Aberta', counting: 'Contando', review: 'Revisão', closed: 'Fechada' };
+    tbody.innerHTML = sessions.map(s => `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge ${statusBadge[s.status] || 'badge-gray'}">${statusLabel[s.status] || s.status}</span></td>
+      <td class="text-mono">${s.items_count}</td>
+      <td class="text-mono">${s.counted_count}/${s.items_count}</td>
+      <td class="text-mono">—</td>
+      <td class="text-muted text-sm">${s.created_by_name || '—'}</td>
+      <td class="text-muted text-sm">${fmtDateShort(s.created_at)}</td>
+      <td>
+        <div class="flex gap-2">
+          ${s.status !== 'closed' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="openCounting(\'' + s.id + '\')" title="Contar"><i class="fas fa-clipboard-check" style="color:var(--accent3)"></i></button>' : ''}
+          ${s.status !== 'closed' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="closeSession(\'' + s.id + '\')" title="Encerrar"><i class="fas fa-lock" style="color:var(--warn)"></i></button>' : ''}
+          ${s.status === 'closed' ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="openCounting(\'' + s.id + '\')" title="Ver resultado"><i class="fas fa-eye"></i></button>' : ''}
+        </div>
+      </td>
+    </tr>`).join("");
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadSessions);
+  }
+}
+
+function openNewSession() {
+  document.getElementById("session-name").value = "";
+  document.getElementById("session-notes").value = "";
+  openModal("modal-session");
+}
+
+async function createSession() {
+  const name = document.getElementById("session-name").value.trim();
+  if (!name) { showToast("Nome é obrigatório", "error"); return; }
+  try {
+    await api.post("/inventory/sessions", { name, notes: document.getElementById("session-notes").value });
+    showToast("Sessão criada com sucesso!");
+    closeModal("modal-session");
+    loadSessions();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function openCounting(sessionId) {
+  try {
+    const session = await api.get("/inventory/sessions/" + sessionId);
+    currentSession = session;
+    currentCounts = session.counts || [];
+    document.getElementById("counting-title").textContent = session.name;
+    document.getElementById("counting-stats").innerHTML =
+      '<div class="history-stat"><span class="stat-num" style="color:var(--accent)">' + session.total_items + '</span> Total</div>' +
+      '<div class="history-stat"><span class="stat-num" style="color:var(--accent3)">' + session.counted_items + '</span> Contados</div>' +
+      '<div class="history-stat"><span class="stat-num" style="color:var(--danger)">' + session.divergent_items + '</span> Divergências</div>';
+    renderCounts(currentCounts);
+    const isClosed = session.status === 'closed';
+    document.getElementById("counting-footer").innerHTML = isClosed
+      ? '<button class="btn btn-secondary" onclick="closeModal(\'modal-counting\')">Fechar</button>'
+      : '<button class="btn btn-secondary" onclick="closeModal(\'modal-counting\')">Fechar</button>';
+    openModal("modal-counting");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+function renderCounts(counts) {
+  const tbody = document.getElementById("counting-table");
+  const isClosed = currentSession && currentSession.status === 'closed';
+  tbody.innerHTML = counts.map(c => {
+    const diff = c.difference;
+    const diffClass = diff === null ? '' : diff === 0 ? 'style="color:var(--accent3)"' : 'style="color:var(--danger)"';
+    const diffText = diff === null ? '—' : (diff > 0 ? '+' : '') + diff;
+    const statusIcon = c.counted_quantity === null ? '<span class="badge badge-gray">Pendente</span>'
+      : c.adjusted ? '<span class="badge badge-success">Ajustado</span>'
+      : diff === 0 ? '<span class="badge badge-success">OK</span>'
+      : '<span class="badge badge-danger">Divergente</span>';
+    return '<tr>' +
+      '<td><strong>' + (c.product_name || '—') + '</strong></td>' +
+      '<td class="text-mono text-sm">' + (c.product_sku || '—') + '</td>' +
+      '<td class="text-mono">' + c.system_quantity + '</td>' +
+      '<td>' + (isClosed ? '<span class="text-mono">' + (c.counted_quantity !== null ? c.counted_quantity : '—') + '</span>'
+        : '<input type="number" class="form-control" style="width:80px;display:inline" value="' + (c.counted_quantity !== null ? c.counted_quantity : '') + '" onchange="saveCount(\'' + c.id + '\', this.value)" />') + '</td>' +
+      '<td class="text-mono" ' + diffClass + '><strong>' + diffText + '</strong></td>' +
+      '<td>' + statusIcon + '</td></tr>';
+  }).join("");
+}
+
+function filterCounts() {
+  const q = document.getElementById("counting-search").value.toLowerCase();
+  if (!q) { renderCounts(currentCounts); return; }
+  renderCounts(currentCounts.filter(c =>
+    (c.product_name || '').toLowerCase().includes(q) || (c.product_sku || '').toLowerCase().includes(q)
+  ));
+}
+
+async function saveCount(countId, value) {
+  if (value === '' || value === null) return;
+  try {
+    const res = await api.post("/inventory/sessions/" + currentSession.id + "/count", {
+      count_id: countId, counted_quantity: parseFloat(value)
+    });
+    const idx = currentCounts.findIndex(c => c.id === countId);
+    if (idx >= 0) {
+      currentCounts[idx].counted_quantity = parseFloat(value);
+      currentCounts[idx].difference = res.difference;
+    }
+    renderCounts(currentCounts);
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function closeSession(sessionId) {
+  showConfirm({
+    title: "Encerrar sessão de inventário",
+    message: "Deseja encerrar e aplicar os ajustes de estoque para itens divergentes?",
+    confirmText: "Encerrar e Ajustar",
+    type: "warning",
+    icon: "fa-clipboard-check",
+    onConfirm: async () => {
+      try {
+        const res = await api.post("/inventory/sessions/" + sessionId + "/close", { apply_adjustments: true });
+        showToast(res.message);
+        closeModal("modal-counting");
+        loadSessions();
+      } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
+loadSessions();
+</script>
+</body>
+{% endblock %}

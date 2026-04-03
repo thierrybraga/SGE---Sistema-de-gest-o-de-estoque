@@ -1,0 +1,33 @@
+nome;marca;sku;categoria;descricao;valor_unitario;valor_venda;total_unidades;unidades_minimas;condicao;numero_nota;localizacao_estoque;data_entrada;garantia_meses;voltagem;peso_kg;requer_manutencao;disponivel_locacao
+Furadeira de Impacto 750W;Bosch;FER-FUR-750;Elétricas;Furadeira com impacto e mandril 13mm;289.0;389.9;8;2;new;NF-2026-000460;Galpão A-4;2026-01-27;24;Bivolt;28.5;0;0
+Furadeira de Impacto 500W;Black & Decker;FER-FUR-500;Elétricas;Furadeira impacto compacta 500W mandril 10mm;198.0;269.0;6;2;new;NF-2026-000453;Galpão A-1;2026-01-20;24;Bivolt;12.8;0;0
+Parafusadeira 12V;DeWalt;FER-PAR-12V;Elétricas;Parafusadeira com bateria de lítio;350.0;459.0;6;2;good;NF-2026-000459;Galpão B-3;2026-01-21;6;Bivolt;1.2;0;0
+Parafusadeira 18V Premium;Milwaukee;FER-PAR-18V;Elétricas;Parafusadeira brushless 18V bateria 5Ah;890.0;1190.0;3;1;new;NF-2026-000460;Galpão A-5;2026-02-13;24;Bateria;41.0;0;1
+Serra Circular 7.1/4 pol;Makita;FER-SRC-714;Corte;Serra circular 7.1/4 1400W com guia paralela;520.0;689.0;4;2;good;NF-2026-000460;Galpão C-3;2026-01-10;6;Bivolt;13.1;0;0
+Serra Mármore 1400W;Makita;FER-SER-1400;Corte;Serra mármore para corte de piso e pedra;480.0;629.5;5;1;good;NF-2026-000461;Galpão C-3;2026-03-09;6;110V;43.9;0;0
+Serra Tico-Tico 450W;Bosch;FER-STT-450;Corte;Serra tico-tico com movimento pendular 450W;310.0;419.0;4;2;new;NF-2026-000466;Galpão B-4;2026-03-27;36;220V;15.0;0;1
+Esmerilhadeira Angular 4.5 pol;Bosch;FER-ESM-412;Corte;Esmerilhadeira angular uso profissional 4.5 polegadas;260.0;347.8;9;2;regular;NF-2026-000452;Galpão C-4;2026-01-05;6;220V;8.7;0;0
+Esmerilhadeira Angular 7 pol;DeWalt;FER-ESM-700;Corte;Esmerilhadeira 7 polegadas 2400W profissional;520.0;699.0;3;1;new;NF-2026-000453;Galpão C-4;2026-01-06;24;Bivolt;19.9;0;0
+Martelete Rompedor 1500W;Stanley;FER-MAR-1500;Demolição;Martelete para perfuração e demolição leve;890.0;1190.0;3;1;maintenance;NF-2026-000454;Galpão A-1;2026-03-16;12;Bateria;27.8;1;0
+Martelete Perfurador 800W SDS;Bosch;FER-MAR-800S;Demolição;Martelete SDS-Plus 800W 3 funções;490.0;659.0;5;2;good;NF-2026-000464;Galpão B-5;2026-03-08;24;220V;23.2;0;1
+Rompedor 10J SDS Max;Makita;FER-ROM-10J;Demolição;Rompedor profissional 10 Joules SDS Max;1250.0;1690.0;2;1;new;NF-2026-000456;Galpão B-5;2026-03-25;36;Bivolt;23.4;0;0
+Nível a Laser Verde Linha Cruzada;Deko;FER-NIV-LAS;Precisão;Nível a laser de linhas cruzadas verde;220.0;289.9;4;1;new;NF-2026-000466;Galpão B-1;2026-01-04;24;N/A;6.1;0;0
+Nível a Laser 5 Linhas;Bosch;FER-NIV-5LN;Precisão;Nível a laser 5 linhas auto nivelador;680.0;899.0;2;1;new;NF-2026-000462;Galpão B-4;2026-03-07;6;N/A;21.1;0;0
+Chave de Impacto 1/2 pol;Vonder;FER-CHI-IMP;Fixação;Chave de impacto para parafusos estruturais meia polegada;410.0;540.0;4;1;good;NF-2026-000461;Galpão A-5;2026-03-23;12;N/A;37.2;0;1
+Parafusadeira de Impacto 18V;Milwaukee;FER-PAI-18V;Fixação;Parafusadeira de impacto brushless 220Nm;780.0;1050.0;3;1;new;NF-2026-000456;Galpão B-3;2026-03-15;24;N/A;15.0;0;0
+Betoneira 400L Monofásica;CSM;FER-BET-400;Concretagem;Betoneira 400 litros 220V monofásica;2950.0;3950.0;2;1;regular;NF-2026-000451;Galpão C-3;2026-03-07;24;220V;41.1;0;0
+Betoneira 160L Bivolt;Menegotti;FER-BET-160;Concretagem;Betoneira 160 litros bivolt compacta;980.0;1290.0;3;1;good;NF-2026-000457;Galpão C-2;2026-03-16;24;110V;11.7;0;1
+Vibrador de Concreto 1.5HP;Vonder;FER-VIB-15H;Concretagem;Vibrador de imersão 1.5HP eixo 38mm;890.0;1180.0;2;1;new;NF-2026-000465;Galpão B-5;2026-02-09;24;220V;30.7;0;0
+Escada Extensiva 6m Alumínio;Mor;FER-ESC-600;Acesso;Escada extensiva em alumínio 6 metros;750.0;980.0;7;2;good;NF-2026-000458;Galpão C-2;2026-03-24;6;N/A;29.9;0;0
+Escada Telescópica 4.4m;Alulev;FER-ESC-TEL;Acesso;Escada telescópica alumínio 14 degraus;620.0;829.0;4;1;new;NF-2026-000455;Galpão A-5;2026-02-07;6;N/A;44.7;0;0
+Andaime Tubular 1m;Styla;FER-AND-001;Acesso;Andaime tubular galvanizado módulo 1m;380.0;520.0;8;2;good;NF-2026-000458;Galpão B-3;2026-01-15;24;N/A;30.1;0;0
+Carrinho de Mão 60L;Tramontina;FER-CAR-060;Transporte;Carrinho de mão reforçado 60 litros;210.0;278.4;12;3;good;NF-2026-000452;Galpão A-2;2026-02-18;36;N/A;20.1;0;0
+Carrinho de Plataforma 300kg;Vonder;FER-CAR-PLT;Transporte;Carrinho de plataforma dobrável 300kg;320.0;428.0;5;2;new;NF-2026-000458;Galpão C-2;2026-01-04;12;N/A;1.8;0;0
+Trena a Laser 50m;Bosch;FER-TRE-L50;Medição;Trena digital laser alcance 50 metros;320.0;420.0;5;1;new;NF-2026-000457;Galpão A-4;2026-03-02;24;N/A;38.9;0;0
+Trena Métrica 50m Inox;Stanley;FER-TRE-050;Medição;Trena metálica inox com estojo 50 metros;120.0;168.0;6;2;good;NF-2026-000458;Galpão C-1;2026-02-27;36;N/A;36.5;0;1
+Lavadora Alta Pressão 1800W;Wap;FER-LAV-1800;Limpeza;Lavadora de alta pressão para canteiro;680.0;890.0;3;1;poor;NF-2026-000461;Galpão B-4;2026-02-10;6;Bivolt;19.2;1;1
+Lavadora Alta Pressão 2200W;Karcher;FER-LAV-2200;Limpeza;Lavadora Karcher K4 2200W uso profissional;980.0;1290.0;2;1;new;NF-2026-000463;Galpão C-5;2026-02-19;6;Bateria;43.2;0;0
+Compressor 10 Pés Mono;Schulz;FER-COM-10P;Limpeza;Compressor de ar 10 pés 220V monofásico;1480.0;1950.0;2;1;good;NF-2026-000463;Galpão B-2;2026-03-06;6;110V;44.9;0;0
+Gerador a Gasolina 5.5kVA;Branco;FER-GER-55K;Elétricas;Gerador a gasolina 5.5kVA monofásico;2480.0;3290.0;1;1;new;NF-2026-000455;Galpão A-3;2026-03-01;12;Bivolt;40.0;0;0
+Soprador Térmico 2000W;Bosch;FER-SOP-2KW;Elétricas;Soprador térmico temperatura regulável;210.0;289.0;4;2;good;NF-2026-000452;Galpão B-5;2026-01-26;12;220V;15.4;0;0
+Politriz Angular 5 pol;DeWalt;FER-POL-500;Elétricas;Politriz angular de velocidade variável 5 polegadas;680.0;899.0;3;1;new;NF-2026-000458;Galpão A-5;2026-02-06;36;Bateria;20.4;0;0

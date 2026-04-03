@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from flask import g, current_app
 from werkzeug.security import generate_password_hash
@@ -38,11 +39,24 @@ def query_db(query, args=(), one=False):
     return (rv[0] if rv else None) if one else rv
 
 
-def execute_db(query, args=()):
+def execute_db(query, args=(), commit=True):
     db = get_db()
     cur = db.execute(query, args)
-    db.commit()
+    if commit:
+        db.commit()
     return cur
+
+
+@contextmanager
+def db_transaction():
+    db = get_db()
+    try:
+        db.execute("BEGIN")
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
 
 def row_to_dict(row):
@@ -236,6 +250,8 @@ def init_db(app):
         password_hash TEXT NOT NULL DEFAULT '',
         role TEXT DEFAULT 'operator',
         active INTEGER DEFAULT 1,
+        must_change_password INTEGER DEFAULT 0,
+        last_login TEXT DEFAULT NULL,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -243,7 +259,9 @@ def init_db(app):
     CREATE TABLE IF NOT EXISTS categories (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        description TEXT
+        description TEXT,
+        active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS products (
@@ -255,9 +273,9 @@ def init_db(app):
         category_id TEXT REFERENCES categories(id),
         cost_price REAL DEFAULT 0.0,
         sale_price REAL DEFAULT 0.0,
-        stock INTEGER DEFAULT 0,
-        reserved_stock INTEGER DEFAULT 0,
-        min_stock INTEGER DEFAULT 0,
+        stock REAL DEFAULT 0,
+        reserved_stock REAL DEFAULT 0,
+        min_stock REAL DEFAULT 0,
         unit TEXT DEFAULT 'un',
         active INTEGER DEFAULT 1,
         created_at TEXT DEFAULT (datetime('now')),
@@ -273,18 +291,20 @@ def init_db(app):
         status TEXT DEFAULT 'active',
         start_date TEXT,
         end_date TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS project_needs (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL REFERENCES projects(id),
         product_id TEXT NOT NULL REFERENCES products(id),
-        quantity_needed INTEGER NOT NULL,
-        quantity_reserved INTEGER DEFAULT 0,
+        quantity_needed REAL NOT NULL,
+        quantity_reserved REAL DEFAULT 0,
         status TEXT DEFAULT 'pending',
         observation TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS suppliers (
@@ -298,7 +318,8 @@ def init_db(app):
         rating REAL DEFAULT 5.0,
         avg_lead_time INTEGER DEFAULT 7,
         active INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT (datetime('now'))
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS product_suppliers (
@@ -308,19 +329,22 @@ def init_db(app):
         avg_price REAL DEFAULT 0.0,
         lead_time INTEGER DEFAULT 7,
         priority INTEGER DEFAULT 1,
-        notes TEXT
+        notes TEXT,
+        UNIQUE(product_id, supplier_id)
     );
 
     CREATE TABLE IF NOT EXISTS movements (
         id TEXT PRIMARY KEY,
         product_id TEXT NOT NULL REFERENCES products(id),
-        type TEXT NOT NULL,
-        quantity INTEGER NOT NULL,
+        type TEXT NOT NULL CHECK(type IN ('entry','exit','adjustment','reservation')),
+        quantity REAL NOT NULL,
         unit_cost REAL DEFAULT 0.0,
         user_id TEXT REFERENCES users(id),
         project_id TEXT REFERENCES projects(id),
         supplier_id TEXT REFERENCES suppliers(id),
         invoice_number TEXT,
+        invoice_id TEXT REFERENCES invoices(id),
+        invoice_item_id TEXT REFERENCES invoice_items(id),
         observation TEXT,
         created_at TEXT DEFAULT (datetime('now'))
     );
@@ -329,7 +353,7 @@ def init_db(app):
         id TEXT PRIMARY KEY,
         project_need_id TEXT REFERENCES project_needs(id),
         product_id TEXT NOT NULL REFERENCES products(id),
-        quantity INTEGER NOT NULL,
+        quantity REAL NOT NULL,
         status TEXT DEFAULT 'open',
         approved_supplier_id TEXT REFERENCES suppliers(id),
         notes TEXT,
@@ -350,13 +374,18 @@ def init_db(app):
     CREATE TABLE IF NOT EXISTS invoices (
         id TEXT PRIMARY KEY,
         invoice_number TEXT NOT NULL,
+        supplier_id TEXT REFERENCES suppliers(id),
         supplier_cnpj TEXT,
         supplier_name TEXT,
         issue_date TEXT,
         total_value REAL DEFAULT 0.0,
-        status TEXT DEFAULT 'pending',
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','processed','reversed')),
         xml_content TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
+        cnpj_valid INTEGER DEFAULT 1,
+        source_file_name TEXT,
+        pdf_content_base64 TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS invoice_items (
@@ -369,13 +398,117 @@ def init_db(app):
         unit TEXT,
         unit_price REAL DEFAULT 0.0,
         total_price REAL DEFAULT 0.0,
-        matched INTEGER DEFAULT 0
+        matched INTEGER DEFAULT 0,
+        match_confidence REAL DEFAULT 0.0,
+        skipped INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS ocr_cache (
+        pdf_hash TEXT PRIMARY KEY,
+        result_json TEXT NOT NULL,
+        source TEXT DEFAULT 'openai',
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id),
+        action TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT,
+        details TEXT,
+        ip_address TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+    CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
     CREATE INDEX IF NOT EXISTS idx_movements_product ON movements(product_id);
     CREATE INDEX IF NOT EXISTS idx_movements_created ON movements(created_at);
+    CREATE INDEX IF NOT EXISTS idx_movements_type ON movements(type);
+    CREATE INDEX IF NOT EXISTS idx_movements_project ON movements(project_id);
+    CREATE INDEX IF NOT EXISTS idx_movements_supplier ON movements(supplier_id);
+    CREATE INDEX IF NOT EXISTS idx_movements_invoice ON movements(invoice_number);
+    CREATE INDEX IF NOT EXISTS idx_movements_invoice_id ON movements(invoice_id);
+    CREATE INDEX IF NOT EXISTS idx_movements_invoice_item_id ON movements(invoice_item_id);
     CREATE INDEX IF NOT EXISTS idx_project_needs_project ON project_needs(project_id);
+    CREATE INDEX IF NOT EXISTS idx_project_needs_product ON project_needs(product_id);
+    CREATE INDEX IF NOT EXISTS idx_project_needs_status ON project_needs(status);
+    CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+    CREATE INDEX IF NOT EXISTS idx_projects_manager ON projects(manager_id);
+    CREATE INDEX IF NOT EXISTS idx_product_suppliers_product ON product_suppliers(product_id);
+    CREATE INDEX IF NOT EXISTS idx_product_suppliers_supplier ON product_suppliers(supplier_id);
+    CREATE INDEX IF NOT EXISTS idx_quotations_product ON quotations(product_id);
+    CREATE INDEX IF NOT EXISTS idx_quotations_status ON quotations(status);
+    CREATE INDEX IF NOT EXISTS idx_quotation_items_quotation ON quotation_items(quotation_id);
+    CREATE INDEX IF NOT EXISTS idx_quotation_items_supplier ON quotation_items(supplier_id);
+    CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
+    CREATE INDEX IF NOT EXISTS idx_invoices_issue_date ON invoices(issue_date);
+    CREATE INDEX IF NOT EXISTS idx_invoices_supplier ON invoices(supplier_id);
+    CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
+    CREATE INDEX IF NOT EXISTS idx_invoice_items_product ON invoice_items(product_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
+
+    -- ── TOOLS MODULE ─────────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS tools (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        brand TEXT,
+        sku TEXT,
+        category TEXT,
+        description TEXT,
+        invoice_id TEXT REFERENCES invoices(id),
+        invoice_number TEXT,
+        unit_value REAL DEFAULT 0.0,
+        total_units INTEGER NOT NULL DEFAULT 1,
+        available_units INTEGER NOT NULL DEFAULT 1,
+        min_units INTEGER DEFAULT 0,
+        condition TEXT DEFAULT 'good' CHECK(condition IN ('new','good','regular','poor','maintenance')),
+        photo_base64 TEXT,
+        active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS tool_checkouts (
+        id TEXT PRIMARY KEY,
+        operator_id TEXT NOT NULL REFERENCES users(id),
+        project_id TEXT REFERENCES projects(id),
+        checkout_date TEXT DEFAULT (datetime('now')),
+        expected_return_date TEXT,
+        actual_return_date TEXT,
+        status TEXT DEFAULT 'active' CHECK(status IN ('active','returned','overdue','renewed','partial')),
+        observation TEXT,
+        checkout_photo TEXT,
+        return_photo TEXT,
+        renewed_count INTEGER DEFAULT 0,
+        created_by TEXT REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS tool_checkout_items (
+        id TEXT PRIMARY KEY,
+        checkout_id TEXT NOT NULL REFERENCES tool_checkouts(id),
+        tool_id TEXT NOT NULL REFERENCES tools(id),
+        quantity INTEGER NOT NULL DEFAULT 1,
+        returned_quantity INTEGER DEFAULT 0,
+        condition_on_return TEXT,
+        observation TEXT,
+        returned_at TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tools_active ON tools(active);
+    CREATE INDEX IF NOT EXISTS idx_tools_category ON tools(category);
+    CREATE INDEX IF NOT EXISTS idx_tool_checkouts_operator ON tool_checkouts(operator_id);
+    CREATE INDEX IF NOT EXISTS idx_tool_checkouts_status ON tool_checkouts(status);
+    CREATE INDEX IF NOT EXISTS idx_tool_checkouts_date ON tool_checkouts(checkout_date);
+    CREATE INDEX IF NOT EXISTS idx_tool_checkout_items_checkout ON tool_checkout_items(checkout_id);
+    CREATE INDEX IF NOT EXISTS idx_tool_checkout_items_tool ON tool_checkout_items(tool_id);
     """
 
     for stmt in schema.split(";"):
@@ -389,25 +522,176 @@ def init_db(app):
 
     con.commit()
 
-    # --- Migrations: new columns and tables added incrementally ---
+    # --- Migrations: incremental schema additions for existing databases ---
     migrations = [
-        # OCR cache to avoid repeated OpenAI calls for the same PDF
-        """CREATE TABLE IF NOT EXISTS ocr_cache (
-            pdf_hash TEXT PRIMARY KEY,
-            result_json TEXT NOT NULL,
-            source TEXT DEFAULT 'openai',
-            created_at TEXT DEFAULT (datetime('now'))
-        )""",
-        # Fuzzy match confidence score per invoice item
+        # New columns added after initial schema
         "ALTER TABLE invoice_items ADD COLUMN match_confidence REAL DEFAULT 0.0",
-        # CNPJ validation flag per invoice
+        "ALTER TABLE invoice_items ADD COLUMN skipped INTEGER DEFAULT 0",
         "ALTER TABLE invoices ADD COLUMN cnpj_valid INTEGER DEFAULT 1",
-        # Index for fast reversal lookup by invoice number
-        "CREATE INDEX IF NOT EXISTS idx_movements_invoice ON movements(invoice_number)",
-        # Backfill columns for legacy databases
+        "ALTER TABLE invoices ADD COLUMN source_file_name TEXT",
+        "ALTER TABLE invoices ADD COLUMN pdf_content_base64 TEXT",
+        "ALTER TABLE invoices ADD COLUMN supplier_id TEXT REFERENCES suppliers(id)",
+        "ALTER TABLE invoices ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
         "ALTER TABLE movements ADD COLUMN supplier_id TEXT",
         "ALTER TABLE movements ADD COLUMN invoice_number TEXT",
         "ALTER TABLE movements ADD COLUMN unit_cost REAL DEFAULT 0.0",
+        "ALTER TABLE movements ADD COLUMN invoice_id TEXT",
+        "ALTER TABLE movements ADD COLUMN invoice_item_id TEXT",
+        "ALTER TABLE categories ADD COLUMN active INTEGER DEFAULT 1",
+        "ALTER TABLE categories ADD COLUMN created_at TEXT DEFAULT (datetime('now'))",
+        "ALTER TABLE projects ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+        "ALTER TABLE project_needs ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+        "ALTER TABLE suppliers ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",
+        # Indexes
+        "CREATE INDEX IF NOT EXISTS idx_invoices_supplier ON invoices(supplier_id)",
+        "CREATE INDEX IF NOT EXISTS idx_movements_invoice ON movements(invoice_number)",
+        # Audit + last_login + must_change_password
+        "ALTER TABLE users ADD COLUMN last_login TEXT DEFAULT NULL",
+        "ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0",
+        """CREATE TABLE IF NOT EXISTS audit_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT REFERENCES users(id),
+            action TEXT NOT NULL,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT,
+            details TEXT,
+            ip_address TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action)",
+        "CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id)",
+        "CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at)",
+        # Tools module tables
+        """CREATE TABLE IF NOT EXISTS tools (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL, brand TEXT, sku TEXT, category TEXT,
+            description TEXT, invoice_id TEXT REFERENCES invoices(id), invoice_number TEXT,
+            unit_value REAL DEFAULT 0.0, total_units INTEGER NOT NULL DEFAULT 1,
+            available_units INTEGER NOT NULL DEFAULT 1, min_units INTEGER DEFAULT 0,
+            condition TEXT DEFAULT 'good', photo_base64 TEXT, active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+        )""",
+        """CREATE TABLE IF NOT EXISTS tool_checkouts (
+            id TEXT PRIMARY KEY, operator_id TEXT NOT NULL REFERENCES users(id),
+            project_id TEXT REFERENCES projects(id),
+            checkout_date TEXT DEFAULT (datetime('now')), expected_return_date TEXT,
+            actual_return_date TEXT, status TEXT DEFAULT 'active',
+            observation TEXT, checkout_photo TEXT, return_photo TEXT,
+            renewed_count INTEGER DEFAULT 0, created_by TEXT REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+        )""",
+        """CREATE TABLE IF NOT EXISTS tool_checkout_items (
+            id TEXT PRIMARY KEY, checkout_id TEXT NOT NULL REFERENCES tool_checkouts(id),
+            tool_id TEXT NOT NULL REFERENCES tools(id), quantity INTEGER NOT NULL DEFAULT 1,
+            returned_quantity INTEGER DEFAULT 0, condition_on_return TEXT,
+            observation TEXT, returned_at TEXT, created_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_tools_active ON tools(active)",
+        "CREATE INDEX IF NOT EXISTS idx_tools_category ON tools(category)",
+        "CREATE INDEX IF NOT EXISTS idx_tool_checkouts_operator ON tool_checkouts(operator_id)",
+        "CREATE INDEX IF NOT EXISTS idx_tool_checkouts_status ON tool_checkouts(status)",
+        "CREATE INDEX IF NOT EXISTS idx_tool_checkouts_date ON tool_checkouts(checkout_date)",
+        "CREATE INDEX IF NOT EXISTS idx_tool_checkout_items_checkout ON tool_checkout_items(checkout_id)",
+        "CREATE INDEX IF NOT EXISTS idx_tool_checkout_items_tool ON tool_checkout_items(tool_id)",
+        # ── PURCHASE ORDERS MODULE ──
+        """CREATE TABLE IF NOT EXISTS purchase_orders (
+            id TEXT PRIMARY KEY,
+            po_number TEXT UNIQUE NOT NULL,
+            quotation_id TEXT REFERENCES quotations(id),
+            supplier_id TEXT NOT NULL REFERENCES suppliers(id),
+            status TEXT DEFAULT 'draft' CHECK(status IN ('draft','sent','partial','received','cancelled')),
+            total_value REAL DEFAULT 0.0,
+            notes TEXT,
+            expected_delivery TEXT,
+            invoice_id TEXT REFERENCES invoices(id),
+            created_by TEXT REFERENCES users(id),
+            approved_by TEXT REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )""",
+        """CREATE TABLE IF NOT EXISTS purchase_order_items (
+            id TEXT PRIMARY KEY,
+            po_id TEXT NOT NULL REFERENCES purchase_orders(id),
+            product_id TEXT NOT NULL REFERENCES products(id),
+            quantity REAL NOT NULL,
+            unit_price REAL DEFAULT 0.0,
+            received_quantity REAL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_po_status ON purchase_orders(status)",
+        "CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplier_id)",
+        "CREATE INDEX IF NOT EXISTS idx_po_items_po ON purchase_order_items(po_id)",
+        # ── MOVEMENT APPROVALS ──
+        "ALTER TABLE movements ADD COLUMN approval_status TEXT DEFAULT 'approved'",
+        "ALTER TABLE movements ADD COLUMN approved_by TEXT",
+        "ALTER TABLE movements ADD COLUMN approval_notes TEXT",
+        # ── MULTI-WAREHOUSE ──
+        """CREATE TABLE IF NOT EXISTS warehouses (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            code TEXT UNIQUE,
+            address TEXT,
+            is_default INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "ALTER TABLE products ADD COLUMN warehouse_id TEXT",
+        "ALTER TABLE movements ADD COLUMN warehouse_id TEXT",
+        # ── PHYSICAL INVENTORY ──
+        """CREATE TABLE IF NOT EXISTS inventory_sessions (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            status TEXT DEFAULT 'open' CHECK(status IN ('open','counting','review','closed')),
+            warehouse_id TEXT,
+            created_by TEXT REFERENCES users(id),
+            closed_by TEXT REFERENCES users(id),
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            closed_at TEXT
+        )""",
+        """CREATE TABLE IF NOT EXISTS inventory_counts (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES inventory_sessions(id),
+            product_id TEXT NOT NULL REFERENCES products(id),
+            system_quantity REAL NOT NULL,
+            counted_quantity REAL,
+            difference REAL,
+            adjusted INTEGER DEFAULT 0,
+            counted_by TEXT REFERENCES users(id),
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_inv_session_status ON inventory_sessions(status)",
+        "CREATE INDEX IF NOT EXISTS idx_inv_counts_session ON inventory_counts(session_id)",
+        # ── ATTACHMENTS ──
+        """CREATE TABLE IF NOT EXISTS attachments (
+            id TEXT PRIMARY KEY,
+            entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            file_type TEXT,
+            file_size INTEGER,
+            file_data TEXT,
+            description TEXT,
+            uploaded_by TEXT REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_attachments_entity ON attachments(entity_type, entity_id)",
+        # ── SYSTEM SETTINGS ──
+        """CREATE TABLE IF NOT EXISTS system_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT,
+            updated_at TEXT DEFAULT (datetime('now'))
+        )""",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('movement_approval_threshold', '0')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('email_alerts_enabled', '0')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_host', '')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_port', '587')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_user', '')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('smtp_password', '')",
+        "INSERT OR IGNORE INTO system_settings (key, value) VALUES ('alert_email_to', '')",
+        "INSERT OR IGNORE INTO warehouses (id, name, code, is_default) VALUES ('default', 'Almoxarifado Principal', 'ALM-01', 1)",
     ]
     for stmt in migrations:
         stmt = stmt.strip()
@@ -426,6 +710,26 @@ def init_db(app):
         "INSERT OR IGNORE INTO users (id, name, email, password_hash, role) VALUES (?,?,?,?,?)",
         (admin_id, "Administrador", "admin@stock.com", pwd_hash, "admin"),
     )
+    con.commit()
+
+    # Seed POC users (Vitória Luz) — only if they don't exist yet
+    poc_users = [
+        ("Admin Principal",      "admin@vitorialuz.com",             "Admin@2026",      "admin",    1),
+        ("Admin Secundário",     "admin2@vitorialuz.com",            "Admin@2026",      "admin",    1),
+        ("Geraldo Mendes",       "gerente.geral@vitorialuz.com",     "Gerente@2026",    "manager",  1),
+        ("Patricia Lima",        "gerente.operacoes@vitorialuz.com", "Gerente@2026",    "manager",  1),
+        ("Marcos Souza",         "operador.campo@vitorialuz.com",    "Operador@2026",   "operator", 1),
+        ("Fernanda Costa",       "operador.logistica@vitorialuz.com","Operador@2026",   "operator", 1),
+        ("Ana Paula Rocha",      "comprador.senior@vitorialuz.com",  "Comprador@2026",  "buyer",    1),
+        ("Diego Ferreira",       "comprador.junior@vitorialuz.com",  "Comprador@2026",  "buyer",    1),
+    ]
+    for name, email, password, role, must_change in poc_users:
+        existing = con.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone()
+        if not existing:
+            con.execute(
+                "INSERT INTO users (id, name, email, password_hash, role, must_change_password) VALUES (?,?,?,?,?,?)",
+                (str(uuid.uuid4()), name, email, generate_password_hash(password), role, must_change),
+            )
     con.commit()
 
     if os.environ.get("DEMO_SEED") == "1":

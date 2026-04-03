@@ -16,34 +16,52 @@
         <button class="btn btn-secondary" onclick="showTab('suppliers')">
           <i class="fas fa-truck"></i> Fornecedores
         </button>
-        <button class="btn btn-primary" onclick="openNewSupplier()">
+        <button class="btn btn-primary" id="btn-new-supplier" onclick="openNewSupplier()">
           <i class="fas fa-plus"></i> Novo Fornecedor
         </button>
       </div>
     </div>
 
     <div class="page-body">
+
+      <!-- ===== SUPPLIERS TAB ===== -->
       <div id="tab-suppliers">
+        <!-- Filter bar -->
+        <div class="flex gap-3 mb-4 items-center" style="flex-wrap:wrap">
+          <label class="flex items-center gap-2" style="font-size:13px;cursor:pointer" id="filter-inactive-wrap">
+            <input type="checkbox" id="chk-inactive" onchange="loadSuppliers()" />
+            Exibir inativos
+          </label>
+        </div>
         <div class="card">
           <div class="table-wrapper">
             <table>
               <thead>
                 <tr>
                   <th>Fornecedor</th><th>CNPJ</th><th>Email</th><th>Contato</th>
-                  <th>Lead Time</th><th>Rating</th><th>Ações</th>
+                  <th>Lead Time</th><th>Rating</th><th>Status</th><th>Ações</th>
                 </tr>
               </thead>
-              <tbody id="suppliers-table">
-              </tbody>
+              <tbody id="suppliers-table"></tbody>
             </table>
           </div>
         </div>
       </div>
 
+      <!-- ===== QUOTATIONS TAB ===== -->
       <div id="tab-quotations" style="display:none">
-        <div class="flex justify-between items-center mb-4">
-          <h3 style="font-size:16px;font-weight:700">Cotações em Andamento</h3>
-          <button class="btn btn-primary" onclick="openNewQuotation()">
+        <div class="flex justify-between items-center mb-4" style="flex-wrap:wrap;gap:8px">
+          <div class="flex gap-2 items-center">
+            <h3 style="font-size:16px;font-weight:700">Cotações</h3>
+            <select id="quot-status-filter" class="form-control" style="width:140px;padding:4px 8px;font-size:13px" onchange="loadQuotations()">
+              <option value="">Todas</option>
+              <option value="open">Abertas</option>
+              <option value="received">Recebidas</option>
+              <option value="approved">Aprovadas</option>
+              <option value="cancelled">Canceladas</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="btn-new-quotation" onclick="openNewQuotation()">
             <i class="fas fa-plus"></i> Nova Cotação
           </button>
         </div>
@@ -56,17 +74,17 @@
                   <th>Fornecedores / Melhor Preço</th><th>Data</th><th>Ações</th>
                 </tr>
               </thead>
-              <tbody id="quotations-table">
-              </tbody>
+              <tbody id="quotations-table"></tbody>
             </table>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
-<!-- Modal: Supplier -->
+<!-- ===== Modal: Supplier Create/Edit ===== -->
 <div class="modal-overlay" id="modal-supplier">
   <div class="modal">
     <div class="modal-header">
@@ -115,7 +133,103 @@
   </div>
 </div>
 
-<!-- Modal: New Quotation -->
+<!-- ===== Modal: Supplier Profile / History ===== -->
+<div class="modal-overlay" id="modal-supplier-profile">
+  <div class="modal modal-lg" style="max-width:860px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="profile-title">Perfil do Fornecedor</h2>
+      <button class="modal-close" onclick="closeModal('modal-supplier-profile')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="profile-stats"></div>
+
+    <!-- Sub-tabs -->
+    <div class="flex gap-2 mb-4" style="border-bottom:1px solid var(--border)">
+      <button class="btn btn-secondary btn-sm" id="ptab-products" onclick="showProfileTab('products')" style="border-radius:4px 4px 0 0">
+        <i class="fas fa-box"></i> Produtos Vinculados
+      </button>
+      <button class="btn btn-secondary btn-sm" id="ptab-invoices" onclick="showProfileTab('invoices')" style="border-radius:4px 4px 0 0">
+        <i class="fas fa-file-invoice"></i> Notas Fiscais
+      </button>
+      <button class="btn btn-secondary btn-sm" id="ptab-movements" onclick="showProfileTab('movements')" style="border-radius:4px 4px 0 0">
+        <i class="fas fa-exchange-alt"></i> Movimentações
+      </button>
+      <button class="btn btn-secondary btn-sm" id="ptab-quotations" onclick="showProfileTab('quotations')" style="border-radius:4px 4px 0 0">
+        <i class="fas fa-file-alt"></i> Cotações
+      </button>
+    </div>
+
+    <div id="profile-tab-products" style="display:none">
+      <div class="flex justify-between items-center mb-3">
+        <span style="font-size:13px;color:var(--text2)">Produtos vinculados a este fornecedor</span>
+        <button class="btn btn-secondary btn-sm" id="btn-add-link" onclick="openAddProductLink()">
+          <i class="fas fa-plus"></i> Vincular Produto
+        </button>
+      </div>
+      <div id="profile-products-list"></div>
+    </div>
+
+    <div id="profile-tab-invoices" style="display:none">
+      <div id="profile-invoices-list"></div>
+    </div>
+
+    <div id="profile-tab-movements" style="display:none">
+      <div id="profile-movements-list"></div>
+    </div>
+
+    <div id="profile-tab-quotations" style="display:none">
+      <div id="profile-quotations-list"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-supplier-profile')">Fechar</button>
+      <button class="btn btn-primary" id="btn-profile-edit" onclick="editCurrentProfileSupplier()">
+        <i class="fas fa-edit"></i> Editar Fornecedor
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Add Product Link ===== -->
+<div class="modal-overlay" id="modal-add-link">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Vincular Produto ao Fornecedor</h2>
+      <button class="modal-close" onclick="closeModal('modal-add-link')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Produto *</label>
+      <select id="link-product-sel" class="form-control"><option value="">Selecione...</option></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Preço médio (R$)</label>
+        <input id="link-price" type="number" step="0.01" class="form-control" value="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lead Time (dias)</label>
+        <input id="link-lead" type="number" class="form-control" value="7" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Prioridade</label>
+        <input id="link-priority" type="number" min="1" class="form-control" value="1" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <input id="link-notes" type="text" class="form-control" placeholder="Observações" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-link')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProductLink()"><i class="fas fa-save"></i> Vincular</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: New Quotation ===== -->
 <div class="modal-overlay" id="modal-quotation">
   <div class="modal">
     <div class="modal-header">
@@ -145,7 +259,36 @@
   </div>
 </div>
 
-<!-- Modal: Approve Quotation -->
+<!-- ===== Modal: Add Supplier to Quotation ===== -->
+<div class="modal-overlay" id="modal-add-quot-supplier">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Adicionar Fornecedor à Cotação</h2>
+      <button class="modal-close" onclick="closeModal('modal-add-quot-supplier')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fornecedor *</label>
+      <select id="add-quot-sup-sel" class="form-control"><option value="">Selecione...</option></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Preço Unitário (R$)</label>
+        <input id="add-quot-price" type="number" step="0.01" class="form-control" value="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lead Time (dias)</label>
+        <input id="add-quot-lead" type="number" class="form-control" value="7" />
+      </div>
+    </div>
+    <input type="hidden" id="add-quot-id" />
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-quot-supplier')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveAddQuotSupplier()"><i class="fas fa-plus"></i> Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Modal: Approve Quotation ===== -->
 <div class="modal-overlay" id="modal-approve">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -164,7 +307,7 @@
   </div>
 </div>
 
-<!-- Modal: Quotation Item Price Entry -->
+<!-- ===== Modal: Quotation Item Price Entry ===== -->
 <div class="modal-overlay" id="modal-price-entry">
   <div class="modal">
     <div class="modal-header">
@@ -189,6 +332,15 @@ initUserInfo();
 
 let currentTab = "suppliers";
 let allSuppliersCache = [];
+let currentProfileSupplierId = null;
+const userRole = getUser()?.role || "";
+const canManage = ["admin", "manager"].includes(userRole);
+const canEdit = ["admin", "manager", "buyer"].includes(userRole);
+
+// Hide "Novo Fornecedor" for operator
+if (!canEdit) document.getElementById("btn-new-supplier").style.display = "none";
+if (!canEdit) document.getElementById("btn-new-quotation").style.display = "none";
+if (!canManage) document.getElementById("filter-inactive-wrap").style.display = "none";
 
 function showTab(tab) {
   currentTab = tab;
@@ -198,19 +350,24 @@ function showTab(tab) {
   else loadSuppliers();
 }
 
+// ─────────────────────────────────────────────
+// Suppliers list
+// ─────────────────────────────────────────────
+
 async function loadSuppliers() {
   const tbody = document.getElementById("suppliers-table");
-  tbody.innerHTML = skeletonRows(7, 5);
+  tbody.innerHTML = skeletonRows(8, 5);
   try {
-    const suppliers = await api.get("/suppliers/");
+    const includeInactive = canManage && document.getElementById("chk-inactive").checked;
+    const suppliers = await api.get("/suppliers/" + (includeInactive ? "?include_inactive=1" : ""));
     allSuppliersCache = suppliers;
     if (!suppliers.length) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">
         <i class="fas fa-truck"></i><h3>Nenhum fornecedor</h3>
         <p>Cadastre o primeiro fornecedor para começar</p></div></td></tr>`;
       return;
     }
-    tbody.innerHTML = suppliers.map(s => `<tr>
+    tbody.innerHTML = suppliers.map(s => `<tr style="${s.active == 0 ? 'opacity:0.6' : ''}">
       <td>
         <div>
           <strong>${s.name}</strong>
@@ -231,13 +388,29 @@ async function loadSuppliers() {
         </div>
       </td>
       <td>
+        <span class="badge ${s.active != 0 ? 'badge-success' : 'badge-gray'}">${s.active != 0 ? 'Ativo' : 'Inativo'}</span>
+      </td>
+      <td>
         <div class="flex gap-2">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openProfile('${s.id}')" title="Ver perfil / histórico">
+            <i class="fas fa-chart-bar" style="color:var(--accent)"></i>
+          </button>
+          ${canEdit ? `
           <button class="btn btn-secondary btn-sm btn-icon" onclick="editSupplier('${s.id}')" title="Editar">
             <i class="fas fa-edit"></i>
-          </button>
-          <button class="btn btn-secondary btn-sm btn-icon" onclick="openNewQuotationForSupplier('${s.id}','${s.name}')" title="Nova Cotação">
+          </button>` : ''}
+          ${canEdit ? `
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openNewQuotationForSupplier('${s.id}','${s.name.replace(/'/g,"\\'")}')}" title="Nova Cotação">
             <i class="fas fa-file-alt" style="color:var(--accent)"></i>
-          </button>
+          </button>` : ''}
+          ${canManage && s.active != 0 ? `
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="toggleSupplierActive('${s.id}', false)" title="Desativar fornecedor">
+            <i class="fas fa-ban" style="color:var(--danger)"></i>
+          </button>` : ''}
+          ${canManage && s.active == 0 ? `
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="toggleSupplierActive('${s.id}', true)" title="Reativar fornecedor">
+            <i class="fas fa-check-circle" style="color:var(--success)"></i>
+          </button>` : ''}
         </div>
       </td>
     </tr>`).join("");
@@ -247,53 +420,228 @@ async function loadSuppliers() {
   }
 }
 
-async function loadQuotations() {
-  const tbody = document.getElementById("quotations-table");
-  tbody.innerHTML = skeletonRows(6, 4);
+async function toggleSupplierActive(supplierId, activate) {
+  const action = activate ? "activate" : "deactivate";
+  const label = activate ? "reativar" : "desativar";
+  if (!confirm(`Confirma ${label} este fornecedor?`)) return;
   try {
-    const quotations = await api.get("/suppliers/quotations/");
-    if (!quotations.length) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-        <i class="fas fa-file-alt"></i><h3>Sem cotações</h3>
-        <p>Crie uma cotação para comparar preços de fornecedores</p></div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = quotations.map(q => {
-      const statusBadge = { open: 'badge-warning', received: 'badge-info', approved: 'badge-success', cancelled: 'badge-gray' };
-      const statusLabel = { open: 'Aberta', received: 'Recebida', approved: 'Aprovada', cancelled: 'Cancelada' };
-      const validPrices = q.items?.filter(i => i.unit_price > 0) || [];
-      const bestPrice = validPrices.length ? Math.min(...validPrices.map(i => i.unit_price)) : null;
-      const itemsInfo = q.items?.length
-        ? `${q.items.length} fornecedor${q.items.length !== 1 ? 'es' : ''}${bestPrice ? ` <span class="text-mono text-sm text-success"> | melhor: ${fmtCurrency(bestPrice)}</span>` : ' <span class="text-muted text-sm">(sem preços)</span>'}`
-        : '<span class="text-muted text-sm">Nenhum fornecedor vinculado</span>';
+    await api.post(`/suppliers/${supplierId}/${action}`, {});
+    showToast(`Fornecedor ${activate ? 'reativado' : 'desativado'} com sucesso.`);
+    loadSuppliers();
+  } catch(e) { showToast(e.message, "error"); }
+}
 
-      return `<tr>
-        <td><strong>${q.product_name || '—'}</strong></td>
-        <td class="text-mono">${q.quantity}</td>
-        <td><span class="badge ${statusBadge[q.status] || 'badge-gray'}">${statusLabel[q.status] || q.status}</span></td>
-        <td>${itemsInfo}</td>
-        <td class="text-muted text-sm">${fmtDateShort(q.created_at)}</td>
-        <td>
-          <div class="flex gap-2">
-            ${q.status === 'open' ? `
-              <button class="btn btn-secondary btn-sm" onclick="openPriceEntry('${q.id}', ${JSON.stringify(q.items || []).replace(/"/g,'&quot;')})" title="Registrar preços">
-                <i class="fas fa-dollar-sign"></i> Preços
-              </button>
-              <button class="btn btn-primary btn-sm" onclick="openApprove('${q.id}', ${JSON.stringify(q.items || []).replace(/"/g,'&quot;')})" title="Aprovar cotação">
-                <i class="fas fa-check"></i> Aprovar
-              </button>
-            ` : q.status === 'approved' ? `
-              <span class="text-muted text-sm">Fornecedor aprovado</span>
-            ` : '—'}
-          </div>
-        </td>
-      </tr>`;
-    }).join("");
+// ─────────────────────────────────────────────
+// Supplier Profile Modal
+// ─────────────────────────────────────────────
+
+let profileData = null;
+
+async function openProfile(supplierId) {
+  currentProfileSupplierId = supplierId;
+  profileData = null;
+  document.getElementById("profile-title").textContent = "Carregando...";
+  document.getElementById("profile-stats").innerHTML = skeletonRows(1, 4);
+  openModal("modal-supplier-profile");
+  showProfileTab("products");
+  try {
+    const d = await api.get(`/suppliers/${supplierId}/summary`);
+    profileData = d;
+    const s = d.supplier;
+    document.getElementById("profile-title").innerHTML =
+      `<i class="fas fa-truck" style="color:var(--accent)"></i> ${s.name}
+       <span class="badge ${s.active ? 'badge-success' : 'badge-gray'}" style="margin-left:8px">${s.active ? 'Ativo' : 'Inativo'}</span>`;
+    document.getElementById("profile-stats").innerHTML = `
+      <div class="card card-sm" style="text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--accent)">${d.stats.total_invoices}</div>
+        <div style="font-size:11px;color:var(--text2)">Notas Fiscais</div>
+      </div>
+      <div class="card card-sm" style="text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--success)">${fmtCurrency(d.stats.total_invoices_value)}</div>
+        <div style="font-size:11px;color:var(--text2)">Total Compras (NFs proc.)</div>
+      </div>
+      <div class="card card-sm" style="text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--warn)">${d.stats.total_movements}</div>
+        <div style="font-size:11px;color:var(--text2)">Movimentações</div>
+      </div>
+      <div class="card card-sm" style="text-align:center">
+        <div style="font-size:20px;font-weight:700;color:var(--accent2)">${d.stats.open_quotations}</div>
+        <div style="font-size:11px;color:var(--text2)">Cotações Abertas</div>
+      </div>
+    `;
+    renderProfileTab("products");
   } catch(e) {
-    tbody.innerHTML = sectionError(e.message, loadQuotations);
-    showToast(e.message, "error");
+    document.getElementById("profile-stats").innerHTML = `<div style="grid-column:1/-1"><div class="alert alert-danger">${e.message}</div></div>`;
   }
 }
+
+function editCurrentProfileSupplier() {
+  closeModal("modal-supplier-profile");
+  editSupplier(currentProfileSupplierId);
+}
+
+function showProfileTab(tab) {
+  ["products","invoices","movements","quotations"].forEach(t => {
+    document.getElementById(`profile-tab-${t}`).style.display = t === tab ? "" : "none";
+    const btn = document.getElementById(`ptab-${t}`);
+    if (btn) btn.style.fontWeight = t === tab ? "700" : "400";
+  });
+  if (profileData) renderProfileTab(tab);
+}
+
+function renderProfileTab(tab) {
+  if (!profileData) return;
+  if (tab === "products") renderProfileProducts();
+  else if (tab === "invoices") renderProfileInvoices();
+  else if (tab === "movements") renderProfileMovements();
+  else if (tab === "quotations") renderProfileQuotations();
+}
+
+function renderProfileProducts() {
+  const el = document.getElementById("profile-products-list");
+  const items = profileData.linked_products || [];
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px"><i class="fas fa-box"></i><p>Nenhum produto vinculado</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Produto</th><th>SKU</th><th>Preço Médio</th><th>Lead Time</th><th>Prioridade</th><th>Estoque Atual</th><th>Ações</th></tr></thead>
+    <tbody>${items.map(p => `<tr>
+      <td><strong>${p.product_name || '—'}</strong></td>
+      <td class="text-mono text-sm">${p.sku || '—'}</td>
+      <td class="text-mono">${p.avg_price > 0 ? fmtCurrency(p.avg_price) : '—'}</td>
+      <td>${p.lead_time} dias</td>
+      <td>${p.priority}</td>
+      <td class="text-mono">${p.stock ?? '—'} ${p.unit || ''}</td>
+      <td>
+        ${canEdit ? `<button class="btn btn-secondary btn-sm btn-icon" onclick="removeProductLink('${p.id}')" title="Remover vínculo">
+          <i class="fas fa-unlink" style="color:var(--danger)"></i>
+        </button>` : ''}
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function renderProfileInvoices() {
+  const el = document.getElementById("profile-invoices-list");
+  const items = profileData.invoices || [];
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px"><i class="fas fa-file-invoice"></i><p>Nenhuma nota fiscal registrada</p></div>`;
+    return;
+  }
+  const badge = { pending: 'badge-warning', processed: 'badge-success', reversed: 'badge-danger' };
+  const label = { pending: 'Pendente', processed: 'Processada', reversed: 'Estornada' };
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Nº NF</th><th>Emissão</th><th>Valor Total</th><th>Itens</th><th>Status</th><th>Importada em</th></tr></thead>
+    <tbody>${items.map(inv => `<tr>
+      <td class="text-mono"><strong>${inv.invoice_number || '—'}</strong></td>
+      <td>${inv.issue_date || '—'}</td>
+      <td class="text-mono">${fmtCurrency(inv.total_value)}</td>
+      <td>${inv.items_count}</td>
+      <td><span class="badge ${badge[inv.status] || 'badge-gray'}">${label[inv.status] || inv.status}</span></td>
+      <td class="text-muted text-sm">${fmtDatetime(inv.created_at)}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function renderProfileMovements() {
+  const el = document.getElementById("profile-movements-list");
+  const items = profileData.movements || [];
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px"><i class="fas fa-exchange-alt"></i><p>Nenhuma movimentação registrada</p></div>`;
+    return;
+  }
+  const mvBadge = { entry: 'badge-success', exit: 'badge-danger', adjustment: 'badge-warning' };
+  const mvLabel = { entry: 'Entrada', exit: 'Saída', adjustment: 'Ajuste' };
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Tipo</th><th>Produto</th><th>Quantidade</th><th>Custo Unit.</th><th>NF</th><th>Data</th></tr></thead>
+    <tbody>${items.map(m => `<tr>
+      <td><span class="badge ${mvBadge[m.type] || 'badge-gray'}">${mvLabel[m.type] || m.type}</span></td>
+      <td>${m.product_name || '—'}</td>
+      <td class="text-mono">${m.quantity} ${m.product_unit || ''}</td>
+      <td class="text-mono">${m.unit_cost > 0 ? fmtCurrency(m.unit_cost) : '—'}</td>
+      <td class="text-mono text-sm">${m.invoice_number || '—'}</td>
+      <td class="text-muted text-sm">${fmtDatetime(m.created_at)}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function renderProfileQuotations() {
+  const el = document.getElementById("profile-quotations-list");
+  const items = profileData.quotations || [];
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px"><i class="fas fa-file-alt"></i><p>Nenhuma cotação registrada</p></div>`;
+    return;
+  }
+  const stBadge = { open: 'badge-warning', received: 'badge-info', approved: 'badge-success', cancelled: 'badge-gray' };
+  const stLabel = { open: 'Aberta', received: 'Recebida', approved: 'Aprovada', cancelled: 'Cancelada' };
+  const itBadge = { pending: 'badge-gray', approved: 'badge-success', rejected: 'badge-danger' };
+  el.innerHTML = `<div class="table-wrapper"><table>
+    <thead><tr><th>Produto</th><th>Quantidade</th><th>Status Cotação</th><th>Preço Ofertado</th><th>Lead Time</th><th>Resultado</th><th>Data</th></tr></thead>
+    <tbody>${items.map(q => `<tr>
+      <td>${q.product_name || '—'}</td>
+      <td class="text-mono">${q.quantity}</td>
+      <td><span class="badge ${stBadge[q.status] || 'badge-gray'}">${stLabel[q.status] || q.status}</span></td>
+      <td class="text-mono">${q.unit_price > 0 ? fmtCurrency(q.unit_price) : '—'}</td>
+      <td>${q.lead_time ? q.lead_time + ' dias' : '—'}</td>
+      <td><span class="badge ${itBadge[q.item_status] || 'badge-gray'}">${q.item_status || '—'}</span></td>
+      <td class="text-muted text-sm">${fmtDateShort(q.created_at)}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function removeProductLink(linkId) {
+  if (!confirm("Confirma remoção do vínculo produto-fornecedor?")) return;
+  try {
+    await api.delete(`/suppliers/product-link/${linkId}`);
+    showToast("Vínculo removido com sucesso.");
+    await openProfile(currentProfileSupplierId);
+    showProfileTab("products");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function openAddProductLink() {
+  try {
+    const products = await api.get("/products/");
+    const sel = document.getElementById("link-product-sel");
+    const currentLinked = new Set((profileData?.linked_products || []).map(p => p.product_id));
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      products.filter(p => !currentLinked.has(p.id))
+        .map(p => `<option value="${p.id}">${p.name} (${p.unit || 'un'})</option>`).join("");
+    document.getElementById("link-price").value = "0";
+    document.getElementById("link-lead").value = "7";
+    document.getElementById("link-priority").value = "1";
+    document.getElementById("link-notes").value = "";
+    openModal("modal-add-link");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function saveProductLink() {
+  const productId = document.getElementById("link-product-sel").value;
+  if (!productId) { showToast("Selecione um produto", "error"); return; }
+  try {
+    await api.post("/suppliers/product-link", {
+      product_id: productId,
+      supplier_id: currentProfileSupplierId,
+      avg_price: parseFloat(document.getElementById("link-price").value) || 0,
+      lead_time: parseInt(document.getElementById("link-lead").value) || 7,
+      priority: parseInt(document.getElementById("link-priority").value) || 1,
+      notes: document.getElementById("link-notes").value || null,
+    });
+    showToast("Produto vinculado com sucesso!");
+    closeModal("modal-add-link");
+    await openProfile(currentProfileSupplierId);
+    showProfileTab("products");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+// ─────────────────────────────────────────────
+// Supplier Create/Edit
+// ─────────────────────────────────────────────
 
 function openNewSupplier() {
   document.getElementById("sup-id").value = "";
@@ -322,7 +670,7 @@ async function saveSupplier() {
   const id = document.getElementById("sup-id").value;
   const data = {
     name: document.getElementById("sup-name").value.trim(),
-    cnpj: document.getElementById("sup-cnpj").value,
+    cnpj: document.getElementById("sup-cnpj").value.trim(),
     email: document.getElementById("sup-email").value,
     phone: document.getElementById("sup-phone").value,
     contact_name: document.getElementById("sup-contact").value,
@@ -338,16 +686,80 @@ async function saveSupplier() {
   } catch(e) { showToast(e.message, "error"); }
 }
 
-async function openNewQuotation() {
+// ─────────────────────────────────────────────
+// Quotations
+// ─────────────────────────────────────────────
+
+async function loadQuotations() {
+  const tbody = document.getElementById("quotations-table");
+  tbody.innerHTML = skeletonRows(6, 4);
+  const statusFilter = document.getElementById("quot-status-filter").value;
+  const url = "/suppliers/quotations/" + (statusFilter ? `?status=${statusFilter}` : "");
   try {
-    const products = await api.get("/products/");
+    const quotations = await api.get(url);
+    if (!quotations.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+        <i class="fas fa-file-alt"></i><h3>Sem cotações</h3>
+        <p>Crie uma cotação para comparar preços de fornecedores</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = quotations.map(q => {
+      const statusBadge = { open: 'badge-warning', received: 'badge-info', approved: 'badge-success', cancelled: 'badge-gray' };
+      const statusLabel = { open: 'Aberta', received: 'Recebida', approved: 'Aprovada', cancelled: 'Cancelada' };
+      const validPrices = q.items?.filter(i => i.unit_price > 0) || [];
+      const bestPrice = validPrices.length ? Math.min(...validPrices.map(i => i.unit_price)) : null;
+      const itemsInfo = q.items?.length
+        ? `${q.items.length} fornecedor${q.items.length !== 1 ? 'es' : ''}${bestPrice ? ` <span class="text-mono text-sm text-success"> | melhor: ${fmtCurrency(bestPrice)}</span>` : ' <span class="text-muted text-sm">(sem preços)</span>'}`
+        : '<span class="text-muted text-sm">Nenhum fornecedor vinculado</span>';
+
+      const actions = [];
+      if (q.status === 'open' || q.status === 'received') {
+        if (canEdit) {
+          actions.push(`<button class="btn btn-secondary btn-sm" onclick="openPriceEntry('${q.id}', ${JSON.stringify(q.items || []).replace(/"/g,'&quot;')})" title="Registrar preços">
+            <i class="fas fa-dollar-sign"></i> Preços
+          </button>`);
+          actions.push(`<button class="btn btn-secondary btn-sm" onclick="openAddQuotSupplier('${q.id}')" title="Adicionar fornecedor">
+            <i class="fas fa-user-plus"></i>
+          </button>`);
+        }
+        if (canManage) {
+          actions.push(`<button class="btn btn-primary btn-sm" onclick="openApprove('${q.id}', ${JSON.stringify(q.items || []).replace(/"/g,'&quot;')})" title="Aprovar cotação">
+            <i class="fas fa-check"></i> Aprovar
+          </button>`);
+          actions.push(`<button class="btn btn-secondary btn-sm" onclick="cancelQuotation('${q.id}')" title="Cancelar cotação" style="color:var(--danger)">
+            <i class="fas fa-times"></i>
+          </button>`);
+        }
+      } else if (q.status === 'approved') {
+        actions.push(`<span class="text-muted text-sm">Fornecedor: ${q.approved_supplier_name || '—'}</span>`);
+      }
+
+      return `<tr>
+        <td><strong>${q.product_name || '—'}</strong></td>
+        <td class="text-mono">${q.quantity}</td>
+        <td><span class="badge ${statusBadge[q.status] || 'badge-gray'}">${statusLabel[q.status] || q.status}</span></td>
+        <td>${itemsInfo}</td>
+        <td class="text-muted text-sm">${fmtDateShort(q.created_at)}</td>
+        <td><div class="flex gap-2">${actions.join('')}</div></td>
+      </tr>`;
+    }).join("");
+  } catch(e) {
+    tbody.innerHTML = sectionError(e.message, loadQuotations);
+    showToast(e.message, "error");
+  }
+}
+
+function openNewSupplier2() { openNewSupplier(); }
+
+function openNewQuotation() {
+  api.get("/products/").then(products => {
     const sel = document.getElementById("quot-product");
     sel.innerHTML = '<option value="">Selecione...</option>' +
       products.map(p => `<option value="${p.id}">${p.name} (estoque: ${p.stock})</option>`).join("");
     document.getElementById("quot-qty").value = "";
     document.getElementById("quot-notes").value = "";
     openModal("modal-quotation");
-  } catch(e) { showToast(e.message, "error"); }
+  }).catch(e => showToast(e.message, "error"));
 }
 
 async function openNewQuotationForSupplier(supplierId, supplierName) {
@@ -370,15 +782,57 @@ async function saveQuotation() {
   } catch(e) { showToast(e.message, "error"); }
 }
 
-// ===== Registrar Preços dos Fornecedores =====
+async function cancelQuotation(quotationId) {
+  const reason = prompt("Motivo do cancelamento (opcional):");
+  if (reason === null) return; // user pressed Cancel on prompt
+  try {
+    await api.post(`/suppliers/quotations/${quotationId}/cancel`, { reason });
+    showToast("Cotação cancelada.");
+    loadQuotations();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+// Add supplier to an existing quotation
+async function openAddQuotSupplier(quotationId) {
+  document.getElementById("add-quot-id").value = quotationId;
+  try {
+    const suppliers = await api.get("/suppliers/");
+    const sel = document.getElementById("add-quot-sup-sel");
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      suppliers.map(s => `<option value="${s.id}">${s.name}${s.cnpj ? ' — ' + s.cnpj : ''}</option>`).join("");
+    document.getElementById("add-quot-price").value = "0";
+    document.getElementById("add-quot-lead").value = "7";
+    openModal("modal-add-quot-supplier");
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+async function saveAddQuotSupplier() {
+  const quotationId = document.getElementById("add-quot-id").value;
+  const supplierId = document.getElementById("add-quot-sup-sel").value;
+  if (!supplierId) { showToast("Selecione um fornecedor", "error"); return; }
+  try {
+    await api.post(`/suppliers/quotations/${quotationId}/add-supplier`, {
+      supplier_id: supplierId,
+      unit_price: parseFloat(document.getElementById("add-quot-price").value) || 0,
+      lead_time: parseInt(document.getElementById("add-quot-lead").value) || 7,
+    });
+    showToast("Fornecedor adicionado à cotação!");
+    closeModal("modal-add-quot-supplier");
+    loadQuotations();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+// ─────────────────────────────────────────────
+// Price Entry
+// ─────────────────────────────────────────────
+
 function openPriceEntry(quotationId, items) {
   document.getElementById("price-entry-quotation-id").value = quotationId;
   const container = document.getElementById("price-entry-list");
-
   if (!items || !items.length) {
     container.innerHTML = `<div class="alert alert-warning">
       <i class="fas fa-exclamation-triangle"></i>
-      Nenhum fornecedor vinculado a esta cotação. Vincule fornecedores ao produto primeiro.
+      Nenhum fornecedor vinculado a esta cotação. Vincule fornecedores ao produto primeiro ou adicione-os manualmente.
     </div>`;
   } else {
     container.innerHTML = items.map(item => `
@@ -408,7 +862,6 @@ function openPriceEntry(quotationId, items) {
 async function savePrices() {
   const priceInputs = document.querySelectorAll(".price-item-input");
   const leadInputs = document.querySelectorAll(".lead-item-input");
-
   try {
     for (let i = 0; i < priceInputs.length; i++) {
       const itemId = priceInputs[i].dataset.itemId;
@@ -422,11 +875,13 @@ async function savePrices() {
   } catch(e) { showToast(e.message, "error"); }
 }
 
-// ===== Aprovar Cotação =====
+// ─────────────────────────────────────────────
+// Approve Quotation
+// ─────────────────────────────────────────────
+
 function openApprove(quotationId, items) {
   document.getElementById("approve-quotation-id").value = quotationId;
   const container = document.getElementById("approve-items-list");
-
   if (!items || !items.length) {
     container.innerHTML = `<div class="alert alert-warning">
       <i class="fas fa-exclamation-triangle"></i>
@@ -435,7 +890,6 @@ function openApprove(quotationId, items) {
   } else {
     const validItems = items.filter(i => i.unit_price > 0);
     const lowestPrice = validItems.length ? Math.min(...validItems.map(i => i.unit_price)) : null;
-
     container.innerHTML = `
       <div style="margin-bottom:16px">
         <label class="form-label">Selecione o Fornecedor Vencedor</label>
@@ -472,6 +926,30 @@ async function confirmApprove() {
     closeModal("modal-approve");
     loadQuotations();
   } catch(e) { showToast(e.message, "error"); }
+}
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
+function fmtDatetime(dt) {
+  if (!dt) return '—';
+  try { return new Date(dt).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch { return dt; }
+}
+
+// api.delete helper (if not already in global api object)
+if (!api.delete) {
+  api.delete = function(url) {
+    return fetch('/api' + url, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + getToken() }
+    }).then(async r => {
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || r.statusText);
+      return d;
+    });
+  };
 }
 
 loadSuppliers();

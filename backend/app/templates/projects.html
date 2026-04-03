@@ -195,19 +195,27 @@ async function loadNeeds(projectId) {
     container.innerHTML = `
       <table style="margin-top:8px">
         <thead><tr>
-          <th>Produto</th><th>SKU</th><th>Necessário</th><th>Reservado</th>
-          <th>Faltando</th><th>Status</th>
+          <th>Produto</th><th>SKU</th><th>Un.</th><th>Necessário</th><th>Reservado</th>
+          <th>Disponível</th><th>Faltando</th><th>Status</th><th>Ações</th>
         </tr></thead>
         <tbody>
           ${needs.map(n => {
             const statusMap = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success', quoted: 'badge-purple' };
+            const avail = n.product_available ?? '—';
             return `<tr>
-              <td><strong>${n.product_name}</strong></td>
+              <td><strong>${n.product_name || '—'}</strong></td>
               <td class="text-mono text-sm">${n.product_sku || '—'}</td>
+              <td class="text-muted text-sm">${n.product_unit || 'un'}</td>
               <td>${n.quantity_needed}</td>
               <td class="text-success">${n.quantity_reserved}</td>
+              <td class="text-mono text-sm">${typeof avail === 'number' ? avail.toFixed(avail % 1 === 0 ? 0 : 2) : avail}</td>
               <td>${n.quantity_missing > 0 ? `<span class="badge badge-danger">${n.quantity_missing}</span>` : '<span class="badge badge-success">0</span>'}</td>
               <td><span class="badge ${statusMap[n.status] || 'badge-gray'}">${n.status}</span></td>
+              <td>
+                <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteNeed('${n.project_id}','${n.id}','${(n.product_name||'').replace(/'/g,"\\'")}') " title="Remover necessidade" data-tooltip="Remover">
+                  <i class="fas fa-trash" style="color:var(--danger)"></i>
+                </button>
+              </td>
             </tr>`;
           }).join("")}
         </tbody>
@@ -272,12 +280,14 @@ function openAddNeed(projectId) {
 
 async function saveNeed() {
   const projectId = document.getElementById("need-project-id").value;
+  const qty = parseFloat(document.getElementById("need-qty").value);
   const data = {
     product_id: document.getElementById("need-product").value,
-    quantity_needed: parseInt(document.getElementById("need-qty").value),
+    quantity_needed: qty,
     observation: document.getElementById("need-obs").value,
   };
-  if (!data.product_id || !data.quantity_needed) { showToast("Preencha produto e quantidade", "error"); return; }
+  if (!data.product_id) { showToast("Selecione o produto", "error"); return; }
+  if (!data.quantity_needed || data.quantity_needed <= 0) { showToast("Informe a quantidade", "error"); return; }
   try {
     await api.post(`/projects/${projectId}/needs`, data);
     showToast("Necessidade adicionada!");
@@ -286,26 +296,55 @@ async function saveNeed() {
   } catch(e) { showToast(e.message, "error"); }
 }
 
+async function deleteNeed(projectId, needId, productName) {
+  showConfirm({
+    title: "Remover necessidade",
+    message: `Deseja remover <strong>${productName}</strong> das necessidades do projeto?<br><small class="text-muted">O estoque reservado será liberado automaticamente.</small>`,
+    confirmText: "Remover",
+    cancelText: "Cancelar",
+    type: "danger",
+    onConfirm: async () => {
+      try {
+        await api.delete(`/projects/${projectId}/needs/${needId}`);
+        showToast("Necessidade removida e reserva liberada");
+        loadNeeds(projectId);
+      } catch(e) { showToast(e.message, "error"); }
+    }
+  });
+}
+
 async function runMatch(projectId) {
   try {
     const result = await api.post(`/projects/${projectId}/match`, {});
     const container = document.getElementById("match-results");
+    const s = result.summary || {};
+    const alertClass = s.fulfilled === s.total_needs ? "alert-success" : "alert-info";
     container.innerHTML = `
-      <div class="alert alert-success mb-4">
-        <i class="fas fa-check-circle"></i> Match executado com sucesso!
+      <div class="alert ${alertClass} mb-4" style="display:flex;gap:10px;align-items:flex-start">
+        <i class="fas fa-check-circle" style="margin-top:2px"></i>
+        <div>
+          <strong>Match executado!</strong><br>
+          <span style="font-size:13px">
+            ${s.total_needs || 0} necessidade(s) analisada(s) —
+            <strong>${s.matched || 0}</strong> atendida(s) neste match,
+            <strong>${s.fulfilled || 0}</strong> totalmente fulfillidas,
+            <strong>${s.pending || 0}</strong> ainda pendente(s).
+          </span>
+        </div>
       </div>
       <table>
         <thead><tr>
-          <th>Produto</th><th>Necessário</th><th>Reservado</th><th>Faltando</th><th>Status</th>
+          <th>Produto</th><th>Necessário</th><th>Reservado</th><th>Reservado agora</th><th>Faltando</th><th>Status</th>
         </tr></thead>
         <tbody>
           ${result.results.map(r => {
             const statusMap = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success' };
             return `<tr>
-              <td>${r.product_name}</td>
+              <td><strong>${r.product_name}</strong></td>
               <td>${r.needed}</td>
               <td class="text-success">${r.reserved}</td>
-              <td>${r.missing > 0 ? `<span class="badge badge-danger">${r.missing}</span>` : '—'}</td>
+              <td>${r.matched > 0 ? `<span class="badge badge-success">+${r.matched}</span>` : '<span class="text-muted">—</span>'}</td>
+              <td>${r.missing > 0 ? `<span class="badge badge-danger">${r.missing}</span>` : '<span class="badge badge-success">0</span>'}</td>
               <td><span class="badge ${statusMap[r.status] || 'badge-gray'}">${r.status}</span></td>
             </tr>`;
           }).join("")}
@@ -313,6 +352,8 @@ async function runMatch(projectId) {
       </table>`;
     openModal("modal-match");
     loadNeeds(projectId);
+    // Reload projects to refresh pending counts
+    allProjects = await api.get("/projects/");
   } catch(e) { showToast(e.message, "error"); }
 }
 

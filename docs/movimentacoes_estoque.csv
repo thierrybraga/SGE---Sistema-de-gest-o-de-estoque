@@ -1,0 +1,201 @@
+id_movimentacao;data;hora;sku_produto;nome_produto;tipo_movimentacao;motivo;quantidade;preco_unitario;valor_total;obra_destino;nota_fiscal;usuario_responsavel;lote;observacao
+MOV-20260001;2026-02-17;13:38;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;entrada;Retorno de devolução;53;14.82;785.46;;NF-2026-597374;Ana Pereira;LT-7555;
+MOV-20260002;2026-02-20;16:30;HID-REG-25;Registro de Esfera 25mm;saida;Consumo interno;170;254.17;43208.9;Obra Residencial Alphaville;;Lucia Santos;;
+MOV-20260003;2026-03-25;09:09;MAT-ARE-001;Areia Média Lavada;saida;Transferência entre obras;130;261.2;33956.0;Edifício Central Business;;Ana Pereira;;Verificar prazo de validade
+MOV-20260004;2026-02-06;07:02;MAT-GES-020;Gesso em Pó 20kg;saida;Venda;113;279.51;31584.63;Obra Residencial Alphaville;;Marcos Andrade;;
+MOV-20260005;2026-01-17;16:40;MAT-CAL-020;Cal Hidratada 20kg;entrada;Compra NF;54;141.74;7653.96;;NF-2026-636659;Fernanda Lima;LT-3115;
+MOV-20260006;2026-01-04;18:04;MAT-BRI-001;Brita 1;entrada;Retorno de devolução;191;187.35;35783.85;;NF-2026-198505;Ana Pereira;LT-5984;Verificar prazo de validade
+MOV-20260007;2026-01-02;12:50;MAT-ACO-010;Aço CA-50 10mm;entrada;Bonificação fornecedor;132;283.54;37427.28;;NF-2026-175019;Lucia Santos;LT-6406;
+MOV-20260008;2026-02-02;09:07;MAT-GES-020;Gesso em Pó 20kg;saida;Transferência entre obras;140;10.0;1400.0;Obra Industrial Jundiaí;;Lucia Santos;;Verificar prazo de validade
+MOV-20260009;2026-02-07;12:52;MAT-ARG-020;Argamassa AC-II 20kg;devolucao;Devolução de cliente;46;111.3;5119.8;;NF-2026-733395;João Silva;;
+MOV-20260010;2026-02-21;10:33;MAT-CIM-050;Cimento CP II 50kg;entrada;Compra NF;61;62.43;3808.23;;NF-2026-109752;João Silva;LT-9632;
+MOV-20260011;2026-03-22;11:21;MAT-ARG-020;Argamassa AC-II 20kg;saida;Transferência entre obras;79;251.76;19889.04;Obra Residencial Alphaville;;Fernanda Lima;;Conferir com almoxarife
+MOV-20260012;2026-03-20;16:31;FER-FUR-750;Furadeira de Impacto 750W;devolucao;Devolução de cliente;116;128.85;14946.6;;NF-2026-816556;João Silva;;Verificar prazo de validade
+MOV-20260013;2026-01-21;13:49;MAT-POR-6060;Porcelanato 60x60;entrada;Compra NF;192;19.16;3678.72;;NF-2026-593756;Ana Pereira;LT-4722;Verificar prazo de validade
+MOV-20260014;2026-02-17;17:58;MAT-GES-020;Gesso em Pó 20kg;devolucao;Material com defeito;171;166.14;28409.94;;NF-2026-847568;Marcos Andrade;;
+MOV-20260015;2026-02-16;12:30;HID-REG-25;Registro de Esfera 25mm;saida;Venda;154;139.21;21438.34;Condomínio Verde Mar;;Ana Pereira;;
+MOV-20260016;2026-03-08;18:48;FER-FUR-750;Furadeira de Impacto 750W;devolucao;Devolução de cliente;172;202.4;34812.8;;NF-2026-871557;Ana Pereira;;Material para reposição urgente
+MOV-20260017;2026-02-08;07:06;EPI-MAS-PF2;Máscara PFF2;ajuste;Quebra/perda;76;138.82;10550.32;;;Ana Pereira;;
+MOV-20260018;2026-03-22;17:50;PNT-SEL-18;Selador Acrílico 18L;saida;Transferência entre obras;128;55.63;7120.64;Condomínio Verde Mar;;Roberto Costa;;
+MOV-20260019;2026-01-05;11:49;MAT-CIM-050;Cimento CP II 50kg;entrada;Bonificação fornecedor;124;68.92;8546.08;;NF-2026-825352;Roberto Costa;LT-2816;Verificar prazo de validade
+MOV-20260020;2026-02-27;16:53;ELE-FIT-020;Fita Isolante 20m;saida;Venda;30;43.9;1317.0;Obra Residencial Alphaville;;Fernanda Lima;;
+MOV-20260021;2026-01-20;13:03;MAT-CAL-020;Cal Hidratada 20kg;ajuste;Inventário;27;202.22;5459.94;;;João Silva;;
+MOV-20260022;2026-03-12;17:26;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;entrada;Transferência entre depósitos;33;62.99;2078.67;;NF-2026-461657;Roberto Costa;LT-1485;
+MOV-20260023;2026-02-23;18:20;MAT-ARE-001;Areia Média Lavada;entrada;Compra NF;196;176.02;34499.92;;NF-2026-977458;João Silva;LT-4591;
+MOV-20260024;2026-03-07;15:36;MAT-ARE-001;Areia Média Lavada;saida;Consumo interno;116;103.19;11970.04;Condomínio Verde Mar;;João Silva;;Conferir com almoxarife
+MOV-20260025;2026-03-14;12:50;EPI-MAS-PF2;Máscara PFF2;saida;Venda;118;116.18;13709.24;Depósito Central;;Roberto Costa;;Material para reposição urgente
+MOV-20260026;2026-02-14;11:30;EPI-MAS-PF2;Máscara PFF2;entrada;Retorno de devolução;7;24.92;174.44;;NF-2026-752889;Ana Pereira;LT-1673;Material para reposição urgente
+MOV-20260027;2026-03-08;07:02;FER-FUR-750;Furadeira de Impacto 750W;devolucao;Devolução de cliente;100;260.38;26038.0;;NF-2026-721114;Lucia Santos;;
+MOV-20260028;2026-03-12;16:20;FER-DSC-045;Disco de Corte 4.1/2;entrada;Compra NF;67;267.97;17953.99;;NF-2026-610389;Fernanda Lima;LT-1074;Material para reposição urgente
+MOV-20260029;2026-03-10;17:24;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Consumo interno;38;103.79;3944.02;Reforma Comercial SP;;Fernanda Lima;;Material para reposição urgente
+MOV-20260030;2026-02-01;18:24;MAT-CIM-050;Cimento CP II 50kg;saida;Baixa por avaria;191;218.39;41712.49;Obra Industrial Jundiaí;;Marcos Andrade;;Verificar prazo de validade
+MOV-20260031;2026-02-24;18:20;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Compra NF;20;208.8;4176.0;;NF-2026-782523;Ana Pereira;LT-7003;
+MOV-20260032;2026-03-06;12:18;EPI-CAP-BR;Capacete Classe B Branco;entrada;Compra NF;29;103.55;3002.95;;NF-2026-372882;Lucia Santos;LT-7729;Conferir com almoxarife
+MOV-20260033;2026-01-07;14:02;EPI-LUV-M;Luva Nitrílica M;entrada;Bonificação fornecedor;95;183.45;17427.75;;NF-2026-951384;Roberto Costa;LT-5149;Conferir com almoxarife
+MOV-20260034;2026-02-11;17:35;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;entrada;Retorno de devolução;34;182.05;6189.7;;NF-2026-283763;Lucia Santos;LT-7666;Conferir com almoxarife
+MOV-20260035;2026-02-03;13:57;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Retorno de devolução;163;187.38;30542.94;;NF-2026-897398;Marcos Andrade;LT-2620;
+MOV-20260036;2026-03-27;14:53;EPI-LUV-M;Luva Nitrílica M;saida;Consumo interno;199;16.42;3267.58;Reforma Comercial SP;;João Silva;;Material para reposição urgente
+MOV-20260037;2026-01-10;17:54;ELE-CAB-25A;Cabo Flexível 2,5mm;saida;Transferência entre obras;7;155.29;1087.03;Edifício Central Business;;João Silva;;
+MOV-20260038;2026-03-08;07:48;MAT-BLC-001;Bloco de Concreto 14x19x39;devolucao;Material com defeito;78;175.17;13663.26;;NF-2026-833819;Fernanda Lima;;
+MOV-20260039;2026-03-05;18:50;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Consumo interno;88;135.78;11948.64;Condomínio Verde Mar;;Lucia Santos;;Material para reposição urgente
+MOV-20260040;2026-01-08;07:06;EPI-CAP-BR;Capacete Classe B Branco;saida;Venda;65;194.57;12647.05;Condomínio Verde Mar;;Lucia Santos;;
+MOV-20260041;2026-03-04;15:22;PNT-SEL-18;Selador Acrílico 18L;saida;Transferência entre obras;140;259.35;36309.0;Condomínio Verde Mar;;Lucia Santos;;Material para reposição urgente
+MOV-20260042;2026-03-19;12:49;PNT-SEL-18;Selador Acrílico 18L;entrada;Transferência entre depósitos;140;277.16;38802.4;;NF-2026-593562;Roberto Costa;LT-4576;
+MOV-20260043;2026-02-22;14:06;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Venda;140;42.12;5896.8;Depósito Central;;Marcos Andrade;;Verificar prazo de validade
+MOV-20260044;2026-03-26;15:33;MAT-ACO-010;Aço CA-50 10mm;entrada;Bonificação fornecedor;176;40.75;7172.0;;NF-2026-288485;Marcos Andrade;LT-7958;Material para reposição urgente
+MOV-20260045;2026-01-15;16:26;PNT-SEL-18;Selador Acrílico 18L;transferencia;Para obra Araucária;50;254.83;12741.5;Obra Residencial Alphaville;;Marcos Andrade;;
+MOV-20260046;2026-01-09;08:58;MAT-ACO-010;Aço CA-50 10mm;saida;Venda;62;162.9;10099.8;Obra Industrial Jundiaí;;Marcos Andrade;;
+MOV-20260047;2026-02-08;12:28;FER-BET-400;Betoneira 400L;devolucao;Devolução a fornecedor;55;35.97;1978.35;;NF-2026-936066;Marcos Andrade;;
+MOV-20260048;2026-02-11;13:05;HID-REG-25;Registro de Esfera 25mm;entrada;Compra NF;166;89.42;14843.72;;NF-2026-183534;Marcos Andrade;LT-6555;
+MOV-20260049;2026-02-05;15:28;HID-TUB-25;Tubo PVC 25mm;entrada;Compra NF;44;63.87;2810.28;;NF-2026-168561;Marcos Andrade;LT-4548;Conferir com almoxarife
+MOV-20260050;2026-02-24;10:13;HID-CAI-1000;Caixa d'Água 1000L;saida;Transferência entre obras;155;283.62;43961.1;Edifício Central Business;;Roberto Costa;;Verificar prazo de validade
+MOV-20260051;2026-03-24;18:00;MAT-ARG-020;Argamassa AC-II 20kg;entrada;Compra NF;84;50.79;4266.36;;NF-2026-358957;Ana Pereira;LT-9133;Conferir com almoxarife
+MOV-20260052;2026-02-27;07:22;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Compra NF;39;260.41;10155.99;;NF-2026-795522;Marcos Andrade;LT-6045;Conferir com almoxarife
+MOV-20260053;2026-02-22;08:45;MAT-REJ-001;Rejunte Flexível Cinza 1kg;devolucao;Devolução a fornecedor;96;208.09;19976.64;;NF-2026-172255;Ana Pereira;;
+MOV-20260054;2026-02-02;15:13;MAT-CIM-050;Cimento CP II 50kg;entrada;Bonificação fornecedor;114;1.53;174.42;;NF-2026-286495;Ana Pereira;LT-6937;
+MOV-20260055;2026-02-19;15:01;ELE-CAB-25A;Cabo Flexível 2,5mm;ajuste;Correção de sistema;136;259.01;35225.36;;;Marcos Andrade;;
+MOV-20260056;2026-01-19;07:57;ELE-CON-34;Conduíte Corrugado 3/4;saida;Baixa por avaria;100;82.21;8221.0;Obra Industrial Jundiaí;;Lucia Santos;;Material para reposição urgente
+MOV-20260057;2026-03-08;08:18;FER-DSC-045;Disco de Corte 4.1/2;entrada;Retorno de devolução;102;262.35;26759.7;;NF-2026-525099;João Silva;LT-4092;Conferir com almoxarife
+MOV-20260058;2026-03-09;15:55;EPI-BOT-SEC;Bota de Segurança;entrada;Compra NF;150;286.86;43029.0;;NF-2026-249378;Lucia Santos;LT-9608;
+MOV-20260059;2026-02-01;12:56;FER-DSC-045;Disco de Corte 4.1/2;saida;Consumo interno;47;219.19;10301.93;Condomínio Verde Mar;;Marcos Andrade;;
+MOV-20260060;2026-02-15;10:35;MAT-GES-020;Gesso em Pó 20kg;entrada;Transferência entre depósitos;70;55.03;3852.1;;NF-2026-809975;Roberto Costa;LT-7029;
+MOV-20260061;2026-03-14;07:03;EPI-MAS-PF2;Máscara PFF2;saida;Venda;9;132.97;1196.73;Obra Industrial Jundiaí;;Roberto Costa;;Verificar prazo de validade
+MOV-20260062;2026-01-01;18:25;MAT-GES-020;Gesso em Pó 20kg;entrada;Transferência entre depósitos;2;279.88;559.76;;NF-2026-412501;Marcos Andrade;LT-2181;Material para reposição urgente
+MOV-20260063;2026-02-04;09:22;MAT-ACO-010;Aço CA-50 10mm;saida;Consumo interno;7;150.92;1056.44;Reforma Comercial SP;;Roberto Costa;;Material para reposição urgente
+MOV-20260064;2026-03-24;17:11;HID-JOE-25;Joelho 90 PVC 25mm;entrada;Compra NF;1;168.3;168.3;;NF-2026-667433;João Silva;LT-2666;Conferir com almoxarife
+MOV-20260065;2026-03-28;12:37;MAT-CIM-050;Cimento CP II 50kg;saida;Baixa por avaria;175;217.39;38043.25;Edifício Central Business;;Roberto Costa;;
+MOV-20260066;2026-02-10;07:53;SOL-ELT-25;Eletrodo 6013 2.5mm;entrada;Compra NF;20;100.16;2003.2;;NF-2026-574383;Lucia Santos;LT-4954;
+MOV-20260067;2026-02-27;09:58;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;saida;Baixa por avaria;82;198.97;16315.54;Obra Industrial Jundiaí;;Lucia Santos;;
+MOV-20260068;2026-03-13;14:48;FER-FUR-750;Furadeira de Impacto 750W;saida;Consumo interno;161;72.53;11677.33;Obra Industrial Jundiaí;;Lucia Santos;;Conferir com almoxarife
+MOV-20260069;2026-01-03;10:49;MAT-GES-020;Gesso em Pó 20kg;ajuste;Inventário;97;134.93;13088.21;;;Marcos Andrade;;
+MOV-20260070;2026-01-02;11:00;FER-DSC-045;Disco de Corte 4.1/2;entrada;Compra NF;153;299.09;45760.77;;NF-2026-135782;Ana Pereira;LT-1134;
+MOV-20260071;2026-03-13;15:53;MAT-REJ-001;Rejunte Flexível Cinza 1kg;entrada;Bonificação fornecedor;43;111.14;4779.02;;NF-2026-531695;João Silva;LT-9337;
+MOV-20260072;2026-02-25;07:39;MAT-MAS-025;Massa Corrida PVA 25kg;devolucao;Devolução a fornecedor;177;224.74;39778.98;;NF-2026-318427;Lucia Santos;;Material para reposição urgente
+MOV-20260073;2026-02-21;12:51;EPI-OCU-INC;Óculos de Proteção Incolor;saida;Consumo interno;189;287.87;54407.43;Edifício Central Business;;Fernanda Lima;;Conferir com almoxarife
+MOV-20260074;2026-03-06;10:10;FER-DSC-045;Disco de Corte 4.1/2;saida;Baixa por avaria;59;1.78;105.02;Obra Industrial Jundiaí;;Roberto Costa;;Verificar prazo de validade
+MOV-20260075;2026-03-10;08:16;MAT-BRI-001;Brita 1;saida;Uso em obra;11;227.88;2506.68;Depósito Central;;João Silva;;Material para reposição urgente
+MOV-20260076;2026-01-14;18:46;MAT-ACO-010;Aço CA-50 10mm;entrada;Transferência entre depósitos;138;177.68;24519.84;;NF-2026-934049;Marcos Andrade;LT-2079;
+MOV-20260077;2026-02-13;08:02;EPI-CAP-BR;Capacete Classe B Branco;saida;Uso em obra;31;48.74;1510.94;Edifício Central Business;;João Silva;;
+MOV-20260078;2026-02-10;07:53;HID-REG-25;Registro de Esfera 25mm;saida;Venda;35;17.28;604.8;Condomínio Verde Mar;;Roberto Costa;;
+MOV-20260079;2026-01-12;09:57;ELE-FIT-020;Fita Isolante 20m;entrada;Compra NF;97;245.19;23783.43;;NF-2026-708278;Lucia Santos;LT-6431;
+MOV-20260080;2026-01-09;16:52;FER-BET-400;Betoneira 400L;transferencia;Entre depósitos;86;259.89;22350.54;Depósito Central;;Marcos Andrade;;
+MOV-20260081;2026-02-03;13:07;EPI-MAS-PF2;Máscara PFF2;saida;Baixa por avaria;34;81.77;2780.18;Reforma Comercial SP;;Marcos Andrade;;Material para reposição urgente
+MOV-20260082;2026-03-05;15:07;MAT-ARE-001;Areia Média Lavada;saida;Consumo interno;163;146.22;23833.86;Depósito Central;;Roberto Costa;;
+MOV-20260083;2026-03-13;12:53;HID-CAI-1000;Caixa d'Água 1000L;entrada;Bonificação fornecedor;138;45.91;6335.58;;NF-2026-328900;Lucia Santos;LT-8785;Material para reposição urgente
+MOV-20260084;2026-01-26;15:21;HID-REG-25;Registro de Esfera 25mm;saida;Uso em obra;95;180.13;17112.35;Obra Residencial Alphaville;;Marcos Andrade;;
+MOV-20260085;2026-01-28;10:02;FER-DSC-045;Disco de Corte 4.1/2;transferencia;Para filial Sul;100;114.57;11457.0;Obra Industrial Jundiaí;;Lucia Santos;;
+MOV-20260086;2026-02-03;16:25;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Transferência entre depósitos;44;100.33;4414.52;;NF-2026-531174;Fernanda Lima;LT-5665;Material para reposição urgente
+MOV-20260087;2026-01-28;15:03;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Retorno de devolução;35;234.07;8192.45;;NF-2026-800181;João Silva;LT-1284;
+MOV-20260088;2026-03-12;17:45;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Transferência entre obras;47;188.83;8875.01;Depósito Central;;Lucia Santos;;Verificar prazo de validade
+MOV-20260089;2026-02-20;15:22;MAT-ACO-010;Aço CA-50 10mm;saida;Uso em obra;90;71.93;6473.7;Depósito Central;;Roberto Costa;;
+MOV-20260090;2026-02-18;07:49;MAT-REJ-001;Rejunte Flexível Cinza 1kg;ajuste;Avaria em estoque;60;202.16;12129.6;;;João Silva;;
+MOV-20260091;2026-02-26;09:23;MAT-ACO-010;Aço CA-50 10mm;entrada;Bonificação fornecedor;15;240.04;3600.6;;NF-2026-521065;Ana Pereira;LT-8900;Verificar prazo de validade
+MOV-20260092;2026-01-21;09:32;ELE-CAB-25A;Cabo Flexível 2,5mm;entrada;Transferência entre depósitos;119;148.1;17623.9;;NF-2026-653388;Roberto Costa;LT-8600;
+MOV-20260093;2026-01-23;11:37;FER-FUR-750;Furadeira de Impacto 750W;saida;Uso em obra;9;276.61;2489.49;Obra Industrial Jundiaí;;Marcos Andrade;;
+MOV-20260094;2026-01-23;12:45;ELE-CON-34;Conduíte Corrugado 3/4;entrada;Transferência entre depósitos;55;61.09;3359.95;;NF-2026-938361;Ana Pereira;LT-4443;
+MOV-20260095;2026-02-09;14:06;ELE-FIT-020;Fita Isolante 20m;saida;Baixa por avaria;101;168.08;16976.08;Edifício Central Business;;João Silva;;Conferir com almoxarife
+MOV-20260096;2026-02-09;17:52;MAT-MAS-025;Massa Corrida PVA 25kg;entrada;Bonificação fornecedor;42;113.94;4785.48;;NF-2026-109204;João Silva;LT-2533;Conferir com almoxarife
+MOV-20260097;2026-01-24;18:29;ELE-FIT-020;Fita Isolante 20m;saida;Consumo interno;17;267.23;4542.91;Condomínio Verde Mar;;Ana Pereira;;
+MOV-20260098;2026-03-19;10:09;HID-TUB-25;Tubo PVC 25mm;saida;Baixa por avaria;138;220.73;30460.74;Reforma Comercial SP;;João Silva;;
+MOV-20260099;2026-02-23;13:41;FER-FUR-750;Furadeira de Impacto 750W;ajuste;Avaria em estoque;4;185.77;743.08;;;Roberto Costa;;Material para reposição urgente
+MOV-20260100;2026-02-21;08:26;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Transferência entre obras;70;105.27;7368.9;Reforma Comercial SP;;João Silva;;
+MOV-20260101;2026-03-28;08:58;EPI-OCU-INC;Óculos de Proteção Incolor;ajuste;Inventário;193;161.86;31238.98;;;Marcos Andrade;;
+MOV-20260102;2026-02-23;18:52;MAT-MAS-025;Massa Corrida PVA 25kg;entrada;Compra NF;11;206.59;2272.49;;NF-2026-958028;João Silva;LT-9086;Material para reposição urgente
+MOV-20260103;2026-02-24;15:49;FER-BET-400;Betoneira 400L;saida;Uso em obra;176;285.58;50262.08;Depósito Central;;João Silva;;
+MOV-20260104;2026-01-12;09:26;EPI-OCU-INC;Óculos de Proteção Incolor;devolucao;Devolução a fornecedor;58;41.24;2391.92;;NF-2026-492541;Ana Pereira;;
+MOV-20260105;2026-03-19;13:04;MAT-CAL-020;Cal Hidratada 20kg;entrada;Bonificação fornecedor;151;223.3;33718.3;;NF-2026-321938;Fernanda Lima;LT-2747;Conferir com almoxarife
+MOV-20260106;2026-02-19;14:03;EPI-BOT-SEC;Bota de Segurança;saida;Baixa por avaria;112;152.24;17050.88;Obra Residencial Alphaville;;Ana Pereira;;
+MOV-20260107;2026-02-03;13:58;SOL-ELT-25;Eletrodo 6013 2.5mm;saida;Venda;32;147.93;4733.76;Obra Industrial Jundiaí;;Marcos Andrade;;
+MOV-20260108;2026-03-25;09:51;EPI-MAS-PF2;Máscara PFF2;entrada;Retorno de devolução;12;87.92;1055.04;;NF-2026-264401;João Silva;LT-3255;Conferir com almoxarife
+MOV-20260109;2026-02-11;17:13;MAT-GES-020;Gesso em Pó 20kg;entrada;Transferência entre depósitos;70;106.11;7427.7;;NF-2026-225738;Marcos Andrade;LT-2823;Material para reposição urgente
+MOV-20260110;2026-02-23;11:11;SOL-ELT-25;Eletrodo 6013 2.5mm;devolucao;Material com defeito;58;225.92;13103.36;;NF-2026-972832;Marcos Andrade;;Verificar prazo de validade
+MOV-20260111;2026-01-25;13:37;FER-DSC-045;Disco de Corte 4.1/2;devolucao;Material com defeito;116;247.21;28676.36;;NF-2026-376735;Marcos Andrade;;
+MOV-20260112;2026-02-21;15:08;HID-TUB-25;Tubo PVC 25mm;entrada;Retorno de devolução;176;193.97;34138.72;;NF-2026-392253;Marcos Andrade;LT-2320;
+MOV-20260113;2026-03-09;09:24;EPI-BOT-SEC;Bota de Segurança;saida;Baixa por avaria;5;127.44;637.2;Obra Residencial Alphaville;;Fernanda Lima;;
+MOV-20260114;2026-02-16;18:00;HID-TUB-25;Tubo PVC 25mm;entrada;Retorno de devolução;92;103.0;9476.0;;NF-2026-417595;João Silva;LT-5667;
+MOV-20260115;2026-02-11;17:18;MAT-BLC-001;Bloco de Concreto 14x19x39;saida;Venda;191;40.23;7683.93;Edifício Central Business;;Roberto Costa;;
+MOV-20260116;2026-02-16;18:36;PNT-TIN-18;Tinta Acrílica Branco 18L;entrada;Compra NF;185;128.28;23731.8;;NF-2026-910159;Ana Pereira;LT-3377;
+MOV-20260117;2026-02-28;15:00;FER-DSC-045;Disco de Corte 4.1/2;saida;Uso em obra;99;210.13;20802.87;Depósito Central;;Fernanda Lima;;
+MOV-20260118;2026-03-02;08:48;MAT-MAS-025;Massa Corrida PVA 25kg;devolucao;Devolução a fornecedor;194;90.92;17638.48;;NF-2026-900483;Ana Pereira;;Verificar prazo de validade
+MOV-20260119;2026-01-21;07:27;EPI-BOT-SEC;Bota de Segurança;saida;Baixa por avaria;61;107.17;6537.37;Obra Industrial Jundiaí;;Roberto Costa;;
+MOV-20260120;2026-03-16;11:43;FER-BET-400;Betoneira 400L;entrada;Transferência entre depósitos;105;270.92;28446.6;;NF-2026-399185;Fernanda Lima;LT-2327;Verificar prazo de validade
+MOV-20260121;2026-03-05;13:13;MAT-GES-020;Gesso em Pó 20kg;saida;Uso em obra;151;189.19;28567.69;Edifício Central Business;;João Silva;;
+MOV-20260122;2026-02-12;18:37;MAT-BLC-001;Bloco de Concreto 14x19x39;entrada;Bonificação fornecedor;143;27.53;3936.79;;NF-2026-384236;João Silva;LT-1292;Verificar prazo de validade
+MOV-20260123;2026-03-04;09:01;MAT-BLC-001;Bloco de Concreto 14x19x39;saida;Baixa por avaria;88;52.91;4656.08;Condomínio Verde Mar;;Ana Pereira;;Material para reposição urgente
+MOV-20260124;2026-03-22;09:24;ELE-CAB-25A;Cabo Flexível 2,5mm;entrada;Retorno de devolução;25;130.73;3268.25;;NF-2026-412051;João Silva;LT-7246;Verificar prazo de validade
+MOV-20260125;2026-01-02;17:50;MAT-GES-020;Gesso em Pó 20kg;entrada;Transferência entre depósitos;128;218.89;28017.92;;NF-2026-399616;Marcos Andrade;LT-5199;
+MOV-20260126;2026-02-04;08:14;SOL-ELT-25;Eletrodo 6013 2.5mm;entrada;Compra NF;178;172.92;30779.76;;NF-2026-547964;Marcos Andrade;LT-9479;
+MOV-20260127;2026-02-05;09:25;FER-DSC-045;Disco de Corte 4.1/2;saida;Consumo interno;156;268.05;41815.8;Condomínio Verde Mar;;João Silva;;Verificar prazo de validade
+MOV-20260128;2026-03-07;16:41;PNT-SEL-18;Selador Acrílico 18L;saida;Transferência entre obras;113;156.61;17696.93;Reforma Comercial SP;;Lucia Santos;;
+MOV-20260129;2026-01-26;15:17;HID-CAI-1000;Caixa d'Água 1000L;saida;Consumo interno;86;111.12;9556.32;Edifício Central Business;;João Silva;;
+MOV-20260130;2026-02-13;17:55;MAT-ACO-010;Aço CA-50 10mm;ajuste;Avaria em estoque;188;153.41;28841.08;;;João Silva;;Material para reposição urgente
+MOV-20260131;2026-03-20;07:07;HID-REG-25;Registro de Esfera 25mm;saida;Uso em obra;170;165.07;28061.9;Obra Industrial Jundiaí;;Ana Pereira;;Conferir com almoxarife
+MOV-20260132;2026-02-06;13:56;MAT-POR-6060;Porcelanato 60x60;ajuste;Avaria em estoque;169;142.06;24008.14;;;Ana Pereira;;Conferir com almoxarife
+MOV-20260133;2026-02-24;09:04;MAT-CIM-050;Cimento CP II 50kg;entrada;Transferência entre depósitos;81;263.24;21322.44;;NF-2026-853460;Ana Pereira;LT-6364;Conferir com almoxarife
+MOV-20260134;2026-01-13;07:46;HID-TUB-25;Tubo PVC 25mm;entrada;Compra NF;77;290.77;22389.29;;NF-2026-743292;João Silva;LT-8640;
+MOV-20260135;2026-02-21;16:36;MAT-POR-6060;Porcelanato 60x60;saida;Uso em obra;157;297.71;46740.47;Edifício Central Business;;Fernanda Lima;;
+MOV-20260136;2026-03-21;12:34;MAT-ACO-010;Aço CA-50 10mm;saida;Baixa por avaria;195;132.88;25911.6;Depósito Central;;Ana Pereira;;
+MOV-20260137;2026-01-28;17:07;MAT-GES-020;Gesso em Pó 20kg;entrada;Retorno de devolução;145;254.0;36830.0;;NF-2026-850238;Lucia Santos;LT-7572;Verificar prazo de validade
+MOV-20260138;2026-01-27;13:59;FER-FUR-750;Furadeira de Impacto 750W;saida;Transferência entre obras;104;230.79;24002.16;Depósito Central;;Lucia Santos;;Verificar prazo de validade
+MOV-20260139;2026-03-25;13:25;PNT-SEL-18;Selador Acrílico 18L;entrada;Retorno de devolução;5;110.31;551.55;;NF-2026-576420;Lucia Santos;LT-4725;Verificar prazo de validade
+MOV-20260140;2026-03-24;17:46;MAT-MAS-025;Massa Corrida PVA 25kg;saida;Consumo interno;52;253.36;13174.72;Obra Industrial Jundiaí;;Marcos Andrade;;Material para reposição urgente
+MOV-20260141;2026-02-21;13:01;HID-JOE-25;Joelho 90 PVC 25mm;entrada;Compra NF;87;42.96;3737.52;;NF-2026-738234;Lucia Santos;LT-1700;Verificar prazo de validade
+MOV-20260142;2026-01-23;18:33;MAT-POR-6060;Porcelanato 60x60;entrada;Compra NF;191;119.25;22776.75;;NF-2026-645543;Ana Pereira;LT-9786;
+MOV-20260143;2026-01-26;13:25;ELE-CON-34;Conduíte Corrugado 3/4;saida;Uso em obra;185;148.68;27505.8;Depósito Central;;Ana Pereira;;Conferir com almoxarife
+MOV-20260144;2026-03-03;14:23;MAT-POR-6060;Porcelanato 60x60;entrada;Compra NF;102;180.65;18426.3;;NF-2026-915476;Fernanda Lima;LT-9134;Material para reposição urgente
+MOV-20260145;2026-02-08;15:34;FER-DSC-045;Disco de Corte 4.1/2;saida;Uso em obra;139;286.33;39799.87;Condomínio Verde Mar;;João Silva;;
+MOV-20260146;2026-01-22;14:56;MAT-CAL-020;Cal Hidratada 20kg;entrada;Bonificação fornecedor;81;218.76;17719.56;;NF-2026-311811;Fernanda Lima;LT-3052;
+MOV-20260147;2026-02-18;07:50;EPI-OCU-INC;Óculos de Proteção Incolor;saida;Transferência entre obras;132;14.89;1965.48;Obra Industrial Jundiaí;;Roberto Costa;;
+MOV-20260148;2026-01-08;12:54;HID-JOE-25;Joelho 90 PVC 25mm;saida;Baixa por avaria;80;111.93;8954.4;Condomínio Verde Mar;;João Silva;;
+MOV-20260149;2026-03-28;13:45;EPI-MAS-PF2;Máscara PFF2;devolucao;Devolução de cliente;100;9.41;941.0;;NF-2026-798931;Fernanda Lima;;Material para reposição urgente
+MOV-20260150;2026-01-08;08:11;MAT-POR-6060;Porcelanato 60x60;saida;Baixa por avaria;64;250.82;16052.48;Obra Residencial Alphaville;;João Silva;;
+MOV-20260151;2026-03-11;12:15;MAT-CAL-020;Cal Hidratada 20kg;entrada;Bonificação fornecedor;89;27.09;2411.01;;NF-2026-401954;Roberto Costa;LT-7417;Conferir com almoxarife
+MOV-20260152;2026-01-03;13:32;MAT-POR-6060;Porcelanato 60x60;saida;Venda;170;63.41;10779.7;Condomínio Verde Mar;;Ana Pereira;;
+MOV-20260153;2026-02-01;13:00;MAT-MAS-025;Massa Corrida PVA 25kg;entrada;Bonificação fornecedor;60;188.84;11330.4;;NF-2026-209583;Ana Pereira;LT-9567;Verificar prazo de validade
+MOV-20260154;2026-03-01;12:35;EPI-OCU-INC;Óculos de Proteção Incolor;saida;Uso em obra;167;119.97;20034.99;Edifício Central Business;;João Silva;;
+MOV-20260155;2026-03-15;13:02;EPI-BOT-SEC;Bota de Segurança;entrada;Transferência entre depósitos;107;191.17;20455.19;;NF-2026-417391;Marcos Andrade;LT-9839;Material para reposição urgente
+MOV-20260156;2026-01-17;09:07;MAT-CAL-020;Cal Hidratada 20kg;saida;Baixa por avaria;145;198.43;28772.35;Depósito Central;;João Silva;;Verificar prazo de validade
+MOV-20260157;2026-03-09;09:34;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;saida;Consumo interno;190;210.4;39976.0;Depósito Central;;João Silva;;Material para reposição urgente
+MOV-20260158;2026-02-24;07:57;FER-DSC-045;Disco de Corte 4.1/2;devolucao;Devolução a fornecedor;43;109.65;4714.95;;NF-2026-258775;Ana Pereira;;
+MOV-20260159;2026-03-12;10:28;PNT-SEL-18;Selador Acrílico 18L;saida;Transferência entre obras;138;263.97;36427.86;Depósito Central;;Lucia Santos;;Verificar prazo de validade
+MOV-20260160;2026-03-15;13:17;HID-JOE-25;Joelho 90 PVC 25mm;saida;Uso em obra;16;243.19;3891.04;Reforma Comercial SP;;Fernanda Lima;;
+MOV-20260161;2026-01-14;15:03;EPI-CAP-BR;Capacete Classe B Branco;saida;Venda;171;148.22;25345.62;Depósito Central;;Fernanda Lima;;Conferir com almoxarife
+MOV-20260162;2026-01-10;07:45;PNT-SEL-18;Selador Acrílico 18L;saida;Venda;137;98.62;13510.94;Obra Industrial Jundiaí;;João Silva;;
+MOV-20260163;2026-03-13;16:19;EPI-LUV-M;Luva Nitrílica M;saida;Venda;186;17.41;3238.26;Obra Residencial Alphaville;;João Silva;;
+MOV-20260164;2026-02-16;11:01;MAT-CIM-050;Cimento CP II 50kg;saida;Uso em obra;34;288.37;9804.58;Obra Industrial Jundiaí;;Roberto Costa;;
+MOV-20260165;2026-01-08;11:22;ELE-CON-34;Conduíte Corrugado 3/4;saida;Baixa por avaria;51;250.2;12760.2;Condomínio Verde Mar;;Ana Pereira;;
+MOV-20260166;2026-02-28;16:22;EPI-OCU-INC;Óculos de Proteção Incolor;transferencia;Entre depósitos;145;268.1;38874.5;Obra Residencial Alphaville;;Fernanda Lima;;
+MOV-20260167;2026-02-19;12:39;HID-TUB-25;Tubo PVC 25mm;saida;Consumo interno;5;190.95;954.75;Depósito Central;;Fernanda Lima;;Verificar prazo de validade
+MOV-20260168;2026-02-05;08:28;MAT-CAL-020;Cal Hidratada 20kg;entrada;Bonificação fornecedor;123;125.81;15474.63;;NF-2026-605402;Lucia Santos;LT-7852;
+MOV-20260169;2026-03-21;13:14;EPI-MAS-PF2;Máscara PFF2;saida;Uso em obra;113;7.41;837.33;Obra Industrial Jundiaí;;Ana Pereira;;Material para reposição urgente
+MOV-20260170;2026-01-20;14:24;ELE-CON-34;Conduíte Corrugado 3/4;devolucao;Material com defeito;132;43.56;5749.92;;NF-2026-350731;Roberto Costa;;Material para reposição urgente
+MOV-20260171;2026-02-10;07:54;HID-JOE-25;Joelho 90 PVC 25mm;entrada;Retorno de devolução;51;267.82;13658.82;;NF-2026-821404;Fernanda Lima;LT-4586;
+MOV-20260172;2026-02-07;07:37;MAT-GES-020;Gesso em Pó 20kg;transferencia;Entre depósitos;83;225.06;18679.98;Obra Industrial Jundiaí;;Roberto Costa;;Conferir com almoxarife
+MOV-20260173;2026-01-08;16:40;EPI-LUV-M;Luva Nitrílica M;saida;Uso em obra;186;98.09;18244.74;Depósito Central;;Marcos Andrade;;
+MOV-20260174;2026-03-23;10:06;FER-FUR-750;Furadeira de Impacto 750W;devolucao;Material com defeito;46;71.11;3271.06;;NF-2026-281390;Roberto Costa;;
+MOV-20260175;2026-02-26;14:09;MAT-ACO-010;Aço CA-50 10mm;saida;Uso em obra;17;160.84;2734.28;Obra Residencial Alphaville;;Lucia Santos;;
+MOV-20260176;2026-02-16;12:15;EPI-CAP-BR;Capacete Classe B Branco;saida;Venda;111;15.39;1708.29;Reforma Comercial SP;;Fernanda Lima;;
+MOV-20260177;2026-02-05;09:21;EPI-OCU-INC;Óculos de Proteção Incolor;transferencia;Para obra Campinas;79;74.64;5896.56;Edifício Central Business;;Roberto Costa;;
+MOV-20260178;2026-03-20;08:08;SOL-ELT-25;Eletrodo 6013 2.5mm;saida;Consumo interno;129;289.95;37403.55;Reforma Comercial SP;;Marcos Andrade;;Material para reposição urgente
+MOV-20260179;2026-03-23;13:40;PNT-SEL-18;Selador Acrílico 18L;saida;Venda;186;194.76;36225.36;Condomínio Verde Mar;;João Silva;;Verificar prazo de validade
+MOV-20260180;2026-02-10;12:27;SOL-ELT-25;Eletrodo 6013 2.5mm;entrada;Compra NF;70;95.47;6682.9;;NF-2026-570357;Lucia Santos;LT-6717;
+MOV-20260181;2026-03-11;12:08;MAT-ARE-001;Areia Média Lavada;entrada;Bonificação fornecedor;197;258.86;50995.42;;NF-2026-918155;Marcos Andrade;LT-9010;
+MOV-20260182;2026-03-23;16:07;MAT-BRI-001;Brita 1;entrada;Bonificação fornecedor;48;212.86;10217.28;;NF-2026-659210;Fernanda Lima;LT-8108;
+MOV-20260183;2026-03-19;11:37;ELE-CON-34;Conduíte Corrugado 3/4;saida;Venda;55;166.14;9137.7;Obra Industrial Jundiaí;;Fernanda Lima;;
+MOV-20260184;2026-01-26;11:23;HID-TUB-25;Tubo PVC 25mm;entrada;Bonificação fornecedor;192;56.17;10784.64;;NF-2026-390440;Roberto Costa;LT-7010;Verificar prazo de validade
+MOV-20260185;2026-02-27;12:07;MAT-BLC-001;Bloco de Concreto 14x19x39;transferencia;Para filial Sul;125;125.19;15648.75;Obra Residencial Alphaville;;João Silva;;
+MOV-20260186;2026-02-07;12:57;FER-FUR-750;Furadeira de Impacto 750W;entrada;Compra NF;137;179.68;24616.16;;NF-2026-512150;João Silva;LT-9950;
+MOV-20260187;2026-03-02;15:04;HID-JOE-25;Joelho 90 PVC 25mm;entrada;Bonificação fornecedor;79;186.83;14759.57;;NF-2026-604171;João Silva;LT-8145;
+MOV-20260188;2026-03-08;09:20;MAT-TIJ-929;Tijolo Cerâmico 9x19x29;saida;Baixa por avaria;187;230.8;43159.6;Obra Industrial Jundiaí;;João Silva;;Verificar prazo de validade
+MOV-20260189;2026-02-14;10:50;EPI-BOT-SEC;Bota de Segurança;saida;Transferência entre obras;113;89.5;10113.5;Depósito Central;;João Silva;;
+MOV-20260190;2026-03-19;17:11;MAT-CIM-050;Cimento CP II 50kg;devolucao;Devolução de cliente;64;183.82;11764.48;;NF-2026-405700;Lucia Santos;;
+MOV-20260191;2026-03-23;16:17;ELE-FIT-020;Fita Isolante 20m;saida;Baixa por avaria;143;191.16;27335.88;Reforma Comercial SP;;Fernanda Lima;;
+MOV-20260192;2026-03-08;09:07;MAT-BRI-001;Brita 1;saida;Baixa por avaria;164;274.77;45062.28;Edifício Central Business;;Roberto Costa;;
+MOV-20260193;2026-02-27;15:55;ELE-CAB-25A;Cabo Flexível 2,5mm;saida;Venda;154;147.84;22767.36;Obra Residencial Alphaville;;Ana Pereira;;Material para reposição urgente
+MOV-20260194;2026-03-03;11:53;ELE-CON-34;Conduíte Corrugado 3/4;ajuste;Avaria em estoque;185;297.9;55111.5;;;João Silva;;
+MOV-20260195;2026-01-13;16:10;ELE-FIT-020;Fita Isolante 20m;ajuste;Inventário;149;93.33;13906.17;;;Roberto Costa;;
+MOV-20260196;2026-03-07;16:24;FER-DSC-045;Disco de Corte 4.1/2;entrada;Bonificação fornecedor;118;187.73;22152.14;;NF-2026-499022;Fernanda Lima;LT-8029;
+MOV-20260197;2026-02-16;18:19;MAT-POR-6060;Porcelanato 60x60;saida;Venda;168;94.48;15872.64;Reforma Comercial SP;;Lucia Santos;;
+MOV-20260198;2026-02-14;12:37;MAT-CAL-020;Cal Hidratada 20kg;saida;Baixa por avaria;169;14.75;2492.75;Reforma Comercial SP;;Roberto Costa;;Conferir com almoxarife
+MOV-20260199;2026-02-25;14:00;ELE-FIT-020;Fita Isolante 20m;saida;Venda;191;107.18;20471.38;Condomínio Verde Mar;;Lucia Santos;;
+MOV-20260200;2026-02-28;12:17;MAT-REJ-001;Rejunte Flexível Cinza 1kg;entrada;Compra NF;150;92.38;13857.0;;NF-2026-847706;João Silva;LT-9542;

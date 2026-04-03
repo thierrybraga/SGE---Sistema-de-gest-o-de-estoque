@@ -54,7 +54,10 @@
           </div>
           <div class="flex gap-2 mt-4">
             <button class="btn btn-primary" onclick="exportStockCSV(this)">
-              <i class="fas fa-download"></i> Exportar CSV
+              <i class="fas fa-download"></i> CSV
+            </button>
+            <button class="btn btn-danger" onclick="exportStockPDF(this)" style="background:#e74c3c">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
             <button class="btn btn-secondary" onclick="previewStock(this)">
               <i class="fas fa-eye"></i> Visualizar
@@ -87,7 +90,10 @@
           </div>
           <div class="flex gap-2 mt-4">
             <button class="btn btn-primary" onclick="exportMovementsCSV(this)">
-              <i class="fas fa-download"></i> Exportar CSV
+              <i class="fas fa-download"></i> CSV
+            </button>
+            <button class="btn btn-danger" onclick="exportMovementsPDF(this)" style="background:#e74c3c">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
             <button class="btn btn-secondary" onclick="previewMovements(this)">
               <i class="fas fa-eye"></i> Visualizar
@@ -109,7 +115,10 @@
           </div>
           <div class="flex gap-2 mt-4">
             <button class="btn btn-primary" onclick="exportProjectsCSV(this)">
-              <i class="fas fa-download"></i> Exportar CSV
+              <i class="fas fa-download"></i> CSV
+            </button>
+            <button class="btn btn-danger" onclick="exportProjectsPDF(this)" style="background:#e74c3c">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
             <button class="btn btn-secondary" onclick="previewProjects(this)">
               <i class="fas fa-eye"></i> Visualizar
@@ -132,7 +141,10 @@
           </div>
           <div class="flex gap-2 mt-4">
             <button class="btn btn-primary" onclick="exportQuotationsCSV(this)">
-              <i class="fas fa-download"></i> Exportar CSV
+              <i class="fas fa-download"></i> CSV
+            </button>
+            <button class="btn btn-danger" onclick="exportQuotationsPDF(this)" style="background:#e74c3c">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
             <button class="btn btn-secondary" onclick="previewQuotations(this)">
               <i class="fas fa-eye"></i> Visualizar
@@ -147,7 +159,10 @@
           <div class="card-title" id="preview-title" style="margin-bottom:0">Visualização</div>
           <div class="flex gap-2">
             <button class="btn btn-primary btn-sm" id="preview-export-btn">
-              <i class="fas fa-download"></i> Exportar este relatório
+              <i class="fas fa-download"></i> CSV
+            </button>
+            <button class="btn btn-sm" id="preview-pdf-btn" onclick="printPreview()" style="background:#e74c3c;color:white;border:none">
+              <i class="fas fa-file-pdf"></i> PDF
             </button>
             <button class="btn btn-secondary btn-sm" onclick="closePreview()">
               <i class="fas fa-times"></i> Fechar
@@ -535,6 +550,186 @@ function downloadCSV(csv, filename) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ===== PDF Export =====
+function openPrintWindow(title, tableHtml, subtitle) {
+  var win = window.open('', '_blank');
+  var now = new Date().toLocaleString('pt-BR');
+  var user = JSON.parse(localStorage.getItem('user') || '{}');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' — StockOS</title>' +
+    '<style>' +
+    'body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #222; margin: 20px; }' +
+    '.header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 16px; }' +
+    '.header h1 { font-size: 18px; margin: 0; }' +
+    '.header .subtitle { color: #666; font-size: 11px; margin-top: 4px; }' +
+    '.header .meta { text-align: right; font-size: 10px; color: #666; }' +
+    'table { width: 100%; border-collapse: collapse; margin-top: 8px; }' +
+    'th { background: #f0f0f0; font-weight: bold; text-align: left; padding: 6px 8px; border: 1px solid #ccc; font-size: 10px; }' +
+    'td { padding: 5px 8px; border: 1px solid #ddd; font-size: 10px; }' +
+    'tr:nth-child(even) { background: #fafafa; }' +
+    '.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; }' +
+    '.badge-success { background: #d4edda; color: #155724; }' +
+    '.badge-warning { background: #fff3cd; color: #856404; }' +
+    '.badge-danger { background: #f8d7da; color: #721c24; }' +
+    '.badge-info { background: #d1ecf1; color: #0c5460; }' +
+    '.badge-gray { background: #e2e3e5; color: #383d41; }' +
+    '.text-mono { font-family: "Courier New", monospace; }' +
+    '.text-muted { color: #888; }' +
+    '.footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 9px; color: #999; display: flex; justify-content: space-between; }' +
+    '@media print { body { margin: 10px; } .no-print { display: none; } }' +
+    '</style></head><body>' +
+    '<div class="header">' +
+      '<div><h1>' + title + '</h1>' +
+      (subtitle ? '<div class="subtitle">' + subtitle + '</div>' : '') + '</div>' +
+      '<div class="meta">StockOS — Sistema de Estoque<br>Gerado em: ' + now + '<br>Usuário: ' + (user.name || '—') + '</div>' +
+    '</div>' +
+    tableHtml +
+    '<div class="footer"><span>StockOS Enterprise v1.0</span><span>Gerado automaticamente — ' + now + '</span></div>' +
+    '<script>window.onload=function(){window.print();}<\/script>' +
+    '</body></html>');
+  win.document.close();
+}
+
+function printPreview() {
+  var title = document.getElementById('preview-title').textContent;
+  var tableHtml = document.getElementById('preview-table-wrapper').innerHTML;
+  var count = document.getElementById('preview-count').textContent;
+  openPrintWindow(title, tableHtml, count);
+}
+
+async function exportStockPDF(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var products = await getStockData();
+    if (btn) btn.classList.remove('loading');
+    if (!products.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
+    var totalValue = products.reduce(function(s, p) { return s + (p.stock * (p.cost_price || 0)); }, 0);
+    var html = '<table><thead><tr>' +
+      '<th>Nome</th><th>SKU</th><th>Estoque</th><th>Reservado</th><th>Disponível</th>' +
+      '<th>Mínimo</th><th>Custo Unit.</th><th>Valor Total</th><th>Status</th>' +
+      '</tr></thead><tbody>' +
+      products.map(function(p) {
+        var avail = p.stock - (p.reserved_stock || 0);
+        var status = p.stock <= 0 ? '<span class="badge badge-danger">Zerado</span>'
+          : p.is_low_stock ? '<span class="badge badge-warning">Crítico</span>'
+          : '<span class="badge badge-success">OK</span>';
+        return '<tr>' +
+          '<td>' + p.name + '</td>' +
+          '<td class="text-mono">' + (p.sku || '—') + '</td>' +
+          '<td class="text-mono">' + p.stock + '</td>' +
+          '<td class="text-muted">' + (p.reserved_stock || 0) + '</td>' +
+          '<td class="text-mono">' + avail + '</td>' +
+          '<td class="text-muted">' + p.min_stock + '</td>' +
+          '<td class="text-mono">' + fmtCurrency(p.cost_price) + '</td>' +
+          '<td class="text-mono">' + fmtCurrency(p.stock * p.cost_price) + '</td>' +
+          '<td>' + status + '</td></tr>';
+      }).join('') +
+      '<tr style="font-weight:bold;background:#e8e8e8"><td colspan="7" style="text-align:right">VALOR TOTAL EM ESTOQUE:</td><td class="text-mono" colspan="2">' + fmtCurrency(totalValue) + '</td></tr>' +
+      '</tbody></table>';
+    openPrintWindow('Posição de Estoque', html, products.length + ' produtos | Valor total: ' + fmtCurrency(totalValue));
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function exportMovementsPDF(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var movs = await getMovementsData();
+    if (btn) btn.classList.remove('loading');
+    if (!movs.length) { showToast('Nenhuma movimentação no período', 'warning'); return; }
+    var dateFrom = document.getElementById('rep-mov-from').value || '—';
+    var dateTo = document.getElementById('rep-mov-to').value || '—';
+    var html = '<table><thead><tr>' +
+      '<th>Produto</th><th>Tipo</th><th>Quantidade</th><th>Custo Unit.</th><th>Total</th>' +
+      '<th>NF</th><th>Usuário</th><th>Data</th>' +
+      '</tr></thead><tbody>' +
+      movs.map(function(m) {
+        var typeLabel = m.type === 'entry' ? '<span class="badge badge-success">Entrada</span>'
+          : m.type === 'exit' ? '<span class="badge badge-danger">Saída</span>'
+          : '<span class="badge badge-info">Ajuste</span>';
+        var totalVal = (m.unit_cost && m.quantity) ? fmtCurrency(Math.abs(m.quantity) * m.unit_cost) : '—';
+        return '<tr>' +
+          '<td>' + (m.product_name || '—') + '</td>' +
+          '<td>' + typeLabel + '</td>' +
+          '<td class="text-mono">' + (m.quantity > 0 ? '+' : '') + m.quantity + '</td>' +
+          '<td class="text-mono">' + (m.unit_cost ? fmtCurrency(m.unit_cost) : '—') + '</td>' +
+          '<td class="text-mono">' + totalVal + '</td>' +
+          '<td class="text-mono">' + (m.invoice_number || '—') + '</td>' +
+          '<td class="text-muted">' + (m.user_name || '—') + '</td>' +
+          '<td class="text-muted">' + fmtDate(m.created_at) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    openPrintWindow('Movimentações por Período', html, movs.length + ' registros | Período: ' + dateFrom + ' a ' + dateTo);
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function exportProjectsPDF(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var data = await getProjectsData();
+    if (btn) btn.classList.remove('loading');
+    if (!data.length) { showToast('Nenhum projeto encontrado', 'warning'); return; }
+    var statusBadge = { active: 'badge-success', completed: 'badge-info', cancelled: 'badge-gray' };
+    var needsBadge = { pending: 'badge-warning', partial: 'badge-info', fulfilled: 'badge-success' };
+    var html = '<table><thead><tr>' +
+      '<th>Projeto</th><th>CC</th><th>Status</th><th>Produto</th><th>Necessário</th>' +
+      '<th>Reservado</th><th>Faltando</th><th>Status</th></tr></thead><tbody>';
+    data.forEach(function(d) {
+      if (!d.needs.length) {
+        html += '<tr><td><strong>' + d.project.name + '</strong></td>' +
+          '<td>' + (d.project.cost_center || '—') + '</td>' +
+          '<td><span class="badge ' + (statusBadge[d.project.status] || 'badge-gray') + '">' + d.project.status + '</span></td>' +
+          '<td colspan="5">Sem necessidades cadastradas</td></tr>';
+      } else {
+        d.needs.forEach(function(n, idx) {
+          html += '<tr>' +
+            (idx === 0 ? '<td rowspan="' + d.needs.length + '"><strong>' + d.project.name + '</strong></td><td rowspan="' + d.needs.length + '">' + (d.project.cost_center || '—') + '</td><td rowspan="' + d.needs.length + '"><span class="badge ' + (statusBadge[d.project.status] || 'badge-gray') + '">' + d.project.status + '</span></td>' : '') +
+            '<td>' + (n.product_name || '—') + '</td><td>' + n.quantity_needed + '</td>' +
+            '<td>' + n.quantity_reserved + '</td>' +
+            '<td>' + (n.quantity_missing > 0 ? '<span class="badge badge-danger">' + n.quantity_missing + '</span>' : '0') + '</td>' +
+            '<td><span class="badge ' + (needsBadge[n.status] || 'badge-gray') + '">' + n.status + '</span></td></tr>';
+        });
+      }
+    });
+    html += '</tbody></table>';
+    openPrintWindow('Necessidades de Projetos', html, data.length + ' projetos');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
+}
+
+async function exportQuotationsPDF(btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    var quotations = await getQuotationsData();
+    if (btn) btn.classList.remove('loading');
+    if (!quotations.length) { showToast('Nenhuma cotação encontrada', 'warning'); return; }
+    var statusBadge = { open: 'badge-warning', received: 'badge-info', approved: 'badge-success', cancelled: 'badge-gray' };
+    var html = '<table><thead><tr>' +
+      '<th>Produto</th><th>Quantidade</th><th>Status</th><th>Fornecedores</th><th>Melhor Preço</th><th>Data</th>' +
+      '</tr></thead><tbody>' +
+      quotations.map(function(q) {
+        var validPrices = (q.items || []).filter(function(i) { return i.unit_price > 0; });
+        var bestPrice = validPrices.length ? Math.min.apply(null, validPrices.map(function(i) { return i.unit_price; })) : null;
+        return '<tr>' +
+          '<td>' + (q.product_name || '—') + '</td>' +
+          '<td class="text-mono">' + q.quantity + '</td>' +
+          '<td><span class="badge ' + (statusBadge[q.status] || 'badge-gray') + '">' + q.status + '</span></td>' +
+          '<td>' + ((q.items || []).length) + ' fornecedor(es)</td>' +
+          '<td class="text-mono">' + (bestPrice ? fmtCurrency(bestPrice) : '—') + '</td>' +
+          '<td>' + fmtDateShort(q.created_at) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    openPrintWindow('Análise de Cotações', html, quotations.length + ' cotações');
+  } catch(e) {
+    if (btn) btn.classList.remove('loading');
+    showToast(e.message, 'error');
+  }
 }
 
 loadSummary();

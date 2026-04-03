@@ -56,3 +56,33 @@ def users_page():
 @page_login_required
 def reports_page():
     return render_template("reports.html")
+
+
+@frontend_bp.route("/tools")
+@page_login_required
+def tools_page():
+    return render_template("tools.html")
+
+
+@frontend_bp.route("/mobile/tools")
+@page_login_required
+def mobile_tools_page():
+    return render_template("mobile_tools.html")
+
+
+@frontend_bp.route("/mobile/inventory")
+@page_login_required
+def mobile_inventory_page():
+    return render_template("mobile_inventory.html")
+
+
+@frontend_bp.route("/purchase-orders")
+@page_login_required
+def purchase_orders_page():
+    return render_template("purchase_orders.html")
+
+
+@frontend_bp.route("/inventory-check")
+@page_login_required
+def inventory_check_page():
+    return render_template("inventory_check.html")

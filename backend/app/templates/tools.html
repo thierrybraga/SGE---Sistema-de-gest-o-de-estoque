@@ -407,6 +407,8 @@ const canOperate = ['admin','manager','operator'].includes(userRole);
 // Hide admin-only UI
 if (!canManage) {
   document.getElementById('btn-tab-report').style.display = 'none';
+}
+if (userRole !== 'admin') {
   document.getElementById('btn-import-csv').style.display = 'none';
 }
 if (!canOperate) {
@@ -873,36 +875,64 @@ async function _loadCheckoutFormData() {
   }
 }
 
+function _getSelectedToolIds() {
+  return Array.from(document.querySelectorAll('.co-tool-sel')).map(s => s.value).filter(Boolean);
+}
+
+function _refreshToolDropdowns() {
+  const selectedIds = _getSelectedToolIds();
+  document.querySelectorAll('.co-tool-sel').forEach(sel => {
+    const ownVal = sel.value;
+    sel.querySelectorAll('option').forEach(opt => {
+      if (!opt.value) return;
+      opt.hidden = selectedIds.includes(opt.value) && opt.value !== ownVal;
+    });
+    // Update max quantity for currently selected tool
+    const row = sel.closest('[id^="co-tool-row-"]');
+    if (row && ownVal) {
+      const tool = allToolsCache.find(t => t.id === ownVal);
+      if (tool) {
+        const qtyInput = row.querySelector('.co-tool-qty');
+        if (qtyInput) qtyInput.max = tool.available_units;
+      }
+    }
+  });
+}
+
 function addToolRow(presetToolId) {
   const rowId = Date.now();
   coToolRows.push(rowId);
   const available = allToolsCache.filter(t => t.available_units > 0);
+  const selectedIds = _getSelectedToolIds();
+  const presetTool = available.find(t => t.id === presetToolId);
   const div = document.createElement('div');
   div.id = `co-tool-row-${rowId}`;
   div.style.cssText = 'display:grid;grid-template-columns:1fr 80px auto;gap:8px;margin-bottom:8px;align-items:flex-end';
   div.innerHTML = `
     <div class="form-group" style="margin-bottom:0">
       <label class="form-label">Ferramenta</label>
-      <select class="form-control co-tool-sel" data-row="${rowId}">
+      <select class="form-control co-tool-sel" data-row="${rowId}" onchange="_refreshToolDropdowns()">
         <option value="">Selecione...</option>
-        ${available.map(t => `<option value="${t.id}" ${t.id===presetToolId?'selected':''}>${t.name}${t.brand?' ('+t.brand+')':''} — disp: ${t.available_units}</option>`).join('')}
+        ${available.map(t => `<option value="${t.id}" ${t.id===presetToolId?'selected':''} ${selectedIds.includes(t.id)&&t.id!==presetToolId?'hidden':''}>${t.name}${t.brand?' ('+t.brand+')':''} — disp: ${t.available_units}</option>`).join('')}
       </select>
     </div>
     <div class="form-group" style="margin-bottom:0">
       <label class="form-label">Qtd</label>
-      <input type="number" min="1" value="1" class="form-control co-tool-qty" data-row="${rowId}" />
+      <input type="number" min="1" max="${presetTool ? presetTool.available_units : ''}" value="1" class="form-control co-tool-qty" data-row="${rowId}" />
     </div>
     <button type="button" class="btn btn-secondary btn-icon" onclick="removeToolRow(${rowId})" title="Remover" style="margin-bottom:1px">
       <i class="fas fa-trash" style="color:var(--danger)"></i>
     </button>
   `;
   document.getElementById('co-tools-list').appendChild(div);
+  if (presetToolId) _refreshToolDropdowns();
 }
 
 function removeToolRow(rowId) {
   const el = document.getElementById(`co-tool-row-${rowId}`);
   if (el) el.remove();
   coToolRows = coToolRows.filter(r => r !== rowId);
+  _refreshToolDropdowns();
 }
 
 async function saveCheckout() {

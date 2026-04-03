@@ -363,7 +363,7 @@ def _parse_pdf_local_fallback(pdf_bytes):
 # ─────────────────────────────────────────────
 
 @invoices_bp.route("/", methods=["GET"])
-@require_role("admin", "manager", "operator", "buyer")
+@require_role("admin", "manager", "buyer")
 def list_invoices():
     q = """
         SELECT inv.id, inv.invoice_number, inv.supplier_id, inv.supplier_cnpj, inv.supplier_name,

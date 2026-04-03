@@ -9,18 +9,75 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def summary():
     total_products = query_db("SELECT COUNT(*) as c FROM products WHERE active=1", one=True)["c"]
     stock_value = query_db("SELECT COALESCE(SUM(stock * cost_price), 0) as v FROM products WHERE active=1", one=True)["v"]
-    low_stock = query_db("SELECT COUNT(*) as c FROM products WHERE stock <= min_stock AND active=1", one=True)["c"]
+    low_stock = query_db("SELECT COUNT(*) as c FROM products WHERE stock <= min_stock AND active=1 AND min_stock > 0", one=True)["c"]
     active_projects = query_db("SELECT COUNT(*) as c FROM projects WHERE status='active'", one=True)["c"]
     open_quotations = query_db("SELECT COUNT(*) as c FROM quotations WHERE status IN ('open','received')", one=True)["c"]
     total_users = query_db("SELECT COUNT(*) as c FROM users WHERE active=1", one=True)["c"]
-    recent_entries = query_db("SELECT COUNT(*) as c FROM movements WHERE type='entry' AND datetime(created_at) >= datetime('now', '-7 days')", one=True)["c"]
-    recent_exits = query_db("SELECT COUNT(*) as c FROM movements WHERE type='exit' AND datetime(created_at) >= datetime('now', '-7 days')", one=True)["c"]
+    recent_entries = query_db(
+        "SELECT COUNT(*) as c FROM movements WHERE type='entry' AND approval_status != 'revoked' AND date(created_at) >= date('now', '-30 days')",
+        one=True)["c"]
+    recent_exits = query_db(
+        "SELECT COUNT(*) as c FROM movements WHERE type='exit' AND approval_status != 'revoked' AND date(created_at) >= date('now', '-30 days')",
+        one=True)["c"]
     return jsonify({
         "total_products": total_products, "total_stock_value": round(stock_value, 2),
         "low_stock_count": low_stock, "active_projects": active_projects,
         "open_quotations": open_quotations, "total_users": total_users,
         "recent_entries": recent_entries, "recent_exits": recent_exits,
     })
+
+
+@dashboard_bp.route("/movements-chart", methods=["GET"])
+@require_role("admin", "manager", "operator", "buyer")
+def movements_chart():
+    """Returns daily entry/exit counts for the last 30 days."""
+    days = 30
+    rows = query_db("""
+        SELECT date(created_at) as day,
+               SUM(CASE WHEN type='entry' THEN 1 ELSE 0 END) as entries,
+               SUM(CASE WHEN type='exit'  THEN 1 ELSE 0 END) as exits
+        FROM movements
+        WHERE approval_status != 'revoked'
+          AND date(created_at) >= date('now', '-30 days')
+        GROUP BY day
+        ORDER BY day ASC
+    """)
+    return jsonify(rows_to_dicts(rows))
+
+
+@dashboard_bp.route("/stock-by-category", methods=["GET"])
+@require_role("admin", "manager", "operator", "buyer")
+def stock_by_category():
+    """Returns total stock value grouped by category."""
+    rows = query_db("""
+        SELECT COALESCE(c.name, 'Sem categoria') as category,
+               COUNT(p.id) as product_count,
+               COALESCE(SUM(p.stock * p.cost_price), 0) as total_value,
+               COALESCE(SUM(p.stock), 0) as total_units
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.active = 1
+        GROUP BY c.name
+        ORDER BY total_value DESC
+    """)
+    return jsonify(rows_to_dicts(rows))
+
+
+@dashboard_bp.route("/top-products", methods=["GET"])
+@require_role("admin", "manager", "operator", "buyer")
+def top_products():
+    """Returns top 8 products by total stock value."""
+    rows = query_db("""
+        SELECT p.name, p.sku, p.stock, p.cost_price,
+               COALESCE(c.name, 'Sem categoria') as category,
+               (p.stock * p.cost_price) as total_value
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.active = 1 AND p.stock > 0
+        ORDER BY total_value DESC
+        LIMIT 8
+    """)
+    return jsonify(rows_to_dicts(rows))
 
 @dashboard_bp.route("/low-stock", methods=["GET"])
 @require_role("admin", "manager", "operator", "buyer")

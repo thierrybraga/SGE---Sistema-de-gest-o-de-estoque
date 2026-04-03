@@ -10,7 +10,7 @@ from tests.conftest import get, post, put
 @pytest.fixture(scope="module")
 def invoice_supplier_id(client, tokens):
     r = post(client, "/api/suppliers/", tokens["admin"],
-             {"name": "Fornecedor NF QA", "cnpj": "22.333.444/0001-05"})
+             {"name": "Fornecedor NF QA", "cnpj": "22.333.444/0001-81"})
     assert r.status_code == 201
     return r.get_json()["id"]
 
@@ -30,7 +30,7 @@ def invoice_id(client, tokens, invoice_supplier_id):
  <NFe>
   <infNFe>
    <ide><nNF>9001</nNF><dhEmi>2024-01-15T10:00:00-03:00</dhEmi></ide>
-   <emit><CNPJ>22333444000105</CNPJ><xNome>Fornecedor NF QA</xNome></emit>
+   <emit><CNPJ>22333444000181</CNPJ><xNome>Fornecedor NF QA</xNome></emit>
    <dest><CNPJ>11222333000181</CNPJ></dest>
    <det nItem="1">
     <prod>

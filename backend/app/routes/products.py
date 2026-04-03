@@ -134,7 +134,7 @@ def delete_category(category_id):
         [category_id], one=True
     )
     if in_use and in_use["c"] > 0:
-        return jsonify({"error": f"Categoria em uso por {in_use['c']} produto(s). Reassine os produtos antes de excluir."}), 400
+        return jsonify({"error": f"Categoria em uso por {in_use['c']} produto(s). Reassine os produtos antes de excluir."}), 409
     execute_db("UPDATE categories SET active=0 WHERE id=?", [category_id])
     log_action("delete", "category", entity_id=category_id,
                details={"name": dict(cat).get("name")})
@@ -164,7 +164,10 @@ def create_product():
                     data.get("cost_price", 0), data.get("sale_price", 0),
                     data.get("stock", 0), data.get("min_stock", 0), data.get("unit", "un")])
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        error_str = str(e)
+        if "UNIQUE" in error_str.upper():
+            return jsonify({"error": "SKU já cadastrado"}), 409
+        return jsonify({"error": error_str}), 400
     row = query_db("SELECT * FROM products WHERE id=?", [pid], one=True)
     log_action("create", "product", entity_id=pid,
                details={"name": name, "sku": data.get("sku"), "unit": data.get("unit", "un")})
@@ -330,7 +333,7 @@ def product_history(product_id):
 
 
 @products_bp.route("/import/csv", methods=["POST"])
-@require_role("admin", "manager")
+@require_role("admin")
 def import_csv():
     if "file" not in request.files:
         return jsonify({"error": "Arquivo não enviado"}), 400

@@ -1,7 +1,7 @@
 import jwt
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, jsonify, current_app, g
+from flask import request, jsonify, current_app, g, redirect, url_for
 
 
 def create_token(payload: dict) -> str:
@@ -44,9 +44,10 @@ def page_login_required(f):
             try:
                 payload = decode_token(token)
                 g.current_user = payload
+                return f(*args, **kwargs)
             except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
                 pass
-        return f(*args, **kwargs)
+        return redirect("/login")
     return decorated
 
 

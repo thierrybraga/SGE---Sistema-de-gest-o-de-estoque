@@ -39,20 +39,20 @@ class TestRegister:
     def test_register_new_user(self, client, tokens):
         r = post(client, "/api/auth/register", tokens["admin"],
                  {"name": "Novo User", "email": "new_reg@test.com",
-                  "password": "pass12345", "role": "operator"})
+                  "password": "Pass12345", "role": "operator"})
         assert r.status_code in (200, 201)
         assert r.get_json()["email"] == "new_reg@test.com"
 
     def test_register_duplicate_email(self, client, tokens):
         body = {"name": "Dup", "email": "admin@stock.com",
-                "password": "pass12345", "role": "operator"}
+                "password": "Pass12345", "role": "operator"}
         r = post(client, "/api/auth/register", tokens["admin"], body)
         assert r.status_code == 409
 
     def test_register_requires_admin_or_manager(self, client, tokens):
         r = post(client, "/api/auth/register", tokens["operator"],
                  {"name": "X", "email": "x@x.com",
-                  "password": "pass12345", "role": "operator"})
+                  "password": "Pass12345", "role": "operator"})
         assert r.status_code == 403
 
     def test_register_weak_password(self, client, tokens):
@@ -79,12 +79,12 @@ class TestMe:
         # set a new password then revert so other tests still work
         tok = tokens["operator"]
         r = put(client, "/api/auth/me", tok,
-                {"current_password": "op1234567", "new_password": "op1234567NEW"})
+                {"current_password": "Op1234567", "new_password": "Op1234567New"})
         assert r.status_code == 200
         # revert
-        new_tok = _login(client, "op@test.com", "op1234567NEW")
+        new_tok = _login(client, "op@test.com", "Op1234567New")
         put(client, "/api/auth/me", new_tok,
-            {"current_password": "op1234567NEW", "new_password": "op1234567"})
+            {"current_password": "Op1234567New", "new_password": "Op1234567"})
 
 
 class TestUserManagement:
@@ -108,7 +108,7 @@ class TestUserManagement:
         # Create a temporary user
         r = post(client, "/api/auth/register", tokens["admin"],
                  {"name": "Temp", "email": "temp_deact@test.com",
-                  "password": "pass12345", "role": "operator"})
+                  "password": "Pass12345", "role": "operator"})
         uid = r.get_json()["id"]
         r2 = post(client, f"/api/auth/users/{uid}/deactivate", tokens["admin"])
         assert r2.status_code == 200

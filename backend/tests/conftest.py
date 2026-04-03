@@ -39,9 +39,9 @@ def tokens(client):
     admin_tok = _login(client, "admin@stock.com", "admin123")
 
     extras = [
-        ("Manager Teste",   "mgr@test.com",  "mgr12345",  "manager"),
-        ("Operador Teste",  "op@test.com",   "op1234567", "operator"),
-        ("Comprador Teste", "buy@test.com",  "buy123456", "buyer"),
+        ("Manager Teste",   "mgr@test.com",  "Mgr12345",  "manager"),
+        ("Operador Teste",  "op@test.com",   "Op1234567", "operator"),
+        ("Comprador Teste", "buy@test.com",  "Buy123456", "buyer"),
     ]
     for name, email, pwd, role in extras:
         client.post(
@@ -52,9 +52,9 @@ def tokens(client):
 
     return {
         "admin":    admin_tok,
-        "manager":  _login(client, "mgr@test.com",  "mgr12345"),
-        "operator": _login(client, "op@test.com",   "op1234567"),
-        "buyer":    _login(client, "buy@test.com",  "buy123456"),
+        "manager":  _login(client, "mgr@test.com",  "Mgr12345"),
+        "operator": _login(client, "op@test.com",   "Op1234567"),
+        "buyer":    _login(client, "buy@test.com",  "Buy123456"),
     }
 
 

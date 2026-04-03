@@ -17,7 +17,7 @@
         <button class="btn btn-secondary" onclick="openManageCategories()">
           <i class="fas fa-tags"></i> Categorias
         </button>
-        <button class="btn btn-secondary" onclick="document.getElementById('csv-upload').click()">
+        <button class="btn btn-secondary" id="btn-import-csv" onclick="document.getElementById('csv-upload').click()">
           <i class="fas fa-file-import"></i> Importar CSV
         </button>
         <input type="file" id="csv-upload" accept=".csv" style="display:none" onchange="handleCSVUpload(this)" />
@@ -303,6 +303,11 @@
 <script>
 requireAuth();
 initUserInfo();
+
+// Botão de importação CSV visível apenas para admin
+if (getUser()?.role !== 'admin') {
+  document.getElementById('btn-import-csv').style.display = 'none';
+}
 
 let allProducts = [];
 let allCategories = [];

@@ -6,154 +6,167 @@
   </div>
 
   <nav class="sidebar-nav">
+
+    <!-- ── Principal: todos os perfis ── -->
     <div class="nav-section">
       <div class="nav-section-label">Principal</div>
+
       <a href="/dashboard"
          class="nav-item {% if active_page == 'dashboard' %}active{% endif %}"
-         data-page="dashboard"
-         title="Dashboard"
-         data-tooltip="Dashboard"
+         data-roles="admin,manager,operator,buyer"
          {% if active_page == 'dashboard' %}aria-current="page"{% endif %}>
         <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
         <span>Dashboard</span>
       </a>
+
       <a href="/products"
          class="nav-item {% if active_page == 'products' %}active{% endif %}"
-         data-page="products"
-         title="Produtos"
+         data-roles="admin,manager,operator,buyer"
          id="nav-products"
-         data-tooltip="Produtos"
          {% if active_page == 'products' %}aria-current="page"{% endif %}>
         <i class="fas fa-boxes" aria-hidden="true"></i>
         <span>Produtos</span>
-        <span id="badge-low-stock" class="badge badge-danger" style="display:none; margin-left:auto; font-size:10px; padding:2px 6px">!</span>
+        <span id="badge-low-stock" class="badge badge-danger" style="display:none;margin-left:auto;font-size:10px;padding:2px 6px">!</span>
       </a>
+
       <a href="/movements"
          class="nav-item {% if active_page == 'movements' %}active{% endif %}"
-         data-page="movements"
-         title="Movimentações"
-         data-tooltip="Movimentações"
+         data-roles="admin,manager,operator,buyer"
          {% if active_page == 'movements' %}aria-current="page"{% endif %}>
         <i class="fas fa-exchange-alt" aria-hidden="true"></i>
         <span>Movimentações</span>
       </a>
     </div>
 
-    <div class="nav-section">
+    <!-- ── Operações: admin, manager, operator ── -->
+    <div class="nav-section" id="nav-section-operacoes">
       <div class="nav-section-label">Operações</div>
+
       <a href="/projects"
          class="nav-item {% if active_page == 'projects' %}active{% endif %}"
-         data-page="projects"
-         title="Projetos"
-         data-tooltip="Projetos"
+         data-roles="admin,manager,operator"
          {% if active_page == 'projects' %}aria-current="page"{% endif %}>
         <i class="fas fa-project-diagram" aria-hidden="true"></i>
         <span>Projetos</span>
       </a>
+
+      <a href="/tools"
+         class="nav-item {% if active_page == 'tools' %}active{% endif %}"
+         data-roles="admin,manager,operator"
+         {% if active_page == 'tools' %}aria-current="page"{% endif %}>
+        <i class="fas fa-tools" aria-hidden="true"></i>
+        <span>Gestão de Ferramentas</span>
+      </a>
+
+      <a href="/mobile/tools"
+         class="nav-item {% if active_page == 'mobile_tools' %}active{% endif %}"
+         data-roles="admin,manager,operator"
+         id="nav-mobile-tools">
+        <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+        <span>Retirada (Mobile)</span>
+      </a>
+
+      <a href="/mobile/inventory"
+         class="nav-item {% if active_page == 'mobile_inventory' %}active{% endif %}"
+         data-roles="admin,manager,operator"
+         id="nav-mobile-inventory">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <span>Consulta Estoque</span>
+      </a>
+    </div>
+
+    <!-- ── Compras: admin, manager, buyer ── -->
+    <div class="nav-section" id="nav-section-compras">
+      <div class="nav-section-label">Compras</div>
+
       <a href="/invoices"
          class="nav-item {% if active_page == 'invoices' %}active{% endif %}"
-         data-page="invoices"
-         title="Notas Fiscais"
-         data-tooltip="Notas Fiscais"
+         data-roles="admin,manager,buyer"
          {% if active_page == 'invoices' %}aria-current="page"{% endif %}>
         <i class="fas fa-file-invoice" aria-hidden="true"></i>
         <span>Notas Fiscais</span>
       </a>
+
       <a href="/suppliers"
          class="nav-item {% if active_page == 'suppliers' %}active{% endif %}"
-         data-page="suppliers"
-         title="Fornecedores"
-         data-tooltip="Fornecedores"
+         data-roles="admin,manager,buyer"
          {% if active_page == 'suppliers' %}aria-current="page"{% endif %}>
         <i class="fas fa-truck" aria-hidden="true"></i>
         <span>Fornecedores</span>
       </a>
-      <a href="/purchase-orders"
-         class="nav-item {% if active_page == 'purchase_orders' %}active{% endif %}"
-         data-page="purchase_orders"
-         title="Ordens de Compra"
-         data-tooltip="Ordens de Compra"
-         {% if active_page == 'purchase_orders' %}aria-current="page"{% endif %}>
-        <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-        <span>Ordens de Compra</span>
-      </a>
+
+      <!-- buyer também pode ver ferramentas (leitura) e consulta de estoque -->
       <a href="/tools"
          class="nav-item {% if active_page == 'tools' %}active{% endif %}"
-         data-page="tools"
-         title="Ferramentas"
-         data-tooltip="Ferramentas"
+         data-roles="buyer"
+         data-buyer-only="1"
          {% if active_page == 'tools' %}aria-current="page"{% endif %}>
         <i class="fas fa-tools" aria-hidden="true"></i>
         <span>Ferramentas</span>
       </a>
-      <a href="/mobile/tools"
-         class="nav-item {% if active_page == 'mobile_tools' %}active{% endif %}"
-         data-page="mobile_tools"
-         id="nav-mobile-tools"
-         title="Modo Operador (Ferramentas)"
-         data-tooltip="Modo Operador (Ferramentas)">
-        <i class="fas fa-mobile-alt" aria-hidden="true"></i>
-        <span>Ferramentas (Mobile)</span>
-      </a>
+
       <a href="/mobile/inventory"
          class="nav-item {% if active_page == 'mobile_inventory' %}active{% endif %}"
-         data-page="mobile_inventory"
-         id="nav-mobile-inventory"
-         title="Consulta de Estoque (Mobile)"
-         data-tooltip="Consulta de Estoque (Mobile)">
+         data-roles="buyer"
+         data-buyer-only="1">
         <i class="fas fa-search" aria-hidden="true"></i>
-        <span>Estoque (Mobile)</span>
+        <span>Consulta Estoque</span>
       </a>
     </div>
 
-    <div class="nav-section">
-      <div class="nav-section-label">Inventário</div>
-      <a href="/inventory-check"
-         class="nav-item {% if active_page == 'inventory_check' %}active{% endif %}"
-         data-page="inventory_check"
-         title="Inventário Físico"
-         data-tooltip="Inventário Físico"
-         {% if active_page == 'inventory_check' %}aria-current="page"{% endif %}>
-        <i class="fas fa-clipboard-check" aria-hidden="true"></i>
-        <span>Inventário Físico</span>
-      </a>
-    </div>
-
-    <div class="nav-section">
+    <!-- ── Análise: admin, manager, buyer ── -->
+    <div class="nav-section" id="nav-section-analise">
       <div class="nav-section-label">Análise</div>
+
       <a href="/reports"
          class="nav-item {% if active_page == 'reports' %}active{% endif %}"
-         data-page="reports"
-         title="Relatórios"
-         data-tooltip="Relatórios"
+         data-roles="admin,manager,buyer"
          {% if active_page == 'reports' %}aria-current="page"{% endif %}>
         <i class="fas fa-chart-bar" aria-hidden="true"></i>
         <span>Relatórios</span>
       </a>
     </div>
 
-    <div class="nav-section" id="nav-admin-section">
+    <!-- ── Admin: admin, manager ── -->
+    <div class="nav-section" id="nav-section-admin">
       <div class="nav-section-label">Admin</div>
+
       <a href="/users"
          class="nav-item {% if active_page == 'users' %}active{% endif %}"
-         data-page="users"
-         title="Usuários"
-         data-tooltip="Usuários"
+         data-roles="admin,manager"
          {% if active_page == 'users' %}aria-current="page"{% endif %}>
         <i class="fas fa-users" aria-hidden="true"></i>
         <span>Usuários</span>
       </a>
     </div>
+
   </nav>
+
   <script>
     (function () {
       try {
-        var u = JSON.parse(localStorage.getItem('user') || '{}');
+        var u    = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
         var role = u.role || '';
-        if (role !== 'admin' && role !== 'manager') {
-          var sec = document.getElementById('nav-admin-section');
-          if (sec) sec.style.display = 'none';
-        }
+
+        // Hide every nav-item whose data-roles does not include current role
+        document.querySelectorAll('.nav-item[data-roles]').forEach(function (el) {
+          var allowed = el.getAttribute('data-roles').split(',');
+          if (allowed.indexOf(role) === -1) {
+            el.style.display = 'none';
+          }
+        });
+
+        // Hide entire sections that end up with no visible items
+        document.querySelectorAll('.nav-section').forEach(function (sec) {
+          var visible = sec.querySelectorAll('.nav-item:not([style*="display: none"]):not([style*="display:none"])');
+          if (visible.length === 0) sec.style.display = 'none';
+        });
+
+        // Role label map
+        var roleLabels = { admin: 'Administrador', manager: 'Gerente', operator: 'Operador', buyer: 'Compras' };
+        var roleEl = document.getElementById('user-role');
+        if (roleEl && role) roleEl.textContent = roleLabels[role] || role;
+
       } catch (e) {}
     })();
   </script>
@@ -161,8 +174,8 @@
   <div class="sidebar-bottom">
     <div class="user-info">
       <div class="user-avatar" id="user-avatar" aria-hidden="true">A</div>
-      <div>
-        <div class="user-name" id="user-name">Carregando...</div>
+      <div style="min-width:0;flex:1">
+        <div class="user-name" id="user-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
         <div class="user-role" id="user-role"></div>
       </div>
       <button class="btn-logout" onclick="logout()" title="Sair" aria-label="Sair do sistema">

@@ -47,8 +47,8 @@ class TestCategories:
                 tokens["admin"], {"name": "TestCatUpdated"})
         assert r.status_code == 200
 
-    def test_delete_category_with_products_blocked(self, client, tokens, category_id):
-        # category has a product — should return 409
+    def test_delete_category_with_products_blocked(self, client, tokens, category_id, product_id):
+        # category has a product (product_id fixture) — should return 409
         r = delete(client, f"/api/products/categories/{category_id}", tokens["admin"])
         assert r.status_code == 409
 

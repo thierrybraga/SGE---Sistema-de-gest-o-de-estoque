@@ -153,17 +153,14 @@ class TestQuotations:
                 assert r.status_code == 200
 
     def test_approve_quotation(self, client, tokens, supplier_id, quot_product_id):
+        # Vincular produto ao fornecedor para que a cotação gere itens automaticamente
+        post(client, "/api/suppliers/product-link", tokens["admin"],
+             {"supplier_id": supplier_id, "product_id": quot_product_id,
+              "avg_price": 10.0, "lead_time": 3, "priority": 1})
         # Create a fresh quotation to approve
         r = post(client, "/api/suppliers/quotations/", tokens["admin"],
-                 {"product_id": quot_product_id, "quantity": 10,
-                  "supplier_ids": [supplier_id]})
+                 {"product_id": quot_product_id, "quantity": 10})
         quot_id = r.get_json()["id"]
-        items = r.get_json().get("items") or \
-                get(client, "/api/suppliers/quotations/",
-                    tokens["admin"]).get_json()[-1].get("items", [])
-        if items:
-            put(client, f"/api/suppliers/quotation-items/{items[0]['id']}",
-                tokens["buyer"], {"unit_price": 10.0})
         ra = post(client, f"/api/suppliers/quotations/{quot_id}/approve",
                   tokens["admin"],
                   {"supplier_id": supplier_id, "notes": "Aprovado QA"})

@@ -42,30 +42,6 @@ def list_movements():
         q += " AND date(m.created_at) >= date(?)"; args.append(request.args["date_from"])
     if request.args.get("date_to"):
         q += " AND date(m.created_at) <= date(?)"; args.append(request.args["date_to"])
-
-    paginated = request.args.get("page") is not None
-
-    if paginated:
-        try:
-            page = max(int(request.args.get("page", 1)), 1)
-            per_page = min(int(request.args.get("per_page", 50)), 200)
-        except (TypeError, ValueError):
-            page, per_page = 1, 50
-
-        count_q = q.replace(
-            q[:q.index("FROM")],
-            "SELECT COUNT(*) as total "
-        )
-        total = query_db(count_q, args, one=True)["total"]
-
-        q += f" ORDER BY m.created_at DESC LIMIT {per_page} OFFSET {(page - 1) * per_page}"
-        return jsonify({
-            "data": rows_to_dicts(query_db(q, args)),
-            "total": total, "page": page, "per_page": per_page,
-            "pages": (total + per_page - 1) // per_page
-        })
-
-    # Legacy mode
     try:
         limit = min(int(request.args.get("limit", 200)), 1000)
         offset = max(int(request.args.get("offset", 0)), 0)
@@ -136,27 +112,14 @@ def exit_stock():
     if not product:
         return jsonify({"error": "Produto não encontrado"}), 400
     available = float(product["stock"]) - float(product.get("reserved_stock", 0))
-    if float(product["stock"]) < qty:
-        return jsonify({"error": f"Estoque insuficiente. Disponível: {product['stock']}"}), 400
-
-    # Check approval threshold
-    approval_status = "approved"
-    try:
-        threshold_row = query_db("SELECT value FROM system_settings WHERE key='movement_approval_threshold'", one=True)
-        threshold = float(threshold_row["value"]) if threshold_row and threshold_row["value"] else 0
-        if threshold > 0 and qty >= threshold:
-            user_role = current.get("role", "")
-            if user_role not in ("admin", "manager"):
-                approval_status = "pending"
-    except Exception:
-        pass
-
+    if available < qty:
+        return jsonify({"error": f"Estoque insuficiente. Disponível: {available:.4g}"}), 400
     mid = str(uuid.uuid4())
     with db_transaction():
         execute_db("""INSERT INTO movements
                       (id, product_id, type, quantity, unit_cost, user_id, project_id, supplier_id,
-                       invoice_number, invoice_id, invoice_item_id, observation, approval_status)
-                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                       invoice_number, invoice_id, invoice_item_id, observation)
+                      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
                    [mid, product_id, "exit", qty,
                     float(data.get("unit_cost", 0) or 0),
                     current.get("id"),
@@ -165,21 +128,15 @@ def exit_stock():
                     data.get("invoice_number") or None,
                     data.get("invoice_id") or None,
                     data.get("invoice_item_id") or None,
-                    data.get("observation") or None,
-                    approval_status], commit=False)
-        if approval_status == "approved":
-            execute_db(
-                "UPDATE products SET stock=stock-?, updated_at=datetime('now') WHERE id=?",
-                [qty, product_id], commit=False
-            )
+                    data.get("observation") or None], commit=False)
+        execute_db(
+            "UPDATE products SET stock=stock-?, updated_at=datetime('now') WHERE id=?",
+            [qty, product_id], commit=False
+        )
     movement = row_to_dict(query_db("SELECT * FROM movements WHERE id=?", [mid], one=True))
     log_action("exit", "movement", entity_id=mid,
                details={"product_id": product_id, "product_name": product.get("name"),
-                        "quantity": qty, "project_id": data.get("project_id"),
-                        "approval_status": approval_status})
-    if approval_status == "pending":
-        return jsonify({"message": "Saída requer aprovação de um gestor", "approval_status": "pending",
-                        "movement": movement}), 201
+                        "quantity": qty, "project_id": data.get("project_id")})
     return jsonify(movement), 201
 
 @movements_bp.route("/adjustment", methods=["POST"])
@@ -223,56 +180,55 @@ def adjustment():
     return jsonify(movement), 201
 
 
-@movements_bp.route("/pending-approval", methods=["GET"])
+@movements_bp.route("/<movement_id>/revoke", methods=["POST"])
 @require_role("admin", "manager")
-def pending_approval():
-    rows = query_db("""SELECT m.*, p.name as product_name, p.unit as product_unit,
-                              u.name as user_name
-                       FROM movements m
-                       LEFT JOIN products p ON m.product_id = p.id
-                       LEFT JOIN users u ON m.user_id = u.id
-                       WHERE m.approval_status = 'pending'
-                       ORDER BY m.created_at DESC""")
-    return jsonify(rows_to_dicts(rows))
-
-
-@movements_bp.route("/<movement_id>/approve", methods=["POST"])
-@require_role("admin", "manager")
-def approve_movement(movement_id):
+def revoke_movement(movement_id):
+    """Revokes a movement, reversing its stock effect. Admin/manager only."""
     current = get_current_user()
-    mov = query_db("SELECT * FROM movements WHERE id=? AND approval_status='pending'",
-                   [movement_id], one=True)
-    if not mov:
-        return jsonify({"error": "Movimentação não encontrada ou já processada"}), 404
-    mov = dict(mov)
-
     data = request.get_json() or {}
+    reason = (data.get("reason") or "").strip()
+    if not reason:
+        return jsonify({"error": "Motivo da revogação é obrigatório"}), 400
+
+    movement = row_to_dict(query_db("SELECT * FROM movements WHERE id=?", [movement_id], one=True))
+    if not movement:
+        return jsonify({"error": "Movimentação não encontrada"}), 404
+    if movement.get("approval_status") == "revoked":
+        return jsonify({"error": "Movimentação já foi revogada"}), 409
+
+    product = row_to_dict(query_db("SELECT * FROM products WHERE id=?", [movement["product_id"]], one=True))
+    if not product:
+        return jsonify({"error": "Produto não encontrado"}), 404
+
+    qty = float(movement["quantity"])
+    mov_type = movement["type"]
+
     with db_transaction():
-        execute_db("""UPDATE movements SET approval_status='approved', approved_by=?,
-                      approval_notes=? WHERE id=?""",
-                   [current.get("id"), data.get("notes"), movement_id], commit=False)
-        execute_db("UPDATE products SET stock=stock-?, updated_at=datetime('now') WHERE id=?",
-                   [abs(mov["quantity"]), mov["product_id"]], commit=False)
+        # Reverse the stock effect
+        if mov_type == "entry":
+            # Entry added stock → subtract it back (but not below 0)
+            new_stock = max(0, float(product["stock"]) - qty)
+            execute_db("UPDATE products SET stock=?, updated_at=datetime('now') WHERE id=?",
+                       [new_stock, movement["product_id"]], commit=False)
+        elif mov_type == "exit":
+            # Exit removed stock → add it back
+            execute_db("UPDATE products SET stock=stock+?, updated_at=datetime('now') WHERE id=?",
+                       [abs(qty), movement["product_id"]], commit=False)
+        elif mov_type == "adjustment":
+            # Adjustment set stock to a value → restore the previous value (stock - diff)
+            previous = float(product["stock"]) - qty
+            execute_db("UPDATE products SET stock=?, updated_at=datetime('now') WHERE id=?",
+                       [max(0, previous), movement["product_id"]], commit=False)
 
-    log_action("approve", "movement", entity_id=movement_id,
-               details={"product_id": mov["product_id"], "quantity": mov["quantity"]})
-    return jsonify({"message": "Movimentação aprovada e estoque atualizado"})
+        execute_db(
+            "UPDATE movements SET approval_status='revoked', approved_by=?, approval_notes=? WHERE id=?",
+            [current.get("id"), reason, movement_id], commit=False
+        )
 
-
-@movements_bp.route("/<movement_id>/reject", methods=["POST"])
-@require_role("admin", "manager")
-def reject_movement(movement_id):
-    current = get_current_user()
-    mov = query_db("SELECT * FROM movements WHERE id=? AND approval_status='pending'",
-                   [movement_id], one=True)
-    if not mov:
-        return jsonify({"error": "Movimentação não encontrada ou já processada"}), 404
-
-    data = request.get_json() or {}
-    execute_db("""UPDATE movements SET approval_status='rejected', approved_by=?,
-                  approval_notes=? WHERE id=?""",
-               [current.get("id"), data.get("notes", "Rejeitado"), movement_id])
-
-    log_action("reject", "movement", entity_id=movement_id,
-               details={"product_id": dict(mov)["product_id"]})
-    return jsonify({"message": "Movimentação rejeitada"})
+    log_action("revoke", "movement", entity_id=movement_id,
+               details={"product_id": movement["product_id"],
+                        "product_name": product.get("name"),
+                        "type": mov_type, "quantity": qty,
+                        "reason": reason, "revoked_by": current.get("name")})
+    movement = row_to_dict(query_db("SELECT * FROM movements WHERE id=?", [movement_id], one=True))
+    return jsonify(movement)

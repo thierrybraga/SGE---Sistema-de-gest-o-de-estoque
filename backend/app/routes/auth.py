@@ -102,7 +102,7 @@ def register():
         return jsonify({"error": f"Sem permissão para criar usuários com perfil '{target_role}'"}), 403
 
     if query_db("SELECT id FROM users WHERE email=?", [data["email"]], one=True):
-        return jsonify({"error": "Email já cadastrado"}), 400
+        return jsonify({"error": "Email já cadastrado"}), 409
 
     uid = str(uuid.uuid4())
     execute_db(
@@ -155,11 +155,12 @@ def update_me():
                 return jsonify({"error": "Email já cadastrado por outro usuário"}), 400
             sets.append("email=?")
             vals.append(new_email)
-    # Accept both "password" (direct update) and "new_password" (first-login flow with current_password check)
+    # Suporta tanto "new_password"+"current_password" quanto o campo legado "password"
     new_pwd = data.get("new_password") or data.get("password")
     if new_pwd:
-        if data.get("current_password"):
-            if not check_password_hash(user_db["password_hash"], data["current_password"]):
+        if data.get("new_password"):
+            # Valida senha atual antes de trocar
+            if not check_password_hash(user_db["password_hash"], data.get("current_password", "")):
                 return jsonify({"error": "Senha atual incorreta"}), 400
         is_valid, error_msg = _validate_password_complexity(new_pwd)
         if not is_valid:
@@ -168,7 +169,7 @@ def update_me():
         vals.append(generate_password_hash(new_pwd))
     if not sets:
         return jsonify({"error": "Nenhum campo para atualizar"}), 400
-    # Clear must_change_password when email or password is being updated
+    # Clear must_change_password whenever email or password is updated
     if any(s.startswith("password_hash") or s.startswith("email") for s in sets):
         sets.append("must_change_password=?")
         vals.append(0)
@@ -177,9 +178,11 @@ def update_me():
     user = row_to_dict(
         query_db("SELECT id, name, email, role, active, created_at, must_change_password FROM users WHERE id=?", [current["id"]], one=True)
     )
+    user["must_change_password"] = bool(user.get("must_change_password"))
     changed = {}
     if data.get("name"): changed["name"] = data["name"]
-    if new_pwd: changed["password_changed"] = True
+    if data.get("password") or data.get("new_password"): changed["password_changed"] = True
+    if data.get("email"): changed["email_changed"] = True
     log_action("update", "user", entity_id=current["id"], details=changed)
     return jsonify(user)
 
@@ -345,6 +348,7 @@ def list_roles():
 
     all_roles = [
         {
+            "id": "admin",
             "value": "admin",
             "label": "Administrador",
             "description": "Acesso total ao sistema. Gerencia usuários, configurações e pode estornar operações.",
@@ -361,6 +365,7 @@ def list_roles():
             ]
         },
         {
+            "id": "manager",
             "value": "manager",
             "label": "Gerente",
             "description": "Acesso gerencial. Aprova operações, visualiza relatórios e gerencia operadores.",
@@ -378,6 +383,7 @@ def list_roles():
             ]
         },
         {
+            "id": "operator",
             "value": "operator",
             "label": "Operador",
             "description": "Acesso operacional. Movimenta estoque e consulta produtos e projetos.",
@@ -393,6 +399,7 @@ def list_roles():
             ]
         },
         {
+            "id": "buyer",
             "value": "buyer",
             "label": "Compras",
             "description": "Acesso ao módulo de compras. Gerencia fornecedores, cotações e importa notas.",

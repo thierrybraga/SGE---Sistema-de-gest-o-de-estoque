@@ -24,7 +24,7 @@ class TestPurchaseCycleWorkflow:
         # Create supplier
         s = post(client, "/api/suppliers/", tokens["admin"],
                  {"name": "Cimenteira Workflow",
-                  "cnpj": "33.444.555/0001-39"}).get_json()
+                  "cnpj": "33.444.555/0001-81"}).get_json()
 
         # Link product → supplier
         lnk = post(client, "/api/suppliers/product-link", tokens["admin"],
@@ -172,14 +172,14 @@ class TestInvoiceWorkflow:
         # Create supplier
         sup = post(client, "/api/suppliers/", tokens["admin"],
                    {"name": "Emissor NF Workflow",
-                    "cnpj": "44.555.666/0001-78"}).get_json()
+                    "cnpj": "44.555.666/0001-81"}).get_json()
 
         # Import a minimal NF-e XML
         nfe_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
  <NFe><infNFe>
   <ide><nNF>7777</nNF><dhEmi>2024-03-01T10:00:00-03:00</dhEmi></ide>
-  <emit><CNPJ>44555666000178</CNPJ><xNome>Emissor NF Workflow</xNome></emit>
+  <emit><CNPJ>44555666000181</CNPJ><xNome>Emissor NF Workflow</xNome></emit>
   <dest><CNPJ>11222333000181</CNPJ></dest>
   <det nItem="1">
    <prod>
@@ -234,7 +234,7 @@ class TestRoleHierarchy:
     def test_manager_can_register_users(self, client, tokens):
         r = post(client, "/api/auth/register", tokens["manager"],
                  {"name": "MgrCreated", "email": "mgr_created@test.com",
-                  "password": "pass12345", "role": "operator"})
+                  "password": "Pass12345", "role": "operator"})
         assert r.status_code in (200, 201, 409)
 
     def test_operator_cannot_manage_users(self, client, tokens):

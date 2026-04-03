@@ -240,7 +240,7 @@ def get_tool_photo(tool_id):
 # ─────────────────────────────────────────────────────────────
 
 @tools_bp.route("/import-csv", methods=["POST"])
-@require_role("admin", "manager")
+@require_role("admin")
 def import_csv():
     """
     Bulk import tools from CSV.

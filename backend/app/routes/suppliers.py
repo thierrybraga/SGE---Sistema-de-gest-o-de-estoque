@@ -54,7 +54,7 @@ def list_suppliers():
 
 
 @suppliers_bp.route("/", methods=["POST"])
-@require_role("admin", "manager", "buyer")
+@require_role("admin", "manager")
 def create_supplier():
     data = request.get_json() or {}
     name = (data.get("name") or "").strip()

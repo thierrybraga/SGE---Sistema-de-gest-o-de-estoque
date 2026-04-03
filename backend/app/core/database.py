@@ -250,8 +250,8 @@ def init_db(app):
         password_hash TEXT NOT NULL DEFAULT '',
         role TEXT DEFAULT 'operator',
         active INTEGER DEFAULT 1,
-        must_change_password INTEGER DEFAULT 0,
         last_login TEXT DEFAULT NULL,
+        must_change_password INTEGER DEFAULT 0,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -346,6 +346,9 @@ def init_db(app):
         invoice_id TEXT REFERENCES invoices(id),
         invoice_item_id TEXT REFERENCES invoice_items(id),
         observation TEXT,
+        approval_status TEXT DEFAULT 'approved',
+        approved_by TEXT REFERENCES users(id),
+        approval_notes TEXT,
         created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -537,6 +540,9 @@ def init_db(app):
         "ALTER TABLE movements ADD COLUMN unit_cost REAL DEFAULT 0.0",
         "ALTER TABLE movements ADD COLUMN invoice_id TEXT",
         "ALTER TABLE movements ADD COLUMN invoice_item_id TEXT",
+        "ALTER TABLE movements ADD COLUMN approval_status TEXT DEFAULT 'approved'",
+        "ALTER TABLE movements ADD COLUMN approved_by TEXT",
+        "ALTER TABLE movements ADD COLUMN approval_notes TEXT",
         "ALTER TABLE categories ADD COLUMN active INTEGER DEFAULT 1",
         "ALTER TABLE categories ADD COLUMN created_at TEXT DEFAULT (datetime('now'))",
         "ALTER TABLE projects ADD COLUMN updated_at TEXT DEFAULT (datetime('now'))",

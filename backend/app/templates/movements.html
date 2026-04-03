@@ -43,15 +43,49 @@
             <thead>
               <tr>
                 <th>Produto</th><th>Tipo</th><th>Quantidade</th><th>Custo Unit.</th>
-                <th>Total</th><th>NF</th><th>Usuário</th><th>Projeto</th><th>Observação</th><th>Data</th>
+                <th>Total</th><th>NF</th><th>Usuário</th><th>Projeto</th><th>Observação</th><th>Data</th><th></th>
               </tr>
             </thead>
             <tbody id="mov-table">
             </tbody>
           </table>
         </div>
-        <div class="pagination" id="mov-pagination" style="display:none"></div>
+        <div id="mov-pagination" class="flex justify-between items-center mt-3" style="display:none">
+          <button class="btn btn-secondary btn-sm" id="btn-prev" onclick="changePage(-1)" disabled>
+            <i class="fas fa-chevron-left"></i> Anterior
+          </button>
+          <span class="text-muted text-sm" id="page-info"></span>
+          <button class="btn btn-secondary btn-sm" id="btn-next" onclick="changePage(1)">
+            Próxima <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Revogar Movimentação -->
+<div class="modal-overlay" id="modal-revoke">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title"><i class="fas fa-ban" style="color:var(--danger)"></i> Revogar Movimentação</h2>
+      <button class="modal-close" onclick="closeModal('modal-revoke')"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="revoke-mov-id" />
+    <div class="alert alert-danger mb-3" style="font-size:13px">
+      <strong>Atenção:</strong> A revogação desfaz o efeito desta movimentação no estoque. Esta ação é registrada na auditoria.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Movimentação</label>
+      <div id="revoke-mov-info" class="text-muted text-sm"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Motivo da Revogação *</label>
+      <textarea id="revoke-reason" class="form-control" placeholder="Descreva o motivo para revogar esta movimentação..." rows="3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-revoke')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmRevoke()"><i class="fas fa-ban"></i> Confirmar Revogação</button>
     </div>
   </div>
 </div>
@@ -114,14 +148,12 @@
 requireAuth();
 initUserInfo();
 
+const userRole = getUser()?.role;
 let allMovements = [];
-let movCurrentPage = 1;
-let movTotalPages = 1;
-let movTotal = 0;
+let currentPage = 1;
 const PAGE_SIZE = 50;
 
-async function loadMovements(page) {
-  if (page === undefined) page = 1;
+async function loadMovements() {
   const tbody = document.getElementById('mov-table');
   tbody.innerHTML = skeletonRows(10, 6);
   document.getElementById('mov-count').innerHTML = '<span class="skeleton skeleton-text" style="width:200px"></span>';
@@ -131,18 +163,16 @@ async function loadMovements(page) {
   const dateFrom = document.getElementById('filter-date-from').value;
   const dateTo = document.getElementById('filter-date-to').value;
 
-  let url = '/movements/?page=' + page + '&per_page=' + PAGE_SIZE;
+  let url = '/movements/?limit=500';
   if (type) url += '&type=' + type;
   if (productId) url += '&product_id=' + productId;
   if (dateFrom) url += '&date_from=' + dateFrom;
   if (dateTo) url += '&date_to=' + dateTo;
 
   try {
-    const res = await api.get(url);
-    allMovements = res.data;
-    movCurrentPage = res.page;
-    movTotalPages = res.pages;
-    movTotal = res.total;
+    let movs = await api.get(url);
+    allMovements = movs;
+    currentPage = 1;
     renderMovements();
     updateCount();
   } catch(e) {
@@ -154,20 +184,29 @@ async function loadMovements(page) {
 
 function renderMovements() {
   const tbody = document.getElementById('mov-table');
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = allMovements.slice(start, start + PAGE_SIZE);
+  const total = allMovements.length;
 
-  if (!allMovements.length) {
-    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state">' +
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state">' +
       '<i class="fas fa-exchange-alt"></i><h3>Sem movimentações</h3>' +
       '<p>Registre a primeira movimentação de estoque</p></div></td></tr>';
     document.getElementById('mov-pagination').style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = allMovements.map(function(m) {
+  const canRevoke = ['admin','manager'].includes(userRole);
+  tbody.innerHTML = page.map(function(m) {
+    const isRevoked = m.approval_status === 'revoked';
     const totalVal = (m.unit_cost && m.quantity) ? fmtCurrency(Math.abs(m.quantity) * m.unit_cost) : '—';
     const invoiceLabel = m.invoice_number || m.linked_invoice_number || '—';
     const traceLabel = m.invoice_id ? (invoiceLabel + '<br><span class="text-muted text-xs">ID: ' + m.invoice_id.substring(0,8) + '...</span>') : invoiceLabel;
-    return '<tr>' +
+    const rowStyle = isRevoked ? 'opacity:0.5;text-decoration:line-through' : '';
+    const revokeBtn = (canRevoke && !isRevoked)
+      ? '<button class="btn btn-secondary btn-sm btn-icon" onclick="openRevoke(\'' + m.id + '\',\'' + (m.product_name||'').replace(/'/g,"\\'") + '\')" title="Revogar"><i class="fas fa-ban" style="color:var(--danger)"></i></button>'
+      : (isRevoked ? '<span class="badge badge-gray" title="' + (m.approval_notes||'') + '">Revogado</span>' : '');
+    return '<tr style="' + rowStyle + '">' +
       '<td><strong>' + (m.product_name || '—') + '</strong></td>' +
       '<td>' + movBadge(m.type) + '</td>' +
       '<td class="text-mono"><strong>' + (m.quantity > 0 ? '+' : '') + m.quantity + '</strong></td>' +
@@ -178,36 +217,72 @@ function renderMovements() {
       '<td class="text-muted text-sm">' + (m.project_name || (m.project_id ? '<span class="badge badge-purple">Sem nome</span>' : '—')) + '</td>' +
       '<td class="text-muted text-sm" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (m.observation || '') + '">' + (m.observation || '—') + '</td>' +
       '<td class="text-muted text-sm">' + fmtDate(m.created_at) + '</td>' +
+      '<td>' + revokeBtn + '</td>' +
       '</tr>';
   }).join('');
 
-  renderMovPagination();
-}
-
-function renderMovPagination() {
-  const container = document.getElementById('mov-pagination');
-  if (movTotalPages <= 1) { container.style.display = 'none'; return; }
-  container.style.display = 'flex';
-  let html = '<span class="pagination-info">' + movTotal + ' registros — Pág. ' + movCurrentPage + '/' + movTotalPages + '</span>';
-  html += '<div class="pagination-btns">';
-  html += '<button class="btn btn-secondary btn-sm" ' + (movCurrentPage <= 1 ? 'disabled' : '') + ' onclick="loadMovements(' + (movCurrentPage - 1) + ')"><i class="fas fa-chevron-left"></i></button>';
-  const startPage = Math.max(1, movCurrentPage - 2);
-  const endPage = Math.min(movTotalPages, movCurrentPage + 2);
-  if (startPage > 1) html += '<button class="btn btn-secondary btn-sm" onclick="loadMovements(1)">1</button>';
-  if (startPage > 2) html += '<span class="pagination-dots">...</span>';
-  for (let i = startPage; i <= endPage; i++) {
-    html += '<button class="btn ' + (i === movCurrentPage ? 'btn-primary' : 'btn-secondary') + ' btn-sm" onclick="loadMovements(' + i + ')">' + i + '</button>';
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  if (totalPages > 1) {
+    document.getElementById('mov-pagination').style.display = 'flex';
+    document.getElementById('page-info').textContent = 'Página ' + currentPage + ' de ' + totalPages;
+    document.getElementById('btn-prev').disabled = currentPage <= 1;
+    document.getElementById('btn-next').disabled = currentPage >= totalPages;
+  } else {
+    document.getElementById('mov-pagination').style.display = 'none';
   }
-  if (endPage < movTotalPages - 1) html += '<span class="pagination-dots">...</span>';
-  if (endPage < movTotalPages) html += '<button class="btn btn-secondary btn-sm" onclick="loadMovements(' + movTotalPages + ')">' + movTotalPages + '</button>';
-  html += '<button class="btn btn-secondary btn-sm" ' + (movCurrentPage >= movTotalPages ? 'disabled' : '') + ' onclick="loadMovements(' + (movCurrentPage + 1) + ')"><i class="fas fa-chevron-right"></i></button>';
-  html += '</div>';
-  container.innerHTML = html;
 }
 
 function updateCount() {
+  var entries = allMovements.filter(function(m) { return m.type === 'entry' && m.approval_status !== 'revoked'; }).length;
+  var exits = allMovements.filter(function(m) { return m.type === 'exit' && m.approval_status !== 'revoked'; }).length;
+  var adjs = allMovements.filter(function(m) { return m.type === 'adjustment' && m.approval_status !== 'revoked'; }).length;
+  var revoked = allMovements.filter(function(m) { return m.approval_status === 'revoked'; }).length;
   document.getElementById('mov-count').innerHTML =
-    '<strong>' + movTotal + '</strong> registros no total';
+    '<strong>' + allMovements.length + '</strong> registros — ' +
+    '<span style="color:var(--accent3)">' + entries + ' entradas</span> | ' +
+    '<span style="color:var(--danger)">' + exits + ' saídas</span> | ' +
+    '<span style="color:var(--accent)">' + adjs + ' ajustes</span>' +
+    (revoked ? ' | <span style="color:var(--text-muted)">' + revoked + ' revogado(s)</span>' : '');
+}
+
+function openRevoke(movId, productName) {
+  document.getElementById('revoke-mov-id').value = movId;
+  document.getElementById('revoke-reason').value = '';
+  const mov = allMovements.find(function(m) { return m.id === movId; });
+  if (mov) {
+    document.getElementById('revoke-mov-info').innerHTML =
+      '<strong>' + productName + '</strong> — ' + movBadge(mov.type) +
+      ' <strong>' + (mov.quantity > 0 ? '+' : '') + mov.quantity + '</strong>' +
+      (mov.product_unit ? ' ' + mov.product_unit : '') +
+      ' em ' + fmtDate(mov.created_at) +
+      (mov.user_name ? ' por <strong>' + mov.user_name + '</strong>' : '');
+  }
+  openModal('modal-revoke');
+}
+
+async function confirmRevoke() {
+  const movId = document.getElementById('revoke-mov-id').value;
+  const reason = document.getElementById('revoke-reason').value.trim();
+  if (!reason) { showToast('Informe o motivo da revogação', 'error'); return; }
+  const btn = document.querySelector('#modal-revoke .btn-danger');
+  btn.classList.add('loading');
+  try {
+    await api.post('/movements/' + movId + '/revoke', { reason });
+    showToast('Movimentação revogada com sucesso!');
+    closeModal('modal-revoke');
+    loadMovements();
+    loadProductOptions();
+  } catch(e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.classList.remove('loading');
+  }
+}
+
+function changePage(dir) {
+  var totalPages = Math.ceil(allMovements.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(totalPages, currentPage + dir));
+  renderMovements();
 }
 
 function clearFilters() {
@@ -218,49 +293,33 @@ function clearFilters() {
   loadMovements();
 }
 
-async function exportCSV() {
-  showToast('Exportando...', 'info');
-  try {
-    // Fetch all movements (legacy mode without page param) for export
-    const type = document.getElementById('filter-type').value;
-    const productId = document.getElementById('filter-product').value;
-    const dateFrom = document.getElementById('filter-date-from').value;
-    const dateTo = document.getElementById('filter-date-to').value;
-    let url = '/movements/?limit=1000';
-    if (type) url += '&type=' + type;
-    if (productId) url += '&product_id=' + productId;
-    if (dateFrom) url += '&date_from=' + dateFrom;
-    if (dateTo) url += '&date_to=' + dateTo;
-    const exportData = await api.get(url);
-    if (!exportData.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
-    var headers = ['Produto','Tipo','Quantidade','Custo Unitário','Total','NF','Invoice ID','Usuário','Projeto','Observação','Data'];
-    var rows = exportData.map(function(m) {
-      return [
-        '"' + (m.product_name || '') + '"',
-        m.type,
-        m.quantity,
-        m.unit_cost || 0,
-        (m.unit_cost && m.quantity) ? Math.abs(m.quantity * m.unit_cost) : 0,
-        '"' + (m.invoice_number || m.linked_invoice_number || '') + '"',
-        '"' + (m.invoice_id || '') + '"',
-        '"' + (m.user_name || '') + '"',
-        '"' + (m.project_name || '') + '"',
-        '"' + (m.observation || '').replace(/"/g, '""') + '"',
-        m.created_at || '',
-      ].join(',');
-    });
-    var csv = [headers.join(',')].concat(rows).join('\n');
-    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    var csvUrl = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = csvUrl;
-    a.download = 'movimentacoes_' + new Date().toISOString().substring(0,10) + '.csv';
-    a.click();
-    URL.revokeObjectURL(csvUrl);
-    showToast('CSV exportado!');
-  } catch(e) {
-    showToast('Erro ao exportar: ' + e.message, 'error');
-  }
+function exportCSV() {
+  if (!allMovements.length) { showToast('Nenhum dado para exportar', 'warning'); return; }
+  var headers = ['Produto','Tipo','Quantidade','Custo Unitário','Total','NF','Invoice ID','Usuário','Projeto','Observação','Data'];
+  var rows = allMovements.map(function(m) {
+    return [
+      '"' + (m.product_name || '') + '"',
+      m.type,
+      m.quantity,
+      m.unit_cost || 0,
+      (m.unit_cost && m.quantity) ? Math.abs(m.quantity * m.unit_cost) : 0,
+      '"' + (m.invoice_number || m.linked_invoice_number || '') + '"',
+      '"' + (m.invoice_id || '') + '"',
+      '"' + (m.user_name || '') + '"',
+      '"' + (m.project_name || '') + '"',
+      '"' + (m.observation || '').replace(/"/g, '""') + '"',
+      m.created_at || '',
+    ].join(',');
+  });
+  var csv = [headers.join(',')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'movimentacoes_' + new Date().toISOString().substring(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado!');
 }
 
 async function loadProductOptions() {
@@ -295,7 +354,7 @@ function toggleMovType() {
 async function saveMovement() {
   var type = document.getElementById('mov-type').value;
   var productId = document.getElementById('mov-product').value;
-  var qty = parseInt(document.getElementById('mov-qty').value);
+  var qty = parseFloat(document.getElementById('mov-qty').value);
   var obs = document.getElementById('mov-obs').value;
 
   if (!productId) { showToast('Selecione um produto', 'error'); return; }

@@ -41,7 +41,7 @@ class TestProjects:
 
     def test_update_project(self, client, tokens, project_id):
         r = put(client, f"/api/projects/{project_id}", tokens["admin"],
-                {"status": "on_hold"})
+                {"status": "completed"})
         assert r.status_code == 200
 
     def test_project_not_found(self, client, tokens):
